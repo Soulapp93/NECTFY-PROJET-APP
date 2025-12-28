@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { 
   X, Download, ExternalLink, Maximize2, Minimize2, ZoomIn, ZoomOut, 
-  ChevronLeft, ChevronRight, Share2, Loader2, FileWarning, RotateCcw, AlertTriangle
+  ChevronLeft, ChevronRight, Share2, Loader2, FileWarning, RotateCcw, AlertTriangle,
+  RotateCw, RefreshCw, Grid3X3, Pencil
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Slider } from '@/components/ui/slider';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 import { useResolvedFileUrl } from '@/hooks/useResolvedFileUrl';
@@ -12,6 +14,9 @@ import PDFViewerPro from './PDFViewerPro';
 import AudioViewer from './AudioViewer';
 import TextViewer from './TextViewer';
 import ArchiveViewer from './ArchiveViewer';
+import { useImageTransform } from './hooks/useImageTransform';
+import AnnotationLayer from './components/AnnotationLayer';
+import PDFThumbnailNav from './components/PDFThumbnailNav';
 
 // Utility to detect iOS WebKit
 const isIOSDevice = () => {
@@ -72,10 +77,14 @@ const ProductionFileViewer: React.FC<ProductionFileViewerProps> = ({
   const [showControls, setShowControls] = useState(true);
   const [loadProgress, setLoadProgress] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
+  const [imageRotation, setImageRotation] = useState(0);
+  const [showThumbnails, setShowThumbnails] = useState(false);
+  const [showAnnotations, setShowAnnotations] = useState(false);
   
   const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<number | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const { resolvedUrl, isResolving, resolveError } = useResolvedFileUrl(fileUrl, { 
     enabled: isOpen,
@@ -95,6 +104,9 @@ const ProductionFileViewer: React.FC<ProductionFileViewerProps> = ({
       setPdfPages(0);
       setLoadProgress(0);
       setRetryCount(0);
+      setImageRotation(0);
+      setShowThumbnails(false);
+      setShowAnnotations(false);
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -286,20 +298,74 @@ const ProductionFileViewer: React.FC<ProductionFileViewerProps> = ({
   }
 
   // Content renderers
-  const renderImageContent = () => (
-    <div className="flex-1 flex items-center justify-center overflow-auto p-2 bg-black/95">
-      <img
-        key={retryCount}
-        src={resolvedUrl}
-        alt={fileName}
-        className="max-w-full max-h-full object-contain transition-transform duration-300"
-        style={{ transform: `scale(${zoom / 100})` }}
-        onLoad={handleLoadSuccess}
-        onError={() => handleLoadError('Impossible de charger l\'image')}
-        draggable={false}
-      />
-    </div>
-  );
+  const renderImageContent = () => {
+    const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
+    
+    return (
+      <div 
+        ref={contentRef}
+        className="flex-1 flex items-center justify-center overflow-hidden p-2 bg-black/95 relative touch-none"
+        onTouchStart={(e) => {
+          if (e.touches.length === 2) {
+            e.preventDefault();
+          }
+        }}
+        onTouchMove={(e) => {
+          if (e.touches.length === 2) {
+            e.preventDefault();
+            // Pinch to zoom
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const distance = Math.hypot(
+              touch2.clientX - touch1.clientX,
+              touch2.clientY - touch1.clientY
+            );
+            // Simplified pinch zoom
+            if ((window as any)._lastPinchDistance) {
+              const delta = distance - (window as any)._lastPinchDistance;
+              setZoom(z => Math.max(25, Math.min(300, z + delta * 0.5)));
+            }
+            (window as any)._lastPinchDistance = distance;
+          }
+        }}
+        onTouchEnd={() => {
+          (window as any)._lastPinchDistance = null;
+        }}
+      >
+        <img
+          key={retryCount}
+          src={resolvedUrl}
+          alt={fileName}
+          className="max-w-full max-h-full object-contain transition-transform duration-200 select-none pointer-events-none"
+          style={{ 
+            transform: `scale(${zoom / 100}) rotate(${imageRotation}deg)`,
+            transformOrigin: 'center center'
+          }}
+          onLoad={(e) => {
+            const img = e.target as HTMLImageElement;
+            setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+            handleLoadSuccess();
+          }}
+          onError={() => handleLoadError('Impossible de charger l\'image')}
+          draggable={false}
+        />
+        
+        {/* Annotation overlay */}
+        {showAnnotations && imageDimensions.width > 0 && (
+          <AnnotationLayer
+            isActive={showAnnotations}
+            onToggle={() => setShowAnnotations(false)}
+            width={contentRef.current?.clientWidth || 800}
+            height={contentRef.current?.clientHeight || 600}
+            onSave={(dataUrl) => {
+              toast.success('Annotations sauvegardées');
+              setShowAnnotations(false);
+            }}
+          />
+        )}
+      </div>
+    );
+  };
 
   const renderVideoContent = () => (
     <div className="flex-1 flex items-center justify-center bg-black p-2">
@@ -317,18 +383,48 @@ const ProductionFileViewer: React.FC<ProductionFileViewerProps> = ({
   );
 
   const renderPdfContent = () => (
-    <PDFViewerPro
-      fileUrl={resolvedUrl}
-      zoom={zoom}
-      page={pdfPage}
-      onPageChange={setPdfPage}
-      onPagesLoaded={(numPages) => {
-        setPdfPages(numPages);
-        handleLoadSuccess();
-      }}
-      onError={(msg) => handleLoadError(msg)}
-      retryKey={retryCount}
-    />
+    <div className="flex-1 flex relative">
+      {/* Thumbnail sidebar for desktop */}
+      {!isMobile && pdfPages > 1 && (
+        <PDFThumbnailNav
+          fileUrl={resolvedUrl}
+          numPages={pdfPages}
+          currentPage={pdfPage}
+          onPageChange={setPdfPage}
+          isOpen={showThumbnails}
+          onToggle={() => setShowThumbnails(!showThumbnails)}
+        />
+      )}
+      
+      <div className="flex-1 relative" ref={contentRef}>
+        <PDFViewerPro
+          fileUrl={resolvedUrl}
+          zoom={zoom}
+          page={pdfPage}
+          onPageChange={setPdfPage}
+          onPagesLoaded={(numPages) => {
+            setPdfPages(numPages);
+            handleLoadSuccess();
+          }}
+          onError={(msg) => handleLoadError(msg)}
+          retryKey={retryCount}
+        />
+        
+        {/* Annotation overlay for PDF */}
+        {showAnnotations && (
+          <AnnotationLayer
+            isActive={showAnnotations}
+            onToggle={() => setShowAnnotations(false)}
+            width={contentRef.current?.clientWidth || 800}
+            height={contentRef.current?.clientHeight || 600}
+            onSave={(dataUrl) => {
+              toast.success('Annotations sauvegardées');
+              setShowAnnotations(false);
+            }}
+          />
+        )}
+      </div>
+    </div>
   );
 
   const renderOfficeContent = () => {
@@ -498,6 +594,56 @@ const ProductionFileViewer: React.FC<ProductionFileViewerProps> = ({
                 <ZoomIn className="h-4 w-4" />
               </Button>
             </div>
+          )}
+
+          {/* Rotation for images */}
+          {fileType === 'image' && !isMobile && (
+            <div className="hidden sm:flex items-center gap-1 mr-2 bg-muted/50 rounded-lg px-1 py-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setImageRotation(r => (r - 90) % 360)} 
+                className="h-7 w-7"
+                title="Rotation gauche"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setImageRotation(r => (r + 90) % 360)} 
+                className="h-7 w-7"
+                title="Rotation droite"
+              >
+                <RotateCw className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
+          {/* Thumbnails toggle for PDF */}
+          {fileType === 'pdf' && pdfPages > 1 && !isMobile && (
+            <Button 
+              variant={showThumbnails ? 'secondary' : 'ghost'} 
+              size="icon" 
+              onClick={() => setShowThumbnails(!showThumbnails)} 
+              className="h-9 w-9"
+              title="Miniatures"
+            >
+              <Grid3X3 className="h-4 w-4" />
+            </Button>
+          )}
+
+          {/* Annotations toggle */}
+          {(fileType === 'image' || fileType === 'pdf') && (
+            <Button 
+              variant={showAnnotations ? 'secondary' : 'ghost'} 
+              size="icon" 
+              onClick={() => setShowAnnotations(!showAnnotations)} 
+              className="h-9 w-9"
+              title="Annotations"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
           )}
 
           {/* Actions */}
