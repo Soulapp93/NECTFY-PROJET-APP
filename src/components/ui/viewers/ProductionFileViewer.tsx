@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, Download, ExternalLink, Maximize2, Minimize2, ZoomIn, ZoomOut, 
   ChevronLeft, ChevronRight, Share2, Loader2, FileWarning, RotateCcw, AlertTriangle,
@@ -284,43 +285,48 @@ const ProductionFileViewer: React.FC<ProductionFileViewerProps> = ({
 
   if (!isOpen) return null;
 
+  const portalTarget = typeof document !== 'undefined' ? document.body : null;
+  if (!portalTarget) return null;
+
   // Delegate to specialized viewers
   if (fileType === 'audio') {
-    return (
+    return createPortal(
       <AudioViewer
         fileUrl={resolvedUrl}
         fileName={fileName}
         isOpen={isOpen}
         onClose={onClose}
         onShare={handleShare}
-      />
+      />,
+      portalTarget
     );
   }
 
   if (fileType === 'text') {
-    return (
+    return createPortal(
       <TextViewer
         fileUrl={resolvedUrl}
         fileName={fileName}
         isOpen={isOpen}
         onClose={onClose}
         onShare={handleShare}
-      />
+      />,
+      portalTarget
     );
   }
 
   if (fileType === 'archive') {
-    return (
+    return createPortal(
       <ArchiveViewer
         fileUrl={resolvedUrl}
         fileName={fileName}
         isOpen={isOpen}
         onClose={onClose}
         onShare={handleShare}
-      />
+      />,
+      portalTarget
     );
   }
-
   // Content renderers
   const renderImageContent = () => {
     const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
@@ -547,7 +553,7 @@ const ProductionFileViewer: React.FC<ProductionFileViewerProps> = ({
     </div>
   );
 
-  return (
+  return createPortal(
     <div 
       ref={containerRef}
       className="fixed inset-0 z-[200] bg-background flex flex-col"
@@ -748,7 +754,8 @@ const ProductionFileViewer: React.FC<ProductionFileViewerProps> = ({
           </Button>
         </div>
       )}
-    </div>
+    </div>,
+    portalTarget
   );
 };
 
