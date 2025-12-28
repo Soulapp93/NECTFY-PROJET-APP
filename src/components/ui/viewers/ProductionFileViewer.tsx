@@ -172,6 +172,13 @@ const ProductionFileViewer: React.FC<ProductionFileViewerProps> = ({
     }
   }, [isFullscreen, resetControlsTimeout]);
 
+  // Check if file is PowerPoint
+  const isPowerPoint = useMemo(() => {
+    return extension === 'ppt' || extension === 'pptx';
+  }, [extension]);
+
+  const officeIframeRef = useRef<HTMLIFrameElement>(null);
+
   // Keyboard shortcuts
   useEffect(() => {
     if (!isOpen) return;
@@ -191,11 +198,28 @@ const ProductionFileViewer: React.FC<ProductionFileViewerProps> = ({
         if (e.key === 'ArrowLeft') setPdfPage(p => Math.max(1, p - 1));
         if (e.key === 'ArrowRight') setPdfPage(p => Math.min(pdfPages, p + 1));
       }
+      // PowerPoint navigation - focus iframe and simulate navigation
+      if (isPowerPoint && (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+        e.preventDefault();
+        // Focus the iframe to enable native keyboard navigation
+        if (officeIframeRef.current) {
+          officeIframeRef.current.focus();
+          // Post message to Office viewer for navigation
+          try {
+            officeIframeRef.current.contentWindow?.postMessage({
+              type: 'keyboard',
+              key: e.key
+            }, '*');
+          } catch {
+            // Cross-origin restriction - iframe handles its own keyboard events when focused
+          }
+        }
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, isFullscreen, fileType, pdfPages, onClose]);
+  }, [isOpen, isFullscreen, fileType, pdfPages, onClose, isPowerPoint]);
 
   const toggleFullscreen = async () => {
     if (!containerRef.current) return;
@@ -431,16 +455,37 @@ const ProductionFileViewer: React.FC<ProductionFileViewerProps> = ({
     // Office Online viewer requires publicly accessible URL
     const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(resolvedUrl)}`;
     return (
-      <div className="flex-1 w-full h-full bg-muted">
+      <div 
+        className="flex-1 w-full h-full bg-muted relative"
+        onClick={() => {
+          // Click to focus iframe for keyboard navigation
+          officeIframeRef.current?.focus();
+        }}
+      >
         <iframe
+          ref={officeIframeRef}
           key={retryCount}
           src={officeViewerUrl}
           className="w-full h-full border-0"
           title={fileName}
-          onLoad={handleLoadSuccess}
+          onLoad={() => {
+            handleLoadSuccess();
+            // Auto-focus iframe for PowerPoint keyboard navigation
+            if (isPowerPoint) {
+              setTimeout(() => {
+                officeIframeRef.current?.focus();
+              }, 500);
+            }
+          }}
           onError={() => handleLoadError('Impossible de charger le document Office')}
           sandbox="allow-scripts allow-same-origin allow-forms"
+          tabIndex={0}
         />
+        {isPowerPoint && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-background/90 backdrop-blur-sm rounded-lg px-4 py-2 text-sm text-muted-foreground border border-border shadow-lg pointer-events-none">
+            ← → Utilisez les flèches pour naviguer • Cliquez sur le document pour activer
+          </div>
+        )}
       </div>
     );
   };
