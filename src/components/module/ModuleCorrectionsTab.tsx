@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Edit, CheckCircle, Clock, FileText, Eye, Download, FolderOpen, ChevronDown, ChevronRight } from 'lucide-react';
+import { Edit, CheckCircle, Clock, FileText, Eye, FolderOpen, ChevronDown, ChevronRight, Award, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { assignmentService, Assignment, AssignmentSubmission } from '@/services/assignmentService';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import CorrectionModal from './CorrectionModal';
 import StudentCorrectionViewModal from './StudentCorrectionViewModal';
 import { toast } from 'sonner';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface ModuleCorrectionsTabProps {
   moduleId: string;
@@ -25,15 +33,12 @@ const ModuleCorrectionsTab: React.FC<ModuleCorrectionsTabProps> = ({ moduleId })
   
   const { userId, userRole, loading: userLoading } = useCurrentUser();
 
-  // Définir les permissions
   const isFormateur = userRole === 'Formateur';
   const isAdmin = userRole === 'Admin' || userRole === 'AdminPrincipal';
   const canViewCorrections = isFormateur || isAdmin;
   const isEtudiant = userRole === 'Étudiant';
 
-  // Fonction pour vérifier si l'utilisateur peut corriger/modifier une soumission
   const canCorrectSubmission = (assignment: Assignment) => {
-    // Admin/Formateur: correction uniquement sur ses propres devoirs
     if ((isFormateur || isAdmin) && assignment.created_by && assignment.created_by === userId) return true;
     return false;
   };
@@ -51,7 +56,6 @@ const ModuleCorrectionsTab: React.FC<ModuleCorrectionsTabProps> = ({ moduleId })
         
         let filteredSubmissions = submissions;
         
-        // Pour les étudiants, ne montrer que leurs propres soumissions avec corrections publiées
         if (isEtudiant) {
           filteredSubmissions = submissions.filter(s => 
             s.student_id === userId && 
@@ -59,7 +63,6 @@ const ModuleCorrectionsTab: React.FC<ModuleCorrectionsTabProps> = ({ moduleId })
           );
         }
         
-        // Ne pas ajouter les devoirs sans soumissions pertinentes
         if (filteredSubmissions.length > 0 || canViewCorrections) {
           result.push({
             assignment,
@@ -70,7 +73,6 @@ const ModuleCorrectionsTab: React.FC<ModuleCorrectionsTabProps> = ({ moduleId })
       
       setAssignmentsWithSubmissions(result);
       
-      // Étendre tous les devoirs par défaut pour les formateurs/admins
       if (canViewCorrections) {
         setExpandedAssignments(new Set(result.map(r => r.assignment.id)));
       }
@@ -106,23 +108,42 @@ const ModuleCorrectionsTab: React.FC<ModuleCorrectionsTabProps> = ({ moduleId })
     toast.success('Correction sauvegardée avec succès');
   };
 
-  const getSubmissionStatus = (submission: AssignmentSubmission) => {
+  const getStatusBadge = (submission: AssignmentSubmission) => {
     if (submission.correction?.is_corrected) {
       if (submission.correction.published_at) {
-        return { status: 'Publié', color: 'bg-green-100 text-green-800', icon: CheckCircle };
+        return (
+          <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200 hover:bg-emerald-500/20">
+            <Award className="h-3 w-3 mr-1" />
+            Publié ({submission.correction.score}/{submission.correction.max_score})
+          </Badge>
+        );
       } else {
-        return { status: 'Corrigé', color: 'bg-blue-100 text-blue-800', icon: Edit };
+        return (
+          <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Corrigé
+          </Badge>
+        );
       }
     } else {
-      return { status: 'Non corrigé', color: 'bg-amber-100 text-amber-800', icon: Clock };
+      return (
+        <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-200">
+          <Clock className="h-3 w-3 mr-1" />
+          Non corrigé
+        </Badge>
+      );
     }
   };
 
   if (loading || userLoading) {
-    return <div className="text-center py-8">Chargement...</div>;
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
+      </div>
+    );
   }
 
-  // Vue Étudiant - Afficher ses propres corrections
+  // Vue Étudiant
   if (isEtudiant) {
     const myCorrections = assignmentsWithSubmissions
       .flatMap(aws => aws.submissions.map(s => ({ ...s, assignmentTitle: aws.assignment.title })));
@@ -130,9 +151,11 @@ const ModuleCorrectionsTab: React.FC<ModuleCorrectionsTabProps> = ({ moduleId })
     if (myCorrections.length === 0) {
       return (
         <div className="text-center py-12">
-          <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune correction disponible</h3>
-          <p className="text-gray-600">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-muted/50 mb-4">
+            <BookOpen className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">Aucune correction disponible</h3>
+          <p className="text-muted-foreground">
             Vos corrections apparaîtront ici une fois publiées par le formateur.
           </p>
         </div>
@@ -141,43 +164,52 @@ const ModuleCorrectionsTab: React.FC<ModuleCorrectionsTabProps> = ({ moduleId })
 
     return (
       <div className="space-y-6">
-        <h2 className="text-xl font-semibold">Mes corrections</h2>
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+            <Award className="h-5 w-5 text-primary" />
+          </div>
+          <h2 className="text-xl font-semibold text-foreground">Mes corrections</h2>
+        </div>
         
-        <div className="space-y-4">
-        {myCorrections.map((submission) => {
+        <div className="space-y-3">
+          {myCorrections.map((submission) => {
             const correction = submission.correction;
-            
-            // Ignorer les soumissions sans correction (sécurité supplémentaire)
             if (!correction) return null;
             
             return (
-              <div key={submission.id} className="bg-white border border-gray-200 rounded-lg p-5 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-2">
-                      {submission.assignmentTitle}
-                    </h3>
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <span>Rendu le {new Date(submission.submitted_at).toLocaleDateString('fr-FR')}</span>
-                      <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-                        Note: {correction.score ?? '-'}/{correction.max_score ?? '-'}
-                      </span>
+              <Card key={submission.id} className="overflow-hidden hover:shadow-lg hover:border-primary/20 transition-all duration-200">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground mb-2 truncate">
+                        {submission.assignmentTitle}
+                      </h3>
+                      <div className="flex items-center gap-3 text-sm">
+                        <span className="text-muted-foreground">
+                          Rendu le {new Date(submission.submitted_at).toLocaleDateString('fr-FR')}
+                        </span>
+                        <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200">
+                          <Award className="h-3 w-3 mr-1" />
+                          {correction.score ?? '-'}/{correction.max_score ?? '-'}
+                        </Badge>
+                      </div>
                     </div>
+                    
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => setShowStudentModal({ 
+                        submission, 
+                        title: submission.assignmentTitle 
+                      })}
+                      className="flex-shrink-0"
+                    >
+                      <Eye className="h-4 w-4 mr-1.5" />
+                      Voir correction
+                    </Button>
                   </div>
-                  
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => setShowStudentModal({ 
-                      submission, 
-                      title: submission.assignmentTitle 
-                    })}
-                  >
-                    <Eye className="h-4 w-4 mr-1" />
-                    Voir correction
-                  </Button>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             );
           })}
         </div>
@@ -193,11 +225,14 @@ const ModuleCorrectionsTab: React.FC<ModuleCorrectionsTabProps> = ({ moduleId })
     );
   }
 
-  // Vue Formateur/Admin - Historique des corrections par devoir
+  // Vue Formateur/Admin
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Corrections des devoirs</h2>
+      <div className="flex items-center gap-3">
+        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+          <Edit className="h-5 w-5 text-primary" />
+        </div>
+        <h2 className="text-xl font-semibold text-foreground">Corrections des devoirs</h2>
       </div>
 
       {assignmentsWithSubmissions.length > 0 ? (
@@ -208,100 +243,97 @@ const ModuleCorrectionsTab: React.FC<ModuleCorrectionsTabProps> = ({ moduleId })
             const publishedCount = submissions.filter(s => s.correction?.published_at).length;
             
             return (
-              <div key={assignment.id} className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-                {/* En-tête du devoir (cliquable) */}
-                <button
-                  onClick={() => toggleAssignment(assignment.id)}
-                  className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    {isExpanded ? (
-                      <ChevronDown className="h-5 w-5 text-gray-500" />
-                    ) : (
-                      <ChevronRight className="h-5 w-5 text-gray-500" />
-                    )}
-                    <FolderOpen className="h-5 w-5 text-blue-600" />
-                    <div className="text-left">
-                      <h3 className="font-medium text-gray-900">{assignment.title}</h3>
-                      <p className="text-sm text-gray-500">
-                        {submissions.length} soumission{submissions.length > 1 ? 's' : ''} • 
-                        {correctedCount} corrigée{correctedCount > 1 ? 's' : ''} • 
-                        {publishedCount} publiée{publishedCount > 1 ? 's' : ''}
-                      </p>
-                    </div>
-                  </div>
-                </button>
+              <Card key={assignment.id} className="overflow-hidden">
+                <Collapsible open={isExpanded} onOpenChange={() => toggleAssignment(assignment.id)}>
+                  <CollapsibleTrigger asChild>
+                    <button className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left">
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                          {isExpanded ? (
+                            <ChevronDown className="h-4 w-4 text-primary" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-primary" />
+                          )}
+                        </div>
+                        <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-500/5 flex items-center justify-center">
+                          <FolderOpen className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-foreground">{assignment.title}</h3>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
+                            <span>{submissions.length} soumission{submissions.length > 1 ? 's' : ''}</span>
+                            <span className="text-muted-foreground/40">•</span>
+                            <span className="text-emerald-600">{correctedCount} corrigée{correctedCount > 1 ? 's' : ''}</span>
+                            <span className="text-muted-foreground/40">•</span>
+                            <span className="text-primary">{publishedCount} publiée{publishedCount > 1 ? 's' : ''}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  </CollapsibleTrigger>
 
-                {/* Liste des soumissions */}
-                {isExpanded && (
-                  <div className="border-t divide-y">
-                    {submissions.length > 0 ? (
-                      submissions.map((submission) => {
-                        const statusInfo = getSubmissionStatus(submission);
-                        const StatusIcon = statusInfo.icon;
-                        
-                        return (
-                          <div key={submission.id} className="p-4 hover:bg-gray-50">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                  <span className="text-blue-700 font-medium text-sm">
-                                    {submission.student?.first_name?.[0]}{submission.student?.last_name?.[0]}
-                                  </span>
+                  <CollapsibleContent>
+                    <div className="border-t border-border">
+                      {submissions.length > 0 ? (
+                        <div className="divide-y divide-border/50">
+                          {submissions.map((submission) => (
+                            <div key={submission.id} className="p-4 hover:bg-muted/30 transition-colors">
+                              <div className="flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                  <Avatar className="h-10 w-10 border-2 border-primary/20 flex-shrink-0">
+                                    <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/5 text-primary font-medium text-sm">
+                                      {submission.student?.first_name?.[0]}{submission.student?.last_name?.[0]}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="font-medium text-foreground truncate">
+                                      {submission.student?.first_name} {submission.student?.last_name}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">
+                                      Rendu le {new Date(submission.submitted_at).toLocaleDateString('fr-FR')}
+                                    </p>
+                                  </div>
                                 </div>
-                                <div>
-                                  <p className="font-medium text-gray-900">
-                                    {submission.student?.first_name} {submission.student?.last_name}
-                                  </p>
-                                  <p className="text-sm text-gray-500">
-                                    Rendu le {new Date(submission.submitted_at).toLocaleDateString('fr-FR')}
-                                  </p>
-                                </div>
-                              </div>
-                              
-                              <div className="flex items-center gap-3">
-                                <span className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${statusInfo.color}`}>
-                                  <StatusIcon className="h-3 w-3" />
-                                  {statusInfo.status}
-                                  {submission.correction?.score !== undefined && submission.correction.is_corrected && (
-                                    <span className="ml-1">
-                                      ({submission.correction.score}/{submission.correction.max_score})
-                                    </span>
-                                  )}
-                                </span>
                                 
-                                {/* Bouton Corriger/Modifier - uniquement si l'utilisateur peut corriger ce devoir */}
-                                {canCorrectSubmission(assignment) && (
-                                  <Button 
-                                    size="sm" 
-                                    variant={submission.correction?.is_corrected ? 'outline' : 'default'}
-                                    onClick={() => setShowCorrectionModal(submission)}
-                                  >
-                                    <Edit className="h-4 w-4 mr-1" />
-                                    {submission.correction?.is_corrected ? 'Modifier' : 'Corriger'}
-                                  </Button>
-                                )}
+                                <div className="flex items-center gap-3 flex-shrink-0">
+                                  {getStatusBadge(submission)}
+                                  
+                                  {canCorrectSubmission(assignment) && (
+                                    <Button 
+                                      size="sm" 
+                                      variant={submission.correction?.is_corrected ? 'outline' : 'default'}
+                                      onClick={() => setShowCorrectionModal(submission)}
+                                      className={!submission.correction?.is_corrected ? 'bg-gradient-to-r from-primary to-primary/90' : ''}
+                                    >
+                                      <Edit className="h-3.5 w-3.5 mr-1.5" />
+                                      {submission.correction?.is_corrected ? 'Modifier' : 'Corriger'}
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="p-6 text-center text-gray-500">
-                        Aucune soumission pour ce devoir
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-8 text-center">
+                          <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                          <p className="text-muted-foreground">Aucune soumission pour ce devoir</p>
+                        </div>
+                      )}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              </Card>
             );
           })}
         </div>
       ) : (
         <div className="text-center py-12">
-          <Edit className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun devoir à corriger</h3>
-          <p className="text-gray-600">Les soumissions des étudiants apparaîtront ici.</p>
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-muted/50 mb-4">
+            <Edit className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">Aucun devoir à corriger</h3>
+          <p className="text-muted-foreground">Les soumissions des étudiants apparaîtront ici.</p>
         </div>
       )}
 

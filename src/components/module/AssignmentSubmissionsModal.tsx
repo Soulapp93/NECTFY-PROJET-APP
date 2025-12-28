@@ -1,10 +1,18 @@
-
 import React, { useState, useEffect } from 'react';
-import { X, User, Calendar, FileText, CheckCircle, Clock } from 'lucide-react';
+import { X, User, Calendar, FileText, CheckCircle, Clock, Edit, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { assignmentService, Assignment, AssignmentSubmission } from '@/services/assignmentService';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import CorrectionModal from './CorrectionModal';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface AssignmentSubmissionsModalProps {
   assignment: Assignment;
@@ -21,7 +29,6 @@ const AssignmentSubmissionsModal: React.FC<AssignmentSubmissionsModalProps> = ({
   
   const { userId, userRole } = useCurrentUser();
 
-  // Permissions: gestion (corriger/publier) uniquement pour le créateur du devoir
   const isFormateur = userRole === 'Formateur';
   const isAdmin = userRole === 'Admin' || userRole === 'AdminPrincipal';
   const canManage = !!userId && (isFormateur || isAdmin) && assignment.created_by && assignment.created_by === userId;
@@ -62,119 +69,139 @@ const AssignmentSubmissionsModal: React.FC<AssignmentSubmissionsModalProps> = ({
   const correctedCount = submissions.filter(s => s.correction?.is_corrected).length;
   const publishedCount = submissions.filter(s => s.correction?.published_at).length;
 
+  const getStatusBadge = (submission: AssignmentSubmission) => {
+    if (submission.correction?.published_at) {
+      return (
+        <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200 hover:bg-emerald-500/20">
+          <Award className="h-3 w-3 mr-1" />
+          Publié ({submission.correction.score}/{submission.correction.max_score})
+        </Badge>
+      );
+    }
+    if (submission.correction?.is_corrected) {
+      return (
+        <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
+          <CheckCircle className="h-3 w-3 mr-1" />
+          Corrigé ({submission.correction.score}/{submission.correction.max_score})
+        </Badge>
+      );
+    }
+    return (
+      <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-200">
+        <Clock className="h-3 w-3 mr-1" />
+        Non corrigé
+      </Badge>
+    );
+  };
+
   return (
     <>
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden">
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <div>
-              <h2 className="text-lg font-semibold">{assignment.title} - Soumissions</h2>
-              <p className="text-sm text-gray-600 mt-1">
-                {submissions.length} soumission{submissions.length > 1 ? 's' : ''} • {correctedCount} corrigée{correctedCount > 1 ? 's' : ''} • {publishedCount} publiée{publishedCount > 1 ? 's' : ''}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {canPublish && correctedCount > 0 && (
+      <Dialog open={true} onOpenChange={() => onClose()}>
+        <DialogContent className="max-w-2xl max-h-[85vh] p-0 gap-0">
+          <DialogHeader className="p-6 pb-4 border-b border-border">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <DialogTitle className="text-xl font-semibold">
+                  {assignment.title}
+                </DialogTitle>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Badge variant="secondary" className="font-normal">
+                    {submissions.length} soumission{submissions.length > 1 ? 's' : ''}
+                  </Badge>
+                  <span className="text-muted-foreground/50">•</span>
+                  <span className="text-emerald-600">{correctedCount} corrigée{correctedCount > 1 ? 's' : ''}</span>
+                  <span className="text-muted-foreground/50">•</span>
+                  <span className="text-primary">{publishedCount} publiée{publishedCount > 1 ? 's' : ''}</span>
+                </div>
+              </div>
+              {canPublish && correctedCount > 0 && correctedCount !== publishedCount && (
                 <Button 
                   onClick={handlePublishCorrections}
-                  disabled={correctedCount === publishedCount}
+                  size="sm"
+                  className="bg-gradient-to-r from-primary to-primary/90"
                 >
                   Publier les corrections
                 </Button>
               )}
-              <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-                <X className="h-5 w-5" />
-              </button>
             </div>
-          </div>
+          </DialogHeader>
 
-          <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
-            {loading ? (
-              <div className="text-center py-8">Chargement...</div>
-            ) : submissions.length > 0 ? (
-              <div className="space-y-4">
-                {submissions.map((submission) => (
-                  <div key={submission.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <User className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-gray-900">
-                            {submission.student?.first_name} {submission.student?.last_name}
-                          </h3>
-                          <p className="text-sm text-gray-600">{submission.student?.email}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          <span>{new Date(submission.submitted_at).toLocaleDateString()}</span>
-                        </div>
-                        {submission.correction ? (
-                          <div className="flex items-center space-x-2">
-                            {submission.correction.is_corrected ? (
-                              <>
-                                <span className="flex items-center text-green-600 text-sm">
-                                  <CheckCircle className="h-4 w-4 mr-1" />
-                                  Corrigé ({submission.correction.score}/{submission.correction.max_score})
-                                </span>
-                                {canCorrect && (
-                                  <Button 
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => setShowCorrectionModal(submission)}
-                                  >
-                                    Modifier correction
-                                  </Button>
-                                )}
-                              </>
-                            ) : (
-                              <span className="flex items-center text-yellow-600 text-sm">
-                                <Clock className="h-4 w-4 mr-1" />
-                                En cours
-                              </span>
-                            )}
-                            {submission.correction.published_at && (
-                              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                                Publié
-                              </span>
-                            )}
+          <ScrollArea className="flex-1 max-h-[calc(85vh-120px)]">
+            <div className="p-6 pt-4">
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
+                </div>
+              ) : submissions.length > 0 ? (
+                <div className="space-y-3">
+                  {submissions.map((submission) => (
+                    <div 
+                      key={submission.id} 
+                      className="group relative bg-card border border-border rounded-xl p-4 hover:border-primary/30 hover:shadow-md transition-all duration-200"
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <Avatar className="h-10 w-10 border-2 border-primary/20">
+                            <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/5 text-primary font-medium">
+                              {submission.student?.first_name?.[0]}{submission.student?.last_name?.[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-medium text-foreground truncate">
+                              {submission.student?.first_name} {submission.student?.last_name}
+                            </h4>
+                            <p className="text-sm text-muted-foreground truncate">
+                              {submission.student?.email}
+                            </p>
                           </div>
-                        ) : (
-                          canCorrect && (
+                        </div>
+                        
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <div className="hidden sm:flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <Calendar className="h-3.5 w-3.5" />
+                            <span>{new Date(submission.submitted_at).toLocaleDateString('fr-FR')}</span>
+                          </div>
+                          
+                          {getStatusBadge(submission)}
+                          
+                          {canCorrect && (
                             <Button 
                               size="sm"
+                              variant={submission.correction?.is_corrected ? 'outline' : 'default'}
                               onClick={() => setShowCorrectionModal(submission)}
+                              className={!submission.correction?.is_corrected ? 'bg-gradient-to-r from-primary to-primary/90' : ''}
                             >
-                              Corriger
+                              <Edit className="h-3.5 w-3.5 mr-1.5" />
+                              {submission.correction?.is_corrected ? 'Modifier' : 'Corriger'}
                             </Button>
-                          )
-                        )}
+                          )}
+                        </div>
                       </div>
+
+                      {submission.correction?.comments && (
+                        <div className="mt-3 pt-3 border-t border-border/50">
+                          <div className="bg-muted/50 rounded-lg p-3">
+                            <p className="text-xs font-medium text-muted-foreground mb-1">Commentaires</p>
+                            <p className="text-sm text-foreground">{submission.correction.comments}</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
-
-
-                    {submission.correction?.comments && (
-                      <div className="bg-blue-50 rounded p-3">
-                        <h4 className="text-sm font-medium text-blue-900 mb-1">Commentaires du formateur:</h4>
-                        <p className="text-sm text-blue-800">{submission.correction.comments}</p>
-                      </div>
-                    )}
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-muted/50 mb-4">
+                    <FileText className="h-8 w-8 text-muted-foreground" />
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune soumission</h3>
-                <p className="text-gray-600">Aucun étudiant n'a encore rendu ce devoir.</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+                  <h3 className="text-lg font-medium text-foreground mb-2">Aucune soumission</h3>
+                  <p className="text-muted-foreground">Aucun étudiant n'a encore rendu ce devoir.</p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
 
       {showCorrectionModal && (
         <CorrectionModal
