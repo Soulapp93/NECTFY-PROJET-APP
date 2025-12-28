@@ -481,11 +481,6 @@ const ProductionFileViewer: React.FC<ProductionFileViewerProps> = ({
           sandbox="allow-scripts allow-same-origin allow-forms"
           tabIndex={0}
         />
-        {isPowerPoint && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-background/90 backdrop-blur-sm rounded-lg px-4 py-2 text-sm text-muted-foreground border border-border shadow-lg pointer-events-none">
-            ← → Utilisez les flèches pour naviguer • Cliquez sur le document pour activer
-          </div>
-        )}
       </div>
     );
   };
