@@ -1,11 +1,23 @@
-
 import React, { useState, useEffect } from 'react';
-import { X, Download, File, Eye, AlertCircle } from 'lucide-react';
+import { X, Download, File, Eye, Award, MessageSquare, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { assignmentService, AssignmentSubmission } from '@/services/assignmentService';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import ProductionFileViewer from '@/components/ui/viewers/ProductionFileViewer';
 import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 interface CorrectionModalProps {
   submission: AssignmentSubmission;
@@ -90,7 +102,6 @@ const CorrectionModal: React.FC<CorrectionModalProps> = ({
 
   const downloadFile = async (fileUrl: string, fileName: string) => {
     try {
-      // Créer un élément a pour le téléchargement
       const response = await fetch(fileUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -101,7 +112,6 @@ const CorrectionModal: React.FC<CorrectionModalProps> = ({
       document.body.appendChild(link);
       link.click();
       
-      // Nettoyer
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
@@ -116,178 +126,199 @@ const CorrectionModal: React.FC<CorrectionModalProps> = ({
     setViewerFile({ url: fileUrl, name: fileName });
   };
 
+  const percentage = correction.max_score > 0 ? (correction.score / correction.max_score) * 100 : 0;
+  const getGradeColor = () => {
+    if (percentage >= 80) return 'text-emerald-600 bg-emerald-50 border-emerald-200';
+    if (percentage >= 60) return 'text-blue-600 bg-blue-50 border-blue-200';
+    if (percentage >= 40) return 'text-amber-600 bg-amber-50 border-amber-200';
+    return 'text-red-600 bg-red-50 border-red-200';
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col">
-        {/* En-tête du modal */}
-        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 bg-white">
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
-            Corriger - {submission.student?.first_name} {submission.student?.last_name}
-          </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        {/* Contenu principal avec scroll */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-4 sm:p-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
-            {/* Soumission de l'étudiant */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
-                Soumission de l'étudiant
-              </h3>
-              
-              {submission.submission_text && (
-                <div className="bg-gray-50 p-4 rounded-lg border">
-                  <h4 className="font-medium mb-3 text-gray-800">Réponse textuelle:</h4>
-                  <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-                    {submission.submission_text}
-                  </p>
-                </div>
-              )}
-
-              {submissionFiles.length > 0 && (
-                <div>
-                  <h4 className="font-medium mb-3 text-gray-800">Fichiers joints:</h4>
-                  <div className="space-y-3">
-                    {submissionFiles.map((file, index) => (
-                      <div 
-                        key={index} 
-                        className="bg-gray-50 border border-gray-200 p-4 rounded-lg hover:bg-gray-100 transition-colors"
-                      >
-                        {/* Informations du fichier */}
-                        <div className="flex items-center space-x-3 mb-3">
-                          <div className="flex-shrink-0">
-                            <File className="h-5 w-5 text-blue-600" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-gray-900 truncate">
-                              {file.file_name}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              {(file.file_size / 1024).toFixed(1)} KB
-                            </p>
-                          </div>
-                        </div>
-                        
-                        {/* Boutons d'action - bien visibles */}
-                        <div className="flex flex-col sm:flex-row gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => viewFile(file.file_url, file.file_name)}
-                            className="flex-1 sm:flex-none justify-center sm:justify-start"
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            Prévisualiser
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="default"
-                            onClick={() => downloadFile(file.file_url, file.file_name)}
-                            className="flex-1 sm:flex-none justify-center sm:justify-start bg-blue-600 hover:bg-blue-700 text-white"
-                          >
-                            <Download className="h-4 w-4 mr-2" />
-                            Télécharger
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                <p className="text-sm text-blue-800">
-                  <strong>Soumis le:</strong> {new Date(submission.submitted_at).toLocaleDateString()} à {new Date(submission.submitted_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                </p>
+    <>
+      <Dialog open={true} onOpenChange={() => onClose()}>
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0 gap-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-4 border-b border-border bg-gradient-to-r from-primary/5 to-transparent">
+            <div className="flex items-center gap-4">
+              <Avatar className="h-12 w-12 border-2 border-primary/20">
+                <AvatarFallback className="bg-gradient-to-br from-primary/30 to-primary/10 text-primary font-semibold text-lg">
+                  {submission.student?.first_name?.[0]}{submission.student?.last_name?.[0]}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <DialogTitle className="text-xl font-semibold text-foreground">
+                  Correction - {submission.student?.first_name} {submission.student?.last_name}
+                </DialogTitle>
+                <DialogDescription className="text-muted-foreground">
+                  Évaluez et notez la soumission de l'étudiant
+                </DialogDescription>
               </div>
             </div>
+          </DialogHeader>
 
-            {/* Formulaire de correction */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
-                Correction
-              </h3>
-              
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Note obtenue
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      max={correction.max_score}
-                      value={correction.score}
-                      onChange={(e) => setCorrection({ ...correction, score: parseInt(e.target.value) || 0 })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-medium"
-                    />
+          <ScrollArea className="flex-1 max-h-[calc(90vh-180px)]">
+            <div className="p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Soumission de l'étudiant */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <File className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold text-foreground">Soumission de l'étudiant</h3>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Note maximale
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={correction.max_score}
-                      onChange={(e) => setCorrection({ ...correction, max_score: parseInt(e.target.value) || 100 })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-medium"
-                    />
+                  
+                  {submission.submission_text && (
+                    <div className="bg-muted/30 rounded-xl p-4 border border-border">
+                      <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Réponse textuelle</p>
+                      <p className="text-foreground whitespace-pre-wrap leading-relaxed">
+                        {submission.submission_text}
+                      </p>
+                    </div>
+                  )}
+
+                  {submissionFiles.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-muted-foreground">Fichiers joints ({submissionFiles.length})</p>
+                      {submissionFiles.map((file, index) => (
+                        <div 
+                          key={index} 
+                          className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 hover:shadow-sm transition-all"
+                        >
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="flex-shrink-0 p-2 rounded-lg bg-primary/10">
+                              <File className="h-5 w-5 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-foreground truncate text-sm">
+                                {file.file_name}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {(file.file_size / 1024).toFixed(1)} KB
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => viewFile(file.file_url, file.file_name)}
+                              className="flex-1"
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Prévisualiser
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => downloadFile(file.file_url, file.file_name)}
+                              className="flex-1 bg-primary hover:bg-primary/90"
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Télécharger
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
+                    Soumis le {new Date(submission.submitted_at).toLocaleDateString('fr-FR')} à {new Date(submission.submitted_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  </Badge>
+                </div>
+
+                {/* Formulaire de correction */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Award className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold text-foreground">Correction</h3>
                   </div>
-                </div>
+                  
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="score" className="text-sm font-medium text-foreground">
+                          Note obtenue
+                        </Label>
+                        <Input
+                          id="score"
+                          type="number"
+                          min="0"
+                          max={correction.max_score}
+                          value={correction.score}
+                          onChange={(e) => setCorrection({ ...correction, score: parseInt(e.target.value) || 0 })}
+                          className="text-lg font-semibold h-12"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="max_score" className="text-sm font-medium text-foreground">
+                          Note maximale
+                        </Label>
+                        <Input
+                          id="max_score"
+                          type="number"
+                          min="1"
+                          value={correction.max_score}
+                          onChange={(e) => setCorrection({ ...correction, max_score: parseInt(e.target.value) || 100 })}
+                          className="text-lg font-semibold h-12"
+                        />
+                      </div>
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Commentaires de correction
-                  </label>
-                  <textarea
-                    value={correction.comments}
-                    onChange={(e) => setCorrection({ ...correction, comments: e.target.value })}
-                    rows={8}
-                    placeholder="Ajoutez vos commentaires détaillés de correction..."
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                  />
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="comments" className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4" />
+                        Commentaires de correction
+                      </Label>
+                      <Textarea
+                        id="comments"
+                        value={correction.comments}
+                        onChange={(e) => setCorrection({ ...correction, comments: e.target.value })}
+                        rows={6}
+                        placeholder="Ajoutez vos commentaires détaillés de correction..."
+                        className="resize-none"
+                      />
+                    </div>
 
-                {/* Résumé de la note */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
-                  <div className="text-center">
-                    <p className="text-lg font-semibold text-gray-900">
-                      Note finale: {correction.score}/{correction.max_score}
-                    </p>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Pourcentage: {((correction.score / correction.max_score) * 100).toFixed(1)}%
-                    </p>
-                  </div>
-                </div>
+                    {/* Résumé de la note */}
+                    <div className={`rounded-xl p-4 border-2 ${getGradeColor()} transition-colors`}>
+                      <div className="flex items-center justify-center gap-3">
+                        <Star className="h-6 w-6" />
+                        <div className="text-center">
+                          <p className="text-2xl font-bold">
+                            {correction.score}/{correction.max_score}
+                          </p>
+                          <p className="text-sm font-medium opacity-80">
+                            {percentage.toFixed(1)}%
+                          </p>
+                        </div>
+                      </div>
+                    </div>
 
-                {/* Boutons d'action */}
-                <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={onClose}
-                    className="w-full sm:w-auto"
-                  >
-                    Annuler
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={loading}
-                    className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    {loading ? 'Sauvegarde...' : 'Sauvegarder la correction'}
-                  </Button>
+                    {/* Boutons d'action */}
+                    <div className="flex gap-3 pt-2">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={onClose}
+                        className="flex-1"
+                      >
+                        Annuler
+                      </Button>
+                      <Button 
+                        type="submit" 
+                        disabled={loading}
+                        className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white shadow-lg"
+                      >
+                        {loading ? 'Sauvegarde...' : 'Sauvegarder la correction'}
+                      </Button>
+                    </div>
+                  </form>
                 </div>
-              </form>
+              </div>
             </div>
-          </div>
-        </div>
-      </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
 
       {/* Document Viewer */}
       {viewerFile && (
@@ -298,7 +329,7 @@ const CorrectionModal: React.FC<CorrectionModalProps> = ({
           onClose={() => setViewerFile(null)}
         />
       )}
-    </div>
+    </>
   );
 };
 

@@ -31,9 +31,10 @@ const AssignmentSubmissionsModal: React.FC<AssignmentSubmissionsModalProps> = ({
 
   const isFormateur = userRole === 'Formateur';
   const isAdmin = userRole === 'Admin' || userRole === 'AdminPrincipal';
-  const canManage = !!userId && (isFormateur || isAdmin) && assignment.created_by && assignment.created_by === userId;
-  const canCorrect = canManage;
-  const canPublish = canManage;
+  // Correction accessible à tous les formateurs et admins, pas seulement au créateur
+  const canCorrect = !!userId && (isFormateur || isAdmin);
+  const canManage = canCorrect && assignment.created_by && assignment.created_by === userId;
+  const canPublish = canCorrect;
 
   const fetchSubmissions = async () => {
     try {
