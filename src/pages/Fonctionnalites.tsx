@@ -1,182 +1,217 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Clock, FileText, UserCheck, Mail, Download, BarChart, 
-  Shield, Video, Calendar, Search, Bell, Smartphone,
-  ArrowRight, Check
+  LayoutDashboard, ShieldCheck, Users, GraduationCap, BookText, CalendarDays, 
+  ClipboardCheck, Mail, UsersRound, Building2, UserCircle, Briefcase,
+  ArrowRight, CheckCircle2, Sparkles, Smartphone, FileDown, QrCode, 
+  Upload, Bell, Search
 } from 'lucide-react';
 
 const Fonctionnalites = () => {
-  const features = [
+  const mainFeatures = [
     {
-      category: 'Automatisation',
-      icon: Clock,
-      title: 'Automatisation des Tâches Administratives',
-      description: 'Libérez-vous des tâches répétitives et concentrez-vous sur l\'essentiel.',
+      icon: LayoutDashboard,
+      category: 'Pilotage',
+      title: 'Tableau de Bord',
+      description: 'Vue synthétique avec indicateurs clés de votre établissement',
       details: [
-        'Génération automatique des documents',
-        'Envoi programmé d\'emails et notifications',
-        'Mise à jour automatique des calendriers',
-        'Synchronisation des données en temps réel'
+        'Statistiques de présence en temps réel',
+        'Alertes cahiers de textes manquants',
+        'Sessions à venir',
+        'Filtres par formation'
       ]
     },
     {
-      category: 'Documents',
-      icon: FileText,
-      title: 'Génération Automatique de Documents',
-      description: 'Créez tous vos documents administratifs en quelques clics.',
+      icon: ShieldCheck,
+      category: 'Administration',
+      title: 'Administration Centralisée',
+      description: 'Gérez tout depuis une interface unique avec onglets',
       details: [
-        'Feuilles d\'émargement',
-        'Convocations personnalisées',
-        'Attestations de présence',
-        'Rapports de formation'
+        'Onglet Utilisateurs',
+        'Onglet Formations',
+        'Onglet Cahiers de Textes',
+        'Onglet Emplois du Temps',
+        'Onglet Émargements'
       ]
     },
     {
-      category: 'Émargement',
-      icon: UserCheck,
-      title: 'Émargement et Signatures Électroniques',
-      description: 'Gérez les présences de manière moderne et conforme.',
+      icon: Users,
+      category: 'Utilisateurs',
+      title: 'Gestion des Utilisateurs',
+      description: 'Apprenants, formateurs et administrateurs',
       details: [
-        'Signatures électroniques valides juridiquement',
-        'Émargement par QR code',
-        'Validation en temps réel',
-        'Archivage sécurisé'
+        'Import/Export Excel',
+        'Rôles multiples',
+        'Invitations par email',
+        'Activation/désactivation'
       ]
     },
     {
+      icon: GraduationCap,
+      category: 'Formations',
+      title: 'Gestion des Formations',
+      description: 'Programmes modulaires et contenus pédagogiques',
+      details: [
+        'Modules personnalisés',
+        'Devoirs et soumissions',
+        'Documents partagés',
+        'Corrections et notes'
+      ]
+    },
+    {
+      icon: BookText,
+      category: 'Pédagogie',
+      title: 'Cahiers de Textes',
+      description: 'Documentation complète de vos cours',
+      details: [
+        'Matière et contenu',
+        'Travail à faire',
+        'Pièces jointes',
+        'Export PDF'
+      ]
+    },
+    {
+      icon: CalendarDays,
       category: 'Planning',
-      icon: Calendar,
-      title: 'Planning des Séances de Formation',
-      description: 'Organisez et planifiez vos formations facilement.',
+      title: 'Emplois du Temps',
+      description: 'Calendrier interactif et flexible',
       details: [
-        'Vue calendrier interactive',
-        'Gestion des conflits d\'horaires',
-        'Affectation des formateurs',
-        'Export multi-formats'
+        'Vues multiples',
+        'Import Excel',
+        'Gestion salles',
+        'Notifications'
       ]
     },
     {
-      category: 'Communication',
+      icon: ClipboardCheck,
+      category: 'Émargement',
+      title: 'Signatures Numériques',
+      description: 'Émargement conforme et sécurisé',
+      details: [
+        'QR Code dynamique',
+        'Signature tactile',
+        'Motifs d\'absence',
+        'Validation admin'
+      ]
+    },
+    {
       icon: Mail,
-      title: 'Envoi d\'E-mails et de Relances',
-      description: 'Communiquez efficacement avec vos apprenants et formateurs.',
+      category: 'Communication',
+      title: 'Messagerie Interne',
+      description: 'Échanges professionnels intégrés',
       details: [
-        'Templates personnalisables',
-        'Envois groupés',
-        'Relances automatiques',
-        'Suivi des ouvertures'
+        'Pièces jointes',
+        'Envoi groupé',
+        'Dossiers organisés',
+        'Recherche'
       ]
     },
     {
-      category: 'Classes Virtuelles',
-      icon: Video,
-      title: 'Classes Virtuelles',
-      description: 'Formez à distance avec des outils professionnels.',
+      icon: UsersRound,
+      category: 'Collaboration',
+      title: 'Groupes de Discussion',
+      description: 'Chat et collaboration en temps réel',
       details: [
-        'Visioconférence HD',
-        'Partage d\'écran et documents',
-        'Enregistrement des sessions',
-        'Chat et interactions en direct'
+        'Groupes par formation',
+        'Messages instantanés',
+        'Partage fichiers',
+        'Notifications'
       ]
     },
     {
-      category: 'Alertes',
-      icon: Bell,
-      title: 'Alertes et Améliorations Continues',
-      description: 'Restez informé et optimisez vos processus.',
+      icon: Building2,
+      category: 'Configuration',
+      title: 'Gestion Établissement',
+      description: 'Paramètres et personnalisation',
       details: [
-        'Notifications en temps réel',
-        'Alertes personnalisables',
-        'Suggestions d\'amélioration',
-        'Mises à jour automatiques'
+        'Logo personnalisé',
+        'Informations légales',
+        'Coordonnées',
+        'Paramètres'
       ]
     },
     {
-      category: 'Facturation',
-      icon: FileText,
-      title: 'Devis et Facturation',
-      description: 'Gérez votre facturation en toute simplicité.',
+      icon: UserCircle,
+      category: 'Profils',
+      title: 'Comptes Utilisateurs',
+      description: 'Espace personnel pour chacun',
       details: [
-        'Création de devis professionnels',
-        'Facturation automatisée',
-        'Suivi des paiements',
-        'Export comptable'
+        'Photo de profil',
+        'Signature enregistrée',
+        'Préférences',
+        'Sécurité'
       ]
     },
     {
-      category: 'Export',
-      icon: Download,
-      title: 'Export de votre BPF',
-      description: 'Exportez vos données pour vos audits et contrôles.',
+      icon: Briefcase,
+      category: 'Alternance',
+      title: 'Espace Tuteurs',
+      description: 'Suivi des alternants par les tuteurs entreprises',
       details: [
-        'Bilan Pédagogique et Financier',
-        'Export conformes Qualiopi',
-        'Formats personnalisables',
-        'Génération automatique'
-      ]
-    },
-    {
-      category: 'CRM',
-      icon: BarChart,
-      title: 'CRM Intégré de Gestion Commerciale',
-      description: 'Gérez vos prospects et clients efficacement.',
-      details: [
-        'Suivi des opportunités',
-        'Pipeline de vente',
-        'Historique des interactions',
-        'Tableaux de bord commerciaux'
-      ]
-    },
-    {
-      category: 'Stockage',
-      icon: Shield,
-      title: 'Stockage et Archivage des Documents',
-      description: 'Conservez tous vos documents en sécurité.',
-      details: [
-        'Stockage cloud sécurisé',
-        'Organisation hiérarchique',
-        'Recherche avancée',
-        'Partage contrôlé'
-      ]
-    },
-    {
-      category: 'Statistiques',
-      icon: BarChart,
-      title: 'Statistiques',
-      description: 'Analysez vos données pour prendre les bonnes décisions.',
-      details: [
-        'Tableaux de bord personnalisables',
-        'Indicateurs de performance',
-        'Rapports détaillés',
-        'Export des données'
+        'Planning alternant',
+        'Présences',
+        'Communication',
+        'Alertes absences'
       ]
     }
   ];
 
+  const additionalFeatures = [
+    {
+      icon: QrCode,
+      title: 'QR Code Dynamique',
+      description: 'Émargement rapide et sécurisé via scan mobile'
+    },
+    {
+      icon: Upload,
+      title: 'Import Excel',
+      description: 'Importez utilisateurs et plannings massivement'
+    },
+    {
+      icon: FileDown,
+      title: 'Export PDF',
+      description: 'Exportez feuilles de présence et cahiers de textes'
+    },
+    {
+      icon: Bell,
+      title: 'Notifications',
+      description: 'Alertes en temps réel sur les événements importants'
+    },
+    {
+      icon: Search,
+      title: 'Recherche Avancée',
+      description: 'Trouvez rapidement utilisateurs et formations'
+    },
+    {
+      icon: Smartphone,
+      title: 'Mobile Responsive',
+      description: 'Accès complet depuis tous vos appareils'
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <Link to="/" className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-lg">N</span>
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center shadow-lg">
+                <span className="text-primary-foreground font-bold text-lg">N</span>
               </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 NECTFY
               </h1>
             </Link>
             
             <nav className="hidden md:flex items-center space-x-8">
-              <Link to="/solutions" className="text-gray-700 hover:text-primary transition-colors">
+              <Link to="/solutions" className="text-foreground/70 hover:text-primary transition-colors">
                 Solutions
               </Link>
               <Link to="/fonctionnalites" className="text-primary font-semibold">
                 Fonctionnalités
               </Link>
-              <Link to="/pourquoi-nous" className="text-gray-700 hover:text-primary transition-colors">
+              <Link to="/pourquoi-nous" className="text-foreground/70 hover:text-primary transition-colors">
                 Pourquoi nous ?
               </Link>
             </nav>
@@ -189,8 +224,8 @@ const Fonctionnalites = () => {
                 Se connecter
               </Link>
               <Link 
-                to="/auth" 
-                className="px-6 py-2 bg-gradient-to-r from-primary to-purple-600 text-white rounded-lg hover:shadow-lg transform hover:scale-105 font-medium transition-all"
+                to="/create-establishment" 
+                className="px-6 py-2 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-lg hover:shadow-lg transform hover:scale-105 font-medium transition-all"
               >
                 Essai gratuit
               </Link>
@@ -201,43 +236,54 @@ const Fonctionnalites = () => {
 
       {/* Hero Section */}
       <section className="relative py-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-purple-50 to-white"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-accent/5 to-background"></div>
         <div className="relative max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
+          <div className="inline-flex items-center px-4 py-2 bg-primary/10 rounded-full mb-6">
+            <Sparkles className="h-4 w-4 text-primary mr-2" />
+            <span className="text-primary font-medium">Tout ce dont vous avez besoin</span>
+          </div>
+          <h1 className="text-5xl font-bold text-foreground mb-6">
             Toutes les Fonctionnalités
           </h1>
-          <p className="text-xl text-gray-600 leading-relaxed">
-            Découvrez l'ensemble des outils qui feront de NECTFY votre partenaire idéal 
-            pour la gestion de vos formations.
+          <p className="text-xl text-muted-foreground leading-relaxed">
+            Découvrez en détail chaque fonctionnalité de NECTFY, 
+            conçue pour simplifier la gestion de vos formations.
           </p>
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section className="py-20 bg-white">
+      {/* Main Features Grid */}
+      <section className="py-20 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-foreground mb-4">12 Modules Principaux</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Une plateforme complète pour gérer tous les aspects de votre établissement
+            </p>
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => {
+            {mainFeatures.map((feature, index) => {
               const Icon = feature.icon;
               return (
                 <div 
                   key={index}
-                  className="p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 hover:border-primary hover:shadow-lg transition-all"
+                  className="p-6 bg-card rounded-xl border border-border hover:border-primary hover:shadow-lg transition-all group"
                 >
                   <div className="flex items-center mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center mr-4 shadow-lg">
-                      <Icon className="h-6 w-6 text-white" />
+                    <div className="w-12 h-12 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center mr-4 shadow-lg group-hover:scale-110 transition-transform">
+                      <Icon className="h-6 w-6 text-primary-foreground" />
                     </div>
                     <span className="text-xs font-semibold text-primary uppercase tracking-wide">
                       {feature.category}
                     </span>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
-                  <p className="text-gray-600 mb-4">{feature.description}</p>
+                  <h3 className="text-xl font-bold text-foreground mb-3">{feature.title}</h3>
+                  <p className="text-muted-foreground mb-4">{feature.description}</p>
                   <ul className="space-y-2">
                     {feature.details.map((detail, detailIndex) => (
-                      <li key={detailIndex} className="flex items-start text-sm text-gray-600">
-                        <Check className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                      <li key={detailIndex} className="flex items-start text-sm text-muted-foreground">
+                        <CheckCircle2 className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
                         <span>{detail}</span>
                       </li>
                     ))}
@@ -249,15 +295,47 @@ const Fonctionnalites = () => {
         </div>
       </section>
 
-      {/* Mobile App Section */}
-      <section className="py-20 bg-gradient-to-br from-gray-50 to-white">
+      {/* Additional Features */}
+      <section className="py-20 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-foreground mb-4">Fonctionnalités Additionnelles</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Des outils supplémentaires pour optimiser votre productivité
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {additionalFeatures.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <div 
+                  key={index}
+                  className="p-6 bg-card rounded-xl border border-border hover:border-primary transition-all flex items-start gap-4"
+                >
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-foreground mb-1">{feature.title}</h3>
+                    <p className="text-sm text-muted-foreground">{feature.description}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Mobile App Section */}
+      <section className="py-20 bg-muted/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
             <Smartphone className="h-16 w-16 text-primary mx-auto mb-4" />
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-foreground mb-4">
               Accessible partout, à tout moment
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               NECTFY est optimisé pour tous vos appareils : ordinateur, tablette et smartphone.
               Gérez vos formations où que vous soyez.
             </p>
@@ -266,17 +344,17 @@ const Fonctionnalites = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-primary to-purple-600">
+      <section className="py-20 bg-gradient-to-br from-primary to-accent">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold text-white mb-6">
+          <h2 className="text-4xl font-bold text-primary-foreground mb-6">
             Testez toutes ces fonctionnalités gratuitement
           </h2>
-          <p className="text-xl text-white/90 mb-10">
+          <p className="text-xl text-primary-foreground/90 mb-10">
             14 jours d'essai gratuit • Sans engagement • Support inclus
           </p>
           <Link 
-            to="/auth" 
-            className="inline-flex items-center px-8 py-4 bg-white text-primary rounded-lg hover:shadow-2xl transform hover:scale-105 font-bold text-lg transition-all"
+            to="/create-establishment" 
+            className="inline-flex items-center px-8 py-4 bg-background text-primary rounded-lg hover:shadow-2xl transform hover:scale-105 font-bold text-lg transition-all"
           >
             Commencer gratuitement
             <ArrowRight className="ml-2 h-5 w-5" />
@@ -285,24 +363,24 @@ const Fonctionnalites = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
+      <footer className="bg-card text-foreground py-12 border-t border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-3 mb-4 md:mb-0">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">N</span>
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-lg">N</span>
               </div>
               <div>
                 <h3 className="text-xl font-bold">NECTFY</h3>
-                <p className="text-gray-400 text-sm">© 2024 Tous droits réservés</p>
+                <p className="text-muted-foreground text-sm">© 2024 Tous droits réservés</p>
               </div>
             </div>
-            <div className="flex flex-wrap justify-center gap-6 text-gray-400">
-              <Link to="/" className="hover:text-white transition-colors">Accueil</Link>
-              <Link to="/solutions" className="hover:text-white transition-colors">Solutions</Link>
-              <Link to="/pourquoi-nous" className="hover:text-white transition-colors">Pourquoi nous ?</Link>
-              <Link to="/cgu" className="hover:text-white transition-colors">CGU</Link>
-              <Link to="/politique-confidentialite" className="hover:text-white transition-colors">Confidentialité</Link>
+            <div className="flex flex-wrap justify-center gap-6 text-muted-foreground">
+              <Link to="/" className="hover:text-primary transition-colors">Accueil</Link>
+              <Link to="/solutions" className="hover:text-primary transition-colors">Solutions</Link>
+              <Link to="/pourquoi-nous" className="hover:text-primary transition-colors">Pourquoi nous ?</Link>
+              <Link to="/cgu" className="hover:text-primary transition-colors">CGU</Link>
+              <Link to="/politique-confidentialite" className="hover:text-primary transition-colors">Confidentialité</Link>
             </div>
           </div>
         </div>
