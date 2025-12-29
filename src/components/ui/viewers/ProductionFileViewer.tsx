@@ -81,6 +81,7 @@ const ProductionFileViewer: React.FC<ProductionFileViewerProps> = ({
   const [imageRotation, setImageRotation] = useState(0);
   const [showThumbnails, setShowThumbnails] = useState(false);
   const [showAnnotations, setShowAnnotations] = useState(false);
+  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
   
   const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -328,74 +329,70 @@ const ProductionFileViewer: React.FC<ProductionFileViewerProps> = ({
     );
   }
   // Content renderers
-  const renderImageContent = () => {
-    const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
-    
-    return (
-      <div 
-        ref={contentRef}
-        className="flex-1 flex items-center justify-center overflow-hidden p-2 bg-black/95 relative touch-none"
-        onTouchStart={(e) => {
-          if (e.touches.length === 2) {
-            e.preventDefault();
+  const renderImageContent = () => (
+    <div 
+      ref={contentRef}
+      className="flex-1 flex items-center justify-center overflow-hidden p-2 bg-black/95 relative touch-none"
+      onTouchStart={(e) => {
+        if (e.touches.length === 2) {
+          e.preventDefault();
+        }
+      }}
+      onTouchMove={(e) => {
+        if (e.touches.length === 2) {
+          e.preventDefault();
+          // Pinch to zoom
+          const touch1 = e.touches[0];
+          const touch2 = e.touches[1];
+          const distance = Math.hypot(
+            touch2.clientX - touch1.clientX,
+            touch2.clientY - touch1.clientY
+          );
+          // Simplified pinch zoom
+          if ((window as any)._lastPinchDistance) {
+            const delta = distance - (window as any)._lastPinchDistance;
+            setZoom(z => Math.max(25, Math.min(300, z + delta * 0.5)));
           }
+          (window as any)._lastPinchDistance = distance;
+        }
+      }}
+      onTouchEnd={() => {
+        (window as any)._lastPinchDistance = null;
+      }}
+    >
+      <img
+        key={retryCount}
+        src={resolvedUrl}
+        alt={fileName}
+        className="max-w-full max-h-full object-contain transition-transform duration-200 select-none pointer-events-none"
+        style={{ 
+          transform: `scale(${zoom / 100}) rotate(${imageRotation}deg)`,
+          transformOrigin: 'center center'
         }}
-        onTouchMove={(e) => {
-          if (e.touches.length === 2) {
-            e.preventDefault();
-            // Pinch to zoom
-            const touch1 = e.touches[0];
-            const touch2 = e.touches[1];
-            const distance = Math.hypot(
-              touch2.clientX - touch1.clientX,
-              touch2.clientY - touch1.clientY
-            );
-            // Simplified pinch zoom
-            if ((window as any)._lastPinchDistance) {
-              const delta = distance - (window as any)._lastPinchDistance;
-              setZoom(z => Math.max(25, Math.min(300, z + delta * 0.5)));
-            }
-            (window as any)._lastPinchDistance = distance;
-          }
+        onLoad={(e) => {
+          const img = e.target as HTMLImageElement;
+          setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+          handleLoadSuccess();
         }}
-        onTouchEnd={() => {
-          (window as any)._lastPinchDistance = null;
-        }}
-      >
-        <img
-          key={retryCount}
-          src={resolvedUrl}
-          alt={fileName}
-          className="max-w-full max-h-full object-contain transition-transform duration-200 select-none pointer-events-none"
-          style={{ 
-            transform: `scale(${zoom / 100}) rotate(${imageRotation}deg)`,
-            transformOrigin: 'center center'
+        onError={() => handleLoadError('Impossible de charger l\'image')}
+        draggable={false}
+      />
+      
+      {/* Annotation overlay */}
+      {showAnnotations && imageDimensions.width > 0 && (
+        <AnnotationLayer
+          isActive={showAnnotations}
+          onToggle={() => setShowAnnotations(false)}
+          width={contentRef.current?.clientWidth || 800}
+          height={contentRef.current?.clientHeight || 600}
+          onSave={(dataUrl) => {
+            toast.success('Annotations sauvegardées');
+            setShowAnnotations(false);
           }}
-          onLoad={(e) => {
-            const img = e.target as HTMLImageElement;
-            setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
-            handleLoadSuccess();
-          }}
-          onError={() => handleLoadError('Impossible de charger l\'image')}
-          draggable={false}
         />
-        
-        {/* Annotation overlay */}
-        {showAnnotations && imageDimensions.width > 0 && (
-          <AnnotationLayer
-            isActive={showAnnotations}
-            onToggle={() => setShowAnnotations(false)}
-            width={contentRef.current?.clientWidth || 800}
-            height={contentRef.current?.clientHeight || 600}
-            onSave={(dataUrl) => {
-              toast.success('Annotations sauvegardées');
-              setShowAnnotations(false);
-            }}
-          />
-        )}
-      </div>
-    );
-  };
+      )}
+    </div>
+  );
 
   const renderVideoContent = () => (
     <div className="flex-1 flex items-center justify-center bg-black p-2">
