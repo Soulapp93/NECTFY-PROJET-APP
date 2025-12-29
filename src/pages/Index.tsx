@@ -1,9 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  LayoutDashboard, Settings, Users, BookOpen, FileText, Calendar, 
-  ClipboardCheck, MessageSquare, Building2, Building, UserCircle, Briefcase,
-  ArrowRight, CheckCircle2, Sparkles, Play, Shield, Zap, Clock
+  LayoutDashboard, ShieldCheck, Users, GraduationCap, BookText, CalendarDays, 
+  ClipboardCheck, Mail, UsersRound, Building2, UserCircle, Briefcase,
+  ArrowRight, CheckCircle2, Sparkles, Play, Shield, Zap, Clock, CalendarClock
 } from 'lucide-react';
 
 interface FeatureItem {
@@ -13,6 +13,7 @@ interface FeatureItem {
   subtitle: string;
   description: string;
   benefits: string[];
+  details: string[];
   imagePlaceholder: string;
 }
 
@@ -22,99 +23,185 @@ const Index = () => {
       id: 'dashboard',
       icon: LayoutDashboard,
       title: 'Tableau de Bord',
-      subtitle: 'Vue d\'ensemble complète',
-      description: 'Visualisez en un coup d\'œil toutes les métriques importantes de votre établissement. Statistiques en temps réel, alertes et indicateurs clés pour piloter votre activité.',
-      benefits: ['Statistiques en temps réel', 'Alertes personnalisées', 'Indicateurs de performance'],
+      subtitle: 'Vue d\'ensemble en temps réel',
+      description: 'Accédez à une vue synthétique de votre établissement avec des indicateurs clés : taux de présence, sessions à venir, cahiers de textes à compléter, et statistiques globales.',
+      benefits: ['Statistiques de présence en temps réel', 'Alertes sur les cahiers de textes manquants', 'Vue des prochaines sessions'],
+      details: [
+        'Taux de présence global et par formation',
+        'Nombre de sessions planifiées cette semaine',
+        'Rappels automatiques pour les entrées manquantes',
+        'Filtres par formation et par période'
+      ],
       imagePlaceholder: 'dashboard'
     },
     {
       id: 'administration',
-      icon: Settings,
+      icon: ShieldCheck,
       title: 'Administration',
-      subtitle: 'Gestion centralisée',
-      description: 'Administrez l\'ensemble de votre établissement depuis une interface unique. Paramètres, configurations et outils d\'administration avancés.',
-      benefits: ['Configuration complète', 'Gestion des permissions', 'Paramètres avancés'],
+      subtitle: 'Gestion centralisée complète',
+      description: 'Centre de contrôle unifié pour gérer les utilisateurs, formations, cahiers de textes, emplois du temps et feuilles d\'émargement depuis une interface intuitive avec des onglets dédiés.',
+      benefits: ['Interface unifiée avec onglets', 'Accès rapide à toutes les fonctions', 'Gestion complète des données'],
+      details: [
+        'Onglet Utilisateurs : création, import Excel, gestion des rôles',
+        'Onglet Formations : modules, participants, instructeurs',
+        'Onglet Cahiers de Textes : suivi par formation',
+        'Onglet Emplois du Temps : planning visuel',
+        'Onglet Émargements : génération et suivi'
+      ],
       imagePlaceholder: 'administration'
     },
     {
       id: 'users',
       icon: Users,
       title: 'Gestion des Utilisateurs',
-      subtitle: 'Apprenants, formateurs, administrateurs',
-      description: 'Gérez tous les profils de votre établissement. Création de comptes, attribution de rôles, suivi des activités et gestion des accès.',
-      benefits: ['Import/Export Excel', 'Gestion des rôles', 'Suivi des activités'],
+      subtitle: 'Apprenants, Formateurs, Administrateurs',
+      description: 'Gérez l\'ensemble des profils de votre établissement. Créez des comptes individuellement ou par import Excel, attribuez les rôles (AdminPrincipal, Admin, Formateur, Étudiant) et suivez leur activité.',
+      benefits: ['Import/Export Excel des utilisateurs', 'Attribution des rôles granulaire', 'Invitations par email automatiques'],
+      details: [
+        'Création rapide avec formulaire complet',
+        'Import massif via fichier Excel',
+        'Rôles : AdminPrincipal, Admin, Formateur, Étudiant',
+        'Envoi automatique d\'invitations par email',
+        'Activation/désactivation des comptes',
+        'Photo de profil et signature enregistrée'
+      ],
       imagePlaceholder: 'users'
     },
     {
       id: 'formations',
-      icon: BookOpen,
+      icon: GraduationCap,
       title: 'Gestion des Formations',
-      subtitle: 'Programmes et modules',
-      description: 'Créez et organisez vos formations avec des modules personnalisés. Définissez les objectifs, le contenu pédagogique et suivez la progression.',
-      benefits: ['Modules personnalisables', 'Objectifs pédagogiques', 'Suivi de progression'],
+      subtitle: 'Programmes modulaires complets',
+      description: 'Créez des formations structurées avec modules personnalisés. Définissez les dates, durées, niveaux et assignez des formateurs et apprenants. Chaque formation dispose de son propre espace.',
+      benefits: ['Structure modulaire flexible', 'Assignation formateurs/apprenants', 'Espace dédié par formation'],
+      details: [
+        'Création de formations avec titre, dates, durée',
+        'Niveaux : Débutant, Intermédiaire, Avancé',
+        'Modules avec contenus pédagogiques',
+        'Devoirs et travaux avec soumissions',
+        'Documents partagés par module',
+        'Corrections et notations intégrées'
+      ],
       imagePlaceholder: 'formations'
     },
     {
       id: 'textbooks',
-      icon: FileText,
+      icon: BookText,
       title: 'Cahiers de Textes',
-      subtitle: 'Documentation pédagogique',
-      description: 'Tenez à jour les cahiers de textes de vos formations. Historique des cours, contenus abordés et ressources partagées.',
-      benefits: ['Historique complet', 'Pièces jointes', 'Export PDF'],
+      subtitle: 'Suivi pédagogique détaillé',
+      description: 'Tenez à jour les cahiers de textes de vos formations. Chaque entrée documente : date, horaires, matière abordée, contenu du cours et travail à faire. Pièces jointes supportées.',
+      benefits: ['Entrées liées aux créneaux EDT', 'Historique complet des cours', 'Pièces jointes (PDF, images, etc.)'],
+      details: [
+        'Création automatique depuis l\'emploi du temps',
+        'Champs : matière, contenu, travail à faire',
+        'Upload de documents de cours',
+        'Vue chronologique par formation',
+        'Export PDF des cahiers de textes',
+        'Alertes pour entrées manquantes'
+      ],
       imagePlaceholder: 'textbooks'
     },
     {
       id: 'schedule',
-      icon: Calendar,
+      icon: CalendarDays,
       title: 'Emplois du Temps',
-      subtitle: 'Planning intelligent',
-      description: 'Planifiez et visualisez les séances de formation. Vue calendrier, gestion des salles et des disponibilités des formateurs.',
-      benefits: ['Vue calendrier', 'Gestion des salles', 'Notifications automatiques'],
+      subtitle: 'Planning intelligent et flexible',
+      description: 'Planifiez les séances de formation avec un calendrier visuel. Définissez les modules, formateurs, salles et horaires. Génération automatique des feuilles d\'émargement.',
+      benefits: ['Vue calendrier interactive', 'Gestion des salles et formateurs', 'Import Excel des plannings'],
+      details: [
+        'Vues : jour, semaine, mois, liste',
+        'Création de créneaux avec module, formateur, salle',
+        'Code couleur par formation ou module',
+        'Import massif via fichier Excel',
+        'Notifications des changements',
+        'Lien automatique avec émargements'
+      ],
       imagePlaceholder: 'schedule'
     },
     {
       id: 'attendance',
       icon: ClipboardCheck,
       title: 'Gestion des Émargements',
-      subtitle: 'Signatures numériques et QR codes',
-      description: 'Émargement digital conforme et sécurisé. Signatures électroniques, QR codes dynamiques et feuilles de présence automatiques.',
-      benefits: ['QR Code dynamique', 'Signature électronique', 'Conformité légale'],
+      subtitle: 'Signatures numériques conformes',
+      description: 'Système d\'émargement digital complet : génération automatique des feuilles depuis l\'EDT, signatures électroniques, QR codes dynamiques, et suivi des présences en temps réel.',
+      benefits: ['QR Code dynamique sécurisé', 'Signature électronique tactile', 'Conformité réglementaire'],
+      details: [
+        'Génération auto depuis les créneaux EDT',
+        'QR Code unique par session',
+        'Signature sur écran tactile ou mobile',
+        'Motifs d\'absence configurables',
+        'Validation administrative des feuilles',
+        'Export PDF des feuilles signées',
+        'Envoi de liens de signature par email'
+      ],
       imagePlaceholder: 'attendance'
     },
     {
       id: 'messaging',
-      icon: MessageSquare,
+      icon: Mail,
       title: 'Messagerie Interne',
-      subtitle: 'Communication centralisée',
-      description: 'Communiquez facilement avec tous les acteurs de votre établissement. Messages, notifications et historique des échanges.',
-      benefits: ['Messages instantanés', 'Pièces jointes', 'Historique complet'],
+      subtitle: 'Communication professionnelle',
+      description: 'Messagerie intégrée type email pour communiquer avec tous les utilisateurs de votre établissement. Envoyez des messages individuels ou groupés avec pièces jointes.',
+      benefits: ['Messages avec pièces jointes', 'Envoi individuel ou groupé', 'Boîte de réception organisée'],
+      details: [
+        'Composition de messages riches',
+        'Sélection multiple de destinataires',
+        'Pièces jointes (documents, images)',
+        'Dossiers : reçus, envoyés, favoris, archives',
+        'Recherche dans les messages',
+        'Transfert et réponse rapide'
+      ],
       imagePlaceholder: 'messaging'
     },
     {
       id: 'groups',
-      icon: Building2,
+      icon: UsersRound,
       title: 'Groupes Établissement',
-      subtitle: 'Discussions de groupe',
-      description: 'Créez des groupes de discussion pour vos formations, équipes ou projets. Collaboration en temps réel et partage de ressources.',
-      benefits: ['Groupes personnalisés', 'Partage de fichiers', 'Discussions en temps réel'],
+      subtitle: 'Discussions collaboratives',
+      description: 'Créez des groupes de discussion pour vos formations, équipes ou projets. Chat en temps réel, partage de fichiers et collaboration instantanée entre membres.',
+      benefits: ['Groupes par formation automatiques', 'Chat temps réel', 'Partage de fichiers'],
+      details: [
+        'Groupes automatiques par formation',
+        'Groupes personnalisés (équipes, projets)',
+        'Messages en temps réel',
+        'Partage de documents',
+        'Historique des conversations',
+        'Notifications de nouveaux messages'
+      ],
       imagePlaceholder: 'groups'
     },
     {
       id: 'establishment',
-      icon: Building,
-      title: 'Gestion Établissement',
-      subtitle: 'Paramètres et identité',
-      description: 'Configurez les informations de votre établissement. Logo, coordonnées, paramètres légaux et personnalisation de l\'interface.',
-      benefits: ['Personnalisation', 'Informations légales', 'Branding'],
+      icon: Building2,
+      title: 'Gestion du Compte Établissement',
+      subtitle: 'Configuration et paramètres',
+      description: 'Configurez les informations de votre établissement : nom, logo, coordonnées, SIRET. Personnalisez l\'apparence et gérez les paramètres globaux de la plateforme.',
+      benefits: ['Logo et identité visuelle', 'Informations légales complètes', 'Personnalisation de l\'interface'],
+      details: [
+        'Nom et type d\'établissement',
+        'Logo personnalisé',
+        'Adresse et coordonnées',
+        'Numéro SIRET',
+        'Directeur et contacts',
+        'Paramètres de notifications'
+      ],
       imagePlaceholder: 'establishment'
     },
     {
       id: 'profiles',
       icon: UserCircle,
       title: 'Gestion des Profils',
-      subtitle: 'Comptes utilisateurs',
-      description: 'Chaque utilisateur peut gérer son profil personnel. Photo, signature, préférences de notification et paramètres de confidentialité.',
-      benefits: ['Photo de profil', 'Signature enregistrée', 'Préférences personnelles'],
+      subtitle: 'Compte utilisateur personnel',
+      description: 'Chaque utilisateur dispose d\'un espace profil pour gérer ses informations personnelles, sa photo, sa signature enregistrée et ses préférences de notifications.',
+      benefits: ['Photo de profil', 'Signature électronique enregistrée', 'Préférences personnelles'],
+      details: [
+        'Photo de profil personnalisée',
+        'Informations de contact',
+        'Signature tactile enregistrée',
+        'Préférences de notifications',
+        'Changement de mot de passe',
+        'Historique des connexions'
+      ],
       imagePlaceholder: 'profiles'
     },
     {
@@ -122,8 +209,16 @@ const Index = () => {
       icon: Briefcase,
       title: 'Espace Tuteurs Entreprises',
       subtitle: 'Suivi des alternants',
-      description: 'Espace dédié aux tuteurs entreprises pour le suivi des alternants. Visualisation des plannings, des présences et communication avec l\'établissement.',
-      benefits: ['Suivi alternants', 'Planning visible', 'Communication directe'],
+      description: 'Espace dédié aux tuteurs entreprises pour le suivi de leurs alternants. Visualisation des plannings, consultation des présences et communication avec l\'établissement.',
+      benefits: ['Vue planning de l\'alternant', 'Suivi des présences', 'Communication directe'],
+      details: [
+        'Accès au planning de l\'alternant',
+        'Consultation des feuilles d\'émargement',
+        'Vue des formations en cours',
+        'Contact avec l\'établissement',
+        'Informations du contrat d\'alternance',
+        'Notifications des absences'
+      ],
       imagePlaceholder: 'tutors'
     }
   ];
@@ -296,18 +391,31 @@ const Index = () => {
                       </div>
                     </div>
                     
-                    <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
+                    <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
                       {feature.description}
                     </p>
                     
-                    <ul className="space-y-3">
+                    <ul className="space-y-2 mb-6">
                       {feature.benefits.map((benefit, benefitIndex) => (
                         <li key={benefitIndex} className="flex items-center text-foreground">
                           <CheckCircle2 className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
-                          <span className="text-base md:text-lg">{benefit}</span>
+                          <span className="text-base md:text-lg font-medium">{benefit}</span>
                         </li>
                       ))}
                     </ul>
+
+                    {/* Détails supplémentaires */}
+                    <div className="bg-muted/50 rounded-xl p-4 border border-border">
+                      <p className="text-sm font-semibold text-foreground mb-3">Fonctionnalités détaillées :</p>
+                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {feature.details.map((detail, detailIndex) => (
+                          <li key={detailIndex} className="flex items-start text-sm text-muted-foreground">
+                            <span className="text-primary mr-2">•</span>
+                            {detail}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
 
                   {/* Image Placeholder */}
@@ -356,67 +464,63 @@ const Index = () => {
             Prêt à transformer votre gestion ?
           </h2>
           <p className="text-xl md:text-2xl text-primary-foreground/90 mb-10">
-            Rejoignez des centaines d'établissements qui font déjà confiance à NECTFY
+            Rejoignez les établissements qui ont déjà adopté NECTFY
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link 
               to="/create-establishment" 
-              className="inline-flex items-center px-8 py-4 bg-background text-primary rounded-xl hover:shadow-2xl transform hover:scale-105 font-bold text-lg transition-all"
+              className="group inline-flex items-center px-8 py-4 bg-background text-primary rounded-xl hover:shadow-2xl transform hover:scale-105 font-bold text-lg transition-all justify-center"
             >
-              Créer un compte gratuit
-              <ArrowRight className="ml-2 h-5 w-5" />
+              Créer mon établissement
+              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link 
               to="/auth" 
-              className="inline-flex items-center px-8 py-4 border-2 border-primary-foreground/30 text-primary-foreground rounded-xl hover:bg-primary-foreground/10 font-semibold text-lg transition-all"
+              className="inline-flex items-center px-8 py-4 border-2 border-primary-foreground/30 text-primary-foreground rounded-xl hover:bg-primary-foreground/10 font-semibold text-lg transition-all justify-center"
             >
               Se connecter
             </Link>
           </div>
-          <p className="text-primary-foreground/70 mt-8 text-sm md:text-base">
-            Essai gratuit 14 jours • Sans engagement • Support inclus
-          </p>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-foreground text-background py-12 md:py-16">
+      <footer className="bg-card text-foreground py-12 md:py-16 border-t border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
-            <div className="col-span-2">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            <div className="md:col-span-2">
               <div className="flex items-center space-x-3 mb-4">
                 <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
                   <span className="text-primary-foreground font-bold text-lg">N</span>
                 </div>
-                <h3 className="text-2xl font-bold">NECTFY</h3>
+                <h3 className="text-xl font-bold">NECTFY</h3>
               </div>
-              <p className="text-background/60 max-w-md text-sm md:text-base">
-                La plateforme de gestion complète pour digitaliser votre établissement de formation. 12 modules puissants pour tout gérer.
+              <p className="text-muted-foreground mb-4 max-w-md">
+                La plateforme complète pour digitaliser et automatiser la gestion de vos formations professionnelles.
               </p>
             </div>
             
             <div>
-              <h4 className="font-semibold mb-4 text-sm md:text-base">Navigation</h4>
-              <ul className="space-y-2 text-background/60 text-sm">
-                <li><a href="#fonctionnalites" className="hover:text-background transition-colors">Fonctionnalités</a></li>
-                <li><Link to="/solutions" className="hover:text-background transition-colors">Solutions</Link></li>
-                <li><Link to="/pourquoi-nous" className="hover:text-background transition-colors">Pourquoi nous ?</Link></li>
+              <h4 className="font-semibold mb-4">Navigation</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><a href="#fonctionnalites" className="hover:text-primary transition-colors">Fonctionnalités</a></li>
+                <li><Link to="/solutions" className="hover:text-primary transition-colors">Solutions</Link></li>
+                <li><Link to="/pourquoi-nous" className="hover:text-primary transition-colors">Pourquoi nous ?</Link></li>
               </ul>
             </div>
             
             <div>
-              <h4 className="font-semibold mb-4 text-sm md:text-base">Légal</h4>
-              <ul className="space-y-2 text-background/60 text-sm">
-                <li><Link to="/cgu" className="hover:text-background transition-colors">CGU</Link></li>
-                <li><Link to="/politique-confidentialite" className="hover:text-background transition-colors">Confidentialité</Link></li>
+              <h4 className="font-semibold mb-4">Légal</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><Link to="/cgu" className="hover:text-primary transition-colors">CGU</Link></li>
+                <li><Link to="/politique-confidentialite" className="hover:text-primary transition-colors">Confidentialité</Link></li>
               </ul>
             </div>
           </div>
           
-          <div className="border-t border-background/20 pt-8">
-            <p className="text-background/50 text-center text-xs md:text-sm">
-              © 2024 NECTFY. Tous droits réservés.
-            </p>
+          <div className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center text-muted-foreground text-sm">
+            <p>© 2024 NECTFY. Tous droits réservés.</p>
+            <p className="mt-2 md:mt-0">Made with ❤️ for formation professionals</p>
           </div>
         </div>
       </footer>

@@ -2,57 +2,58 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Target, Users, Award, Zap, Heart, TrendingUp, 
-  Shield, Clock, CheckCircle, ArrowRight, Star
+  Shield, Clock, CheckCircle2, ArrowRight, Star,
+  GraduationCap, Building2, Briefcase, Sparkles
 } from 'lucide-react';
 
 const PourquoiNous = () => {
   const audiences = [
     {
-      icon: Target,
-      title: 'Formateurs Indépendants',
-      description: 'Vous êtes formateur indépendant et cherchez à professionnaliser votre activité ?',
-      benefits: [
-        'Interface simple et intuitive',
-        'Gestion autonome complète',
-        'Gain de temps considérable',
-        'Support dédié en français',
-        'Tarifs adaptés aux indépendants'
-      ],
-      testimonial: {
-        text: 'NECTFY m\'a permis de me concentrer sur l\'essentiel : former. Plus de temps perdu en administratif !',
-        author: 'Sophie M., Formatrice indépendante'
-      }
-    },
-    {
-      icon: Users,
-      title: 'Organismes de Formation',
+      icon: GraduationCap,
+      title: 'Centres de Formation',
       description: 'Vous gérez un organisme de formation et souhaitez optimiser vos processus ?',
       benefits: [
-        'Conformité Qualiopi garantie',
-        'Gestion multi-utilisateurs',
-        'Traçabilité complète',
-        'Automatisation des tâches',
-        'Tableaux de bord détaillés'
+        'Gestion complète des formations et modules',
+        'Émargement numérique conforme',
+        'Cahiers de textes automatisés',
+        'Emplois du temps visuels',
+        'Suivi des apprenants en temps réel'
       ],
       testimonial: {
-        text: 'Depuis NECTFY, nous avons divisé par 3 le temps passé sur l\'administratif. Un vrai game-changer !',
-        author: 'Marc D., Directeur de centre de formation'
+        text: 'NECTFY a transformé notre gestion quotidienne. Nous avons divisé par 3 le temps administratif !',
+        author: 'Marie D., Directrice de CFA'
       }
     },
     {
-      icon: Award,
-      title: 'Entreprises qui Forment',
-      description: 'Vous développez les compétences de vos équipes en interne ?',
+      icon: Building2,
+      title: 'Établissements d\'Enseignement',
+      description: 'Vous êtes un établissement scolaire ou universitaire ?',
       benefits: [
-        'Formation interne simplifiée',
-        'Suivi des compétences',
-        'Reporting avancé',
-        'Intégration facile',
-        'ROI mesurable'
+        'Interface intuitive pour tous les profils',
+        'Messagerie et groupes intégrés',
+        'Gestion multi-formations',
+        'Suivi pédagogique complet',
+        'Exports et rapports détaillés'
       ],
       testimonial: {
-        text: 'La formation interne n\'a jamais été aussi simple. Nous suivons précisément la montée en compétences de nos équipes.',
-        author: 'Julie R., DRH'
+        text: 'La plateforme est adoptée par tous nos formateurs et étudiants. Simple et efficace !',
+        author: 'Jean-Pierre L., Responsable pédagogique'
+      }
+    },
+    {
+      icon: Briefcase,
+      title: 'Entreprises avec Alternants',
+      description: 'Vous accueillez des alternants et souhaitez suivre leur formation ?',
+      benefits: [
+        'Espace tuteur entreprise dédié',
+        'Suivi des présences de l\'alternant',
+        'Communication avec l\'établissement',
+        'Accès au planning de formation',
+        'Notifications des absences'
+      ],
+      testimonial: {
+        text: 'En tant que tuteur, je peux enfin suivre facilement la formation de mes alternants.',
+        author: 'Sophie M., Tutrice entreprise'
       }
     }
   ];
@@ -61,22 +62,22 @@ const PourquoiNous = () => {
     {
       icon: Zap,
       title: 'Simplicité d\'utilisation',
-      description: 'Interface intuitive, prise en main immédiate, aucune formation nécessaire'
+      description: 'Interface intuitive, prise en main immédiate sans formation nécessaire'
     },
     {
       icon: Clock,
       title: 'Gain de temps massif',
-      description: 'Automatisation de 80% des tâches administratives répétitives'
+      description: 'Automatisation des tâches administratives répétitives'
     },
     {
       icon: Shield,
-      title: 'Conformité garantie',
-      description: 'Respecte toutes les normes Qualiopi et réglementations en vigueur'
+      title: 'Sécurité des données',
+      description: 'Vos données sont hébergées et protégées de manière sécurisée'
     },
     {
       icon: Heart,
       title: 'Support réactif',
-      description: 'Équipe française disponible pour vous accompagner au quotidien'
+      description: 'Équipe disponible pour vous accompagner au quotidien'
     },
     {
       icon: TrendingUp,
@@ -86,30 +87,30 @@ const PourquoiNous = () => {
     {
       icon: Star,
       title: 'Satisfaction client',
-      description: '98% de nos clients nous recommandent à leurs confrères'
+      description: 'Des établissements satisfaits qui nous recommandent'
     }
   ];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <Link to="/" className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-lg">N</span>
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center shadow-lg">
+                <span className="text-primary-foreground font-bold text-lg">N</span>
               </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 NECTFY
               </h1>
             </Link>
             
             <nav className="hidden md:flex items-center space-x-8">
-              <Link to="/solutions" className="text-gray-700 hover:text-primary transition-colors">
+              <Link to="/solutions" className="text-foreground/70 hover:text-primary transition-colors">
                 Solutions
               </Link>
-              <Link to="/fonctionnalites" className="text-gray-700 hover:text-primary transition-colors">
+              <Link to="/fonctionnalites" className="text-foreground/70 hover:text-primary transition-colors">
                 Fonctionnalités
               </Link>
               <Link to="/pourquoi-nous" className="text-primary font-semibold">
@@ -125,8 +126,8 @@ const PourquoiNous = () => {
                 Se connecter
               </Link>
               <Link 
-                to="/auth" 
-                className="px-6 py-2 bg-gradient-to-r from-primary to-purple-600 text-white rounded-lg hover:shadow-lg transform hover:scale-105 font-medium transition-all"
+                to="/create-establishment" 
+                className="px-6 py-2 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-lg hover:shadow-lg transform hover:scale-105 font-medium transition-all"
               >
                 Essai gratuit
               </Link>
@@ -137,12 +138,16 @@ const PourquoiNous = () => {
 
       {/* Hero Section */}
       <section className="relative py-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-purple-50 to-white"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-accent/5 to-background"></div>
         <div className="relative max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            Pour Qui ?
+          <div className="inline-flex items-center px-4 py-2 bg-primary/10 rounded-full mb-6">
+            <Sparkles className="h-4 w-4 text-primary mr-2" />
+            <span className="text-primary font-medium">La solution adaptée à vos besoins</span>
+          </div>
+          <h1 className="text-5xl font-bold text-foreground mb-6">
+            Pourquoi choisir NECTFY ?
           </h1>
-          <p className="text-xl text-gray-600 leading-relaxed">
+          <p className="text-xl text-muted-foreground leading-relaxed">
             NECTFY s'adapte à tous les professionnels de la formation, 
             quelle que soit la taille de votre structure.
           </p>
@@ -150,7 +155,7 @@ const PourquoiNous = () => {
       </section>
 
       {/* Target Audiences */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="space-y-16">
             {audiences.map((audience, index) => {
@@ -163,32 +168,32 @@ const PourquoiNous = () => {
                 >
                   <div className="flex-1">
                     <div className="flex items-center mb-6">
-                      <div className="w-16 h-16 bg-gradient-to-br from-primary to-purple-600 rounded-2xl flex items-center justify-center mr-4 shadow-lg">
-                        <Icon className="h-8 w-8 text-white" />
+                      <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center mr-4 shadow-lg">
+                        <Icon className="h-8 w-8 text-primary-foreground" />
                       </div>
-                      <h2 className="text-3xl font-bold text-gray-900">{audience.title}</h2>
+                      <h2 className="text-3xl font-bold text-foreground">{audience.title}</h2>
                     </div>
-                    <p className="text-xl text-gray-600 mb-8">{audience.description}</p>
+                    <p className="text-xl text-muted-foreground mb-8">{audience.description}</p>
                     <ul className="space-y-4 mb-8">
                       {audience.benefits.map((benefit, benefitIndex) => (
                         <li key={benefitIndex} className="flex items-start">
-                          <CheckCircle className="h-6 w-6 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
-                          <span className="text-lg text-gray-700">{benefit}</span>
+                          <CheckCircle2 className="h-6 w-6 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                          <span className="text-lg text-foreground">{benefit}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
                   <div className="flex-1">
-                    <div className="p-8 bg-gradient-to-br from-primary/5 to-purple-50 rounded-2xl border border-primary/20">
+                    <div className="p-8 bg-card rounded-2xl border border-border shadow-lg">
                       <div className="flex mb-4">
                         {[...Array(5)].map((_, i) => (
                           <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
                         ))}
                       </div>
-                      <p className="text-lg text-gray-700 italic mb-4">
+                      <p className="text-lg text-muted-foreground italic mb-4">
                         "{audience.testimonial.text}"
                       </p>
-                      <p className="text-gray-900 font-semibold">{audience.testimonial.author}</p>
+                      <p className="text-foreground font-semibold">{audience.testimonial.author}</p>
                     </div>
                   </div>
                 </div>
@@ -199,13 +204,13 @@ const PourquoiNous = () => {
       </section>
 
       {/* Why Choose Us */}
-      <section className="py-20 bg-gradient-to-br from-gray-50 to-white">
+      <section className="py-20 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Pourquoi Choisir NECTFY ?
+            <h2 className="text-4xl font-bold text-foreground mb-4">
+              Les avantages NECTFY
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Plus qu'un simple logiciel, un véritable partenaire pour votre réussite
             </p>
           </div>
@@ -216,13 +221,13 @@ const PourquoiNous = () => {
               return (
                 <div 
                   key={index}
-                  className="p-6 bg-white rounded-xl border border-gray-200 hover:border-primary hover:shadow-lg transition-all"
+                  className="p-6 bg-card rounded-xl border border-border hover:border-primary hover:shadow-lg transition-all"
                 >
-                  <div className="w-12 h-12 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center mb-4 shadow-lg">
-                    <Icon className="h-6 w-6 text-white" />
+                  <div className="w-12 h-12 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center mb-4 shadow-lg">
+                    <Icon className="h-6 w-6 text-primary-foreground" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">{reason.title}</h3>
-                  <p className="text-gray-600">{reason.description}</p>
+                  <h3 className="text-xl font-bold text-foreground mb-3">{reason.title}</h3>
+                  <p className="text-muted-foreground">{reason.description}</p>
                 </div>
               );
             })}
@@ -231,70 +236,70 @@ const PourquoiNous = () => {
       </section>
 
       {/* Stats Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
             <div className="p-6">
-              <div className="text-5xl font-bold text-primary mb-2">500+</div>
-              <div className="text-gray-600">Organismes nous font confiance</div>
+              <div className="text-5xl font-bold text-primary mb-2">12</div>
+              <div className="text-muted-foreground">Modules complets</div>
             </div>
             <div className="p-6">
-              <div className="text-5xl font-bold text-primary mb-2">98%</div>
-              <div className="text-gray-600">Taux de satisfaction</div>
-            </div>
-            <div className="p-6">
-              <div className="text-5xl font-bold text-primary mb-2">80%</div>
-              <div className="text-gray-600">De temps administratif gagné</div>
+              <div className="text-5xl font-bold text-primary mb-2">100%</div>
+              <div className="text-muted-foreground">Dématérialisé</div>
             </div>
             <div className="p-6">
               <div className="text-5xl font-bold text-primary mb-2">24/7</div>
-              <div className="text-gray-600">Support disponible</div>
+              <div className="text-muted-foreground">Accessible</div>
+            </div>
+            <div className="p-6">
+              <div className="text-5xl font-bold text-primary mb-2">∞</div>
+              <div className="text-muted-foreground">Utilisateurs</div>
             </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-primary to-purple-600">
+      <section className="py-20 bg-gradient-to-br from-primary to-accent">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold text-white mb-6">
-            Rejoignez des centaines de professionnels satisfaits
+          <h2 className="text-4xl font-bold text-primary-foreground mb-6">
+            Prêt à simplifier votre gestion ?
           </h2>
-          <p className="text-xl text-white/90 mb-10">
+          <p className="text-xl text-primary-foreground/90 mb-10">
             Testez NECTFY gratuitement pendant 14 jours, sans engagement
           </p>
           <Link 
-            to="/auth" 
-            className="inline-flex items-center px-8 py-4 bg-white text-primary rounded-lg hover:shadow-2xl transform hover:scale-105 font-bold text-lg transition-all"
+            to="/create-establishment" 
+            className="inline-flex items-center px-8 py-4 bg-background text-primary rounded-lg hover:shadow-2xl transform hover:scale-105 font-bold text-lg transition-all"
           >
             Commencer gratuitement
             <ArrowRight className="ml-2 h-5 w-5" />
           </Link>
-          <p className="text-white/80 mt-6 text-sm">
+          <p className="text-primary-foreground/80 mt-6 text-sm">
             Sans carte bancaire • Support inclus • Données sécurisées
           </p>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
+      <footer className="bg-card text-foreground py-12 border-t border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-3 mb-4 md:mb-0">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">N</span>
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-lg">N</span>
               </div>
               <div>
                 <h3 className="text-xl font-bold">NECTFY</h3>
-                <p className="text-gray-400 text-sm">© 2024 Tous droits réservés</p>
+                <p className="text-muted-foreground text-sm">© 2024 Tous droits réservés</p>
               </div>
             </div>
-            <div className="flex flex-wrap justify-center gap-6 text-gray-400">
-              <Link to="/" className="hover:text-white transition-colors">Accueil</Link>
-              <Link to="/solutions" className="hover:text-white transition-colors">Solutions</Link>
-              <Link to="/fonctionnalites" className="hover:text-white transition-colors">Fonctionnalités</Link>
-              <Link to="/cgu" className="hover:text-white transition-colors">CGU</Link>
-              <Link to="/politique-confidentialite" className="hover:text-white transition-colors">Confidentialité</Link>
+            <div className="flex flex-wrap justify-center gap-6 text-muted-foreground">
+              <Link to="/" className="hover:text-primary transition-colors">Accueil</Link>
+              <Link to="/solutions" className="hover:text-primary transition-colors">Solutions</Link>
+              <Link to="/fonctionnalites" className="hover:text-primary transition-colors">Fonctionnalités</Link>
+              <Link to="/cgu" className="hover:text-primary transition-colors">CGU</Link>
+              <Link to="/politique-confidentialite" className="hover:text-primary transition-colors">Confidentialité</Link>
             </div>
           </div>
         </div>
