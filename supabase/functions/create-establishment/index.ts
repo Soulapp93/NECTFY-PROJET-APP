@@ -59,9 +59,48 @@ serve(async (req) => {
       throw new Error('Le mot de passe doit contenir au moins 8 caractères');
     }
 
+    // Get client IP for rate limiting
+    const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() 
+      || req.headers.get('x-real-ip') 
+      || 'unknown';
+    
+    const normalizedEmail = admin.email.trim().toLowerCase();
+
     console.log('=== Starting establishment creation ===');
     console.log('Establishment:', establishment.name);
-    console.log('Admin email:', admin.email);
+    console.log('Admin email:', normalizedEmail);
+    console.log('Client IP:', clientIP);
+
+    // Rate limiting check
+    const { data: rateLimitData, error: rateLimitError } = await supabaseAdmin
+      .rpc('check_establishment_rate_limit', {
+        p_ip_address: clientIP,
+        p_email: normalizedEmail
+      });
+
+    if (rateLimitError) {
+      console.error('Rate limit check error:', rateLimitError);
+      // Continue anyway if rate limit check fails
+    } else if (rateLimitData && rateLimitData.length > 0 && !rateLimitData[0].allowed) {
+      const retryAfter = rateLimitData[0].retry_after_seconds;
+      const retryMinutes = Math.ceil(retryAfter / 60);
+      
+      // Log the blocked attempt
+      await supabaseAdmin.rpc('log_establishment_creation_attempt', {
+        p_ip_address: clientIP,
+        p_email: normalizedEmail,
+        p_success: false
+      });
+      
+      throw new Error(`Trop de tentatives. Veuillez réessayer dans ${retryMinutes > 60 ? Math.ceil(retryMinutes / 60) + ' heure(s)' : retryMinutes + ' minute(s)'}.`);
+    }
+
+    // Log the attempt (before processing)
+    await supabaseAdmin.rpc('log_establishment_creation_attempt', {
+      p_ip_address: clientIP,
+      p_email: normalizedEmail,
+      p_success: false // Will be updated to true on success
+    });
 
     // Step 1: Create establishment
     const { data: establishmentData, error: establishmentError } = await supabaseAdmin
@@ -90,8 +129,6 @@ serve(async (req) => {
     console.log('✓ Establishment created:', establishmentId);
 
     // Step 2: Check if auth user already exists
-    const normalizedEmail = admin.email.trim().toLowerCase();
-    
     // First, try to create a new user
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: normalizedEmail,
@@ -206,6 +243,13 @@ serve(async (req) => {
           .eq('id', authUserId);
       }
     }
+
+    // Log successful creation
+    await supabaseAdmin.rpc('log_establishment_creation_attempt', {
+      p_ip_address: clientIP,
+      p_email: normalizedEmail,
+      p_success: true
+    });
 
     console.log('✓ User profile configured');
     console.log('=== Establishment creation completed successfully ===');

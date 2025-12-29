@@ -700,6 +700,30 @@ export type Database = {
           },
         ]
       }
+      establishment_creation_attempts: {
+        Row: {
+          attempted_at: string | null
+          email: string
+          id: string
+          ip_address: string
+          success: boolean | null
+        }
+        Insert: {
+          attempted_at?: string | null
+          email: string
+          id?: string
+          ip_address: string
+          success?: boolean | null
+        }
+        Update: {
+          attempted_at?: string | null
+          email?: string
+          id?: string
+          ip_address?: string
+          success?: boolean | null
+        }
+        Relationships: []
+      }
       establishments: {
         Row: {
           address: string | null
@@ -2200,6 +2224,14 @@ export type Database = {
         Args: { _file_id: string; _user_id: string }
         Returns: boolean
       }
+      can_view_tutor_details: { Args: { p_tutor_id: string }; Returns: boolean }
+      check_establishment_rate_limit: {
+        Args: { p_email: string; p_ip_address: string }
+        Returns: {
+          allowed: boolean
+          retry_after_seconds: number
+        }[]
+      }
       check_qr_rate_limit: {
         Args: { ip_address_param: string; user_id_param: string }
         Returns: {
@@ -2281,6 +2313,10 @@ export type Database = {
           user_agent_val?: string
           user_id: string
         }
+        Returns: undefined
+      }
+      log_establishment_creation_attempt: {
+        Args: { p_email: string; p_ip_address: string; p_success: boolean }
         Returns: undefined
       }
       tutor_in_current_establishment: {
