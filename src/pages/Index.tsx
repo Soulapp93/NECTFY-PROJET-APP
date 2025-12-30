@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { 
   LayoutDashboard, ShieldCheck, Users, GraduationCap, BookText, CalendarDays, 
   ClipboardCheck, Mail, UsersRound, Building2, UserCircle, Briefcase,
-  ArrowRight, CheckCircle2, Sparkles, Play, Shield, Zap, Clock, CalendarClock
+  ArrowRight, CheckCircle2, Sparkles, Play, Shield, Zap, Clock, Monitor
 } from 'lucide-react';
 
 // Imports des captures d'écran
@@ -24,6 +24,7 @@ import groupesImg from '@/assets/screenshots/groupes.png';
 import gestionEtablissementImg from '@/assets/screenshots/gestion-etablissement.png';
 import profilImg from '@/assets/screenshots/profil.png';
 import espaceTuteursImg from '@/assets/screenshots/espace-tuteurs.png';
+import classesVirtuellesImg from '@/assets/screenshots/classes-virtuelles.png';
 
 interface FeatureItem {
   id: string;
@@ -255,7 +256,7 @@ const Index = () => {
     },
     {
       id: 'virtual-classes',
-      icon: CalendarClock,
+      icon: Monitor,
       title: 'Classes Virtuelles',
       subtitle: 'À venir',
       description: 'Organisez des sessions de formation en ligne avec visioconférence intégrée. Partagez votre écran, interagissez en temps réel avec vos apprenants et enregistrez vos sessions pour les rendre accessibles ultérieurement.',
@@ -270,7 +271,7 @@ const Index = () => {
         'Gestion des participants'
       ],
       imagePlaceholder: 'virtual-classes',
-      images: []
+      images: [classesVirtuellesImg]
     }
   ];
 

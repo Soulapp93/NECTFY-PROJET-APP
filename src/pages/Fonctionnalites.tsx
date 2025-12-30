@@ -4,7 +4,7 @@ import {
   LayoutDashboard, ShieldCheck, Users, GraduationCap, BookText, CalendarDays, 
   ClipboardCheck, Mail, UsersRound, Building2, UserCircle, Briefcase,
   ArrowRight, CheckCircle2, Sparkles, Smartphone, FileDown, QrCode, 
-  Upload, Bell, Search, CalendarClock
+  Upload, Bell, Search, Monitor
 } from 'lucide-react';
 
 const Fonctionnalites = () => {
@@ -155,7 +155,7 @@ const Fonctionnalites = () => {
       ]
     },
     {
-      icon: CalendarClock,
+      icon: Monitor,
       category: 'À venir',
       title: 'Classes Virtuelles',
       description: 'Sessions de formation en ligne avec visioconférence intégrée',
