@@ -282,18 +282,18 @@ const Fonctionnalites = () => {
               return (
                 <div 
                   key={index}
-                  className={`p-6 bg-card rounded-xl border border-border hover:border-primary hover:shadow-lg transition-all group relative ${isComingSoon ? 'opacity-80' : ''}`}
+                  className="p-6 bg-card rounded-xl border border-border hover:border-primary hover:shadow-lg transition-all group relative"
                 >
                   {isComingSoon && (
-                    <div className="absolute top-3 right-3 px-2 py-1 bg-primary/20 text-primary text-xs font-semibold rounded-full">
+                    <div className="absolute top-3 right-3 px-3 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-semibold rounded-full shadow-md">
                       À venir
                     </div>
                   )}
                   <div className="flex items-center mb-4">
-                    <div className={`w-12 h-12 ${isComingSoon ? 'bg-muted' : 'bg-gradient-to-br from-primary to-accent'} rounded-lg flex items-center justify-center mr-4 shadow-lg group-hover:scale-110 transition-transform`}>
-                      <Icon className={`h-6 w-6 ${isComingSoon ? 'text-muted-foreground' : 'text-primary-foreground'}`} />
+                    <div className={`w-12 h-12 ${isComingSoon ? 'bg-gradient-to-br from-amber-500 to-orange-500' : 'bg-gradient-to-br from-primary to-accent'} rounded-lg flex items-center justify-center mr-4 shadow-lg group-hover:scale-110 transition-transform`}>
+                      <Icon className="h-6 w-6 text-white" />
                     </div>
-                    <span className="text-xs font-semibold text-primary uppercase tracking-wide">
+                    <span className={`text-xs font-semibold uppercase tracking-wide ${isComingSoon ? 'text-amber-600' : 'text-primary'}`}>
                       {feature.category}
                     </span>
                   </div>
@@ -302,7 +302,7 @@ const Fonctionnalites = () => {
                   <ul className="space-y-2">
                     {feature.details.map((detail, detailIndex) => (
                       <li key={detailIndex} className="flex items-start text-sm text-muted-foreground">
-                        <CheckCircle2 className={`h-4 w-4 ${isComingSoon ? 'text-muted-foreground' : 'text-green-500'} mr-2 mt-0.5 flex-shrink-0`} />
+                        <CheckCircle2 className={`h-4 w-4 ${isComingSoon ? 'text-amber-500' : 'text-green-500'} mr-2 mt-0.5 flex-shrink-0`} />
                         <span>{detail}</span>
                       </li>
                     ))}
