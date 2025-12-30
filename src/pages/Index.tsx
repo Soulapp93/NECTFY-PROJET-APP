@@ -305,6 +305,12 @@ const Index = () => {
               <Link to="/pourquoi-nous" className="text-foreground/70 hover:text-primary font-medium transition-colors">
                 Pourquoi nous ?
               </Link>
+              <a 
+                href="#contact" 
+                className="text-foreground/70 hover:text-primary font-medium transition-colors"
+              >
+                Contact
+              </a>
             </nav>
 
             <div className="flex items-center space-x-2 md:space-x-4">
