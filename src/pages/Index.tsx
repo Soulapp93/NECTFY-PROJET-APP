@@ -8,6 +8,10 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import FloatingCTA from '@/components/landing/FloatingCTA';
+import ChatWidget from '@/components/landing/ChatWidget';
+import FAQSection from '@/components/landing/FAQSection';
+import AnimatedSection from '@/components/landing/AnimatedSection';
 
 // Imports des captures d'écran
 import tableauDeBordImg from '@/assets/screenshots/tableau-de-bord.png';
@@ -417,7 +421,7 @@ const Index = () => {
       {/* Features Section */}
       <section id="fonctionnalites" className="py-16 md:py-24 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16 md:mb-20">
+          <AnimatedSection className="text-center mb-16 md:mb-20">
             <div className="inline-flex items-center px-4 py-2 bg-primary/10 rounded-full mb-6">
               <Clock className="h-4 w-4 text-primary mr-2" />
               <span className="text-primary font-medium text-sm">Gagnez du temps au quotidien</span>
@@ -428,7 +432,7 @@ const Index = () => {
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
               Une plateforme complète avec 12 modules puissants pour gérer efficacement votre établissement de formation
             </p>
-          </div>
+          </AnimatedSection>
 
           <div className="space-y-24 md:space-y-32">
             {features.map((feature, index) => {
@@ -436,8 +440,10 @@ const Index = () => {
               const isEven = index % 2 === 0;
               
               return (
-                <div 
+                <AnimatedSection 
                   key={feature.id}
+                  animation={isEven ? 'fade-right' : 'fade-left'}
+                  delay={100}
                   className={`flex flex-col ${isEven ? 'lg:flex-row' : 'lg:flex-row-reverse'} items-center gap-8 lg:gap-16`}
                 >
                   {/* Content */}
@@ -520,7 +526,7 @@ const Index = () => {
                       </div>
                     )}
                   </div>
-                </div>
+                </AnimatedSection>
               );
             })}
           </div>
@@ -557,6 +563,9 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* FAQ Section */}
+      <FAQSection />
 
       {/* Contact Section */}
       <section id="contact" className="py-16 md:py-24 bg-background">
@@ -766,6 +775,10 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      {/* Floating Elements */}
+      <FloatingCTA />
+      <ChatWidget />
     </div>
   );
 };
