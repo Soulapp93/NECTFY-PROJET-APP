@@ -12,6 +12,14 @@ import FloatingCTA from '@/components/landing/FloatingCTA';
 import ChatWidget from '@/components/landing/ChatWidget';
 import FAQSection from '@/components/landing/FAQSection';
 import AnimatedSection from '@/components/landing/AnimatedSection';
+import AnimatedCounter from '@/components/landing/AnimatedCounter';
+import TextReveal from '@/components/landing/TextReveal';
+import ParallaxSection from '@/components/landing/ParallaxSection';
+import GlowCard from '@/components/landing/GlowCard';
+import Hover3DCard from '@/components/landing/Hover3DCard';
+import AnimatedButton from '@/components/landing/AnimatedButton';
+import SectionDivider from '@/components/landing/SectionDivider';
+import GradientBackground from '@/components/landing/GradientBackground';
 
 // Imports des captures d'écran
 import tableauDeBordImg from '@/assets/screenshots/tableau-de-bord.png';
@@ -336,87 +344,107 @@ const Index = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative py-16 md:py-28 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/3 to-background"></div>
-        <div className="absolute top-20 right-0 w-48 md:w-96 h-48 md:h-96 bg-primary/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-20 left-0 w-64 md:w-[500px] h-64 md:h-[500px] bg-accent/10 rounded-full blur-3xl"></div>
-        
+      <GradientBackground variant="orbs" className="py-16 md:py-28 px-4 sm:px-6 lg:px-8">
         <div className="relative max-w-7xl mx-auto text-center px-2">
-          <div className="inline-flex items-center px-4 py-2 bg-primary/10 rounded-full mb-6 md:mb-8">
-            <Sparkles className="h-4 w-4 text-primary mr-2 flex-shrink-0" />
-            <span className="text-primary font-medium text-sm md:text-base">La plateforme tout-en-un pour la formation</span>
-          </div>
+          <AnimatedSection animation="scale" delay={0}>
+            <div className="inline-flex items-center px-4 py-2 bg-primary/10 rounded-full mb-6 md:mb-8 glass">
+              <Sparkles className="h-4 w-4 text-primary mr-2 flex-shrink-0 animate-pulse" />
+              <span className="text-primary font-medium text-sm md:text-base">La plateforme tout-en-un pour la formation</span>
+            </div>
+          </AnimatedSection>
           
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-6 md:mb-8 leading-tight">
-            Gérez vos formations
-            <br />
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              comme jamais
-            </span>
-          </h1>
+          <AnimatedSection animation="fade-up" delay={100}>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-6 md:mb-8 leading-tight">
+              <TextReveal delay={200}>Gérez vos formations</TextReveal>
+              <br />
+              <span className="gradient-text-animated">
+                comme jamais
+              </span>
+            </h1>
+          </AnimatedSection>
           
-          <p className="text-lg md:text-xl lg:text-2xl text-muted-foreground mb-10 md:mb-12 max-w-4xl mx-auto leading-relaxed px-2">
-            NECTFY est la solution complète pour digitaliser et automatiser 
-            la gestion de vos formations. <span className="text-foreground font-medium">12 modules puissants</span> pour tout gérer.
-          </p>
+          <AnimatedSection animation="fade-up" delay={300}>
+            <p className="text-lg md:text-xl lg:text-2xl text-muted-foreground mb-10 md:mb-12 max-w-4xl mx-auto leading-relaxed px-2">
+              NECTFY est la solution complète pour digitaliser et automatiser 
+              la gestion de vos formations. <span className="text-foreground font-medium">12 modules puissants</span> pour tout gérer.
+            </p>
+          </AnimatedSection>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12 md:mb-16 px-2">
-            <Link 
-              to="/create-establishment" 
-              className="group px-8 py-4 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-xl hover:shadow-xl transform hover:scale-105 font-semibold text-lg transition-all flex items-center justify-center"
+          <AnimatedSection animation="fade-up" delay={400} className="flex flex-col sm:flex-row gap-4 justify-center mb-12 md:mb-16 px-2">
+            <AnimatedButton 
+              to="/create-establishment"
+              variant="primary"
+              size="lg"
+              icon={<ArrowRight className="h-5 w-5" />}
             >
               Commencer gratuitement
-              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </Link>
-            <a 
-              href="#fonctionnalites" 
-              className="group px-8 py-4 border-2 border-border text-foreground rounded-xl hover:border-primary hover:text-primary hover:bg-primary/5 font-semibold text-lg transition-all flex items-center justify-center"
+            </AnimatedButton>
+            <AnimatedButton
+              href="#fonctionnalites"
+              variant="outline"
+              size="lg"
+              icon={<Play className="h-5 w-5" />}
             >
-              <Play className="mr-2 h-5 w-5" />
               Découvrir les solutions
-            </a>
-          </div>
+            </AnimatedButton>
+          </AnimatedSection>
 
-          <div className="flex flex-wrap justify-center gap-6 md:gap-10 text-sm md:text-base text-muted-foreground">
-            <div className="flex items-center">
-              <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
+          <AnimatedSection animation="fade" delay={600} className="flex flex-wrap justify-center gap-6 md:gap-10 text-sm md:text-base text-muted-foreground">
+            <div className="flex items-center group">
+              <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center mr-2 group-hover:scale-110 transition-transform">
+                <CheckCircle2 className="h-4 w-4 text-success" />
+              </div>
               <span>Essai gratuit 14 jours</span>
             </div>
-            <div className="flex items-center">
-              <Shield className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0" />
+            <div className="flex items-center group">
+              <div className="w-8 h-8 rounded-full bg-info/10 flex items-center justify-center mr-2 group-hover:scale-110 transition-transform">
+                <Shield className="h-4 w-4 text-info" />
+              </div>
               <span>Données sécurisées</span>
             </div>
-            <div className="flex items-center">
-              <Zap className="h-5 w-5 text-yellow-500 mr-2 flex-shrink-0" />
+            <div className="flex items-center group">
+              <div className="w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center mr-2 group-hover:scale-110 transition-transform">
+                <Zap className="h-4 w-4 text-warning" />
+              </div>
               <span>Support réactif</span>
             </div>
+          </AnimatedSection>
+        </div>
+      </GradientBackground>
+
+      <SectionDivider variant="wave" fillColor="fill-primary" />
+
+      {/* Features Count Section */}
+      <section className="py-12 md:py-16 bg-gradient-to-r from-primary to-accent relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.05%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%27%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')] opacity-20"></div>
+        
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-primary-foreground">
+            <AnimatedSection animation="fade-up" delay={0}>
+              <div className="text-4xl md:text-5xl font-bold mb-2">
+                <AnimatedCounter end={12} suffix="" />
+              </div>
+              <div className="text-primary-foreground/80 text-sm md:text-base">Modules complets</div>
+            </AnimatedSection>
+            <AnimatedSection animation="fade-up" delay={100}>
+              <div className="text-4xl md:text-5xl font-bold mb-2">
+                <AnimatedCounter end={100} suffix="%" />
+              </div>
+              <div className="text-primary-foreground/80 text-sm md:text-base">Dématérialisé</div>
+            </AnimatedSection>
+            <AnimatedSection animation="fade-up" delay={200}>
+              <div className="text-4xl md:text-5xl font-bold mb-2">24/7</div>
+              <div className="text-primary-foreground/80 text-sm md:text-base">Accessible</div>
+            </AnimatedSection>
+            <AnimatedSection animation="fade-up" delay={300}>
+              <div className="text-4xl md:text-5xl font-bold mb-2">∞</div>
+              <div className="text-primary-foreground/80 text-sm md:text-base">Utilisateurs</div>
+            </AnimatedSection>
           </div>
         </div>
       </section>
 
-      {/* Features Count Section */}
-      <section className="py-12 md:py-16 bg-gradient-to-r from-primary to-accent">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-primary-foreground">
-            <div>
-              <div className="text-4xl md:text-5xl font-bold mb-2">12</div>
-              <div className="text-primary-foreground/80 text-sm md:text-base">Modules complets</div>
-            </div>
-            <div>
-              <div className="text-4xl md:text-5xl font-bold mb-2">100%</div>
-              <div className="text-primary-foreground/80 text-sm md:text-base">Dématérialisé</div>
-            </div>
-            <div>
-              <div className="text-4xl md:text-5xl font-bold mb-2">24/7</div>
-              <div className="text-primary-foreground/80 text-sm md:text-base">Accessible</div>
-            </div>
-            <div>
-              <div className="text-4xl md:text-5xl font-bold mb-2">∞</div>
-              <div className="text-primary-foreground/80 text-sm md:text-base">Utilisateurs</div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <SectionDivider variant="curve" flip fillColor="fill-muted/30" />
 
       {/* Features Section */}
       <section id="fonctionnalites" className="py-16 md:py-24 bg-muted/30">
@@ -490,17 +518,20 @@ const Index = () => {
                     {feature.images && feature.images.length > 0 ? (
                       <div className="space-y-4">
                         {feature.images.map((img, imgIndex) => (
-                          <div 
-                            key={imgIndex}
-                            className="relative rounded-2xl overflow-hidden shadow-2xl border border-border bg-card"
-                          >
-                            <div className="absolute inset-0 bg-gradient-to-t from-primary/10 to-transparent pointer-events-none z-10"></div>
-                            <img 
-                              src={img} 
-                              alt={`${feature.title} - Capture ${imgIndex + 1}`}
-                              className="w-full h-auto object-cover"
-                            />
-                          </div>
+                          <Hover3DCard key={imgIndex} intensity={5}>
+                            <GlowCard className="rounded-2xl">
+                              <div 
+                                className="relative rounded-2xl overflow-hidden shadow-2xl border border-border bg-card hover-lift"
+                              >
+                                <div className="absolute inset-0 bg-gradient-to-t from-primary/10 to-transparent pointer-events-none z-10"></div>
+                                <img 
+                                  src={img} 
+                                  alt={`${feature.title} - Capture ${imgIndex + 1}`}
+                                  className="w-full h-auto object-cover"
+                                />
+                              </div>
+                            </GlowCard>
+                          </Hover3DCard>
                         ))}
                       </div>
                     ) : (
