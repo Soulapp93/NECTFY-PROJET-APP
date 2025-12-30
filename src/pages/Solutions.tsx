@@ -14,6 +14,15 @@ import gestionFormations1Img from '@/assets/screenshots/gestion-formations-1.png
 import gestionFormations2Img from '@/assets/screenshots/gestion-formations-2.png';
 import cahiersTextesImg from '@/assets/screenshots/cahiers-textes.png';
 import emploisTempsImg from '@/assets/screenshots/emplois-temps.png';
+import emploisTempsCalendrierImg from '@/assets/screenshots/emplois-temps-calendrier.png';
+import emargement1Img from '@/assets/screenshots/emargement-1.png';
+import emargement2Img from '@/assets/screenshots/emargement-2.png';
+import messagerie1Img from '@/assets/screenshots/messagerie-1.png';
+import messagerie2Img from '@/assets/screenshots/messagerie-2.png';
+import groupesImg from '@/assets/screenshots/groupes.png';
+import gestionEtablissementImg from '@/assets/screenshots/gestion-etablissement.png';
+import profilImg from '@/assets/screenshots/profil.png';
+import espaceTuteursImg from '@/assets/screenshots/espace-tuteurs.png';
 
 const Solutions = () => {
   const solutions = [
@@ -99,7 +108,7 @@ const Solutions = () => {
         'Navigation par semaines de l\'année',
         'Création rapide de créneaux'
       ],
-      images: [emploisTempsImg]
+      images: [emploisTempsImg, emploisTempsCalendrierImg]
     },
     {
       icon: ClipboardCheck,
@@ -113,7 +122,7 @@ const Solutions = () => {
         'Validation par les formateurs',
         'Historique complet des présences'
       ],
-      images: [] // À venir
+      images: [emargement1Img, emargement2Img]
     },
     {
       icon: Mail,
@@ -127,7 +136,7 @@ const Solutions = () => {
         'Transfert de messages',
         'Favoris et archivage'
       ],
-      images: [] // À venir
+      images: [messagerie1Img, messagerie2Img]
     },
     {
       icon: UsersRound,
@@ -141,7 +150,7 @@ const Solutions = () => {
         'Réponses aux messages',
         'Historique des conversations'
       ],
-      images: [] // À venir
+      images: [groupesImg]
     },
     {
       icon: Building2,
@@ -155,7 +164,7 @@ const Solutions = () => {
         'Type d\'établissement',
         'Nombre d\'étudiants et formateurs'
       ],
-      images: [] // À venir
+      images: [gestionEtablissementImg]
     },
     {
       icon: UserCircle,
@@ -169,7 +178,7 @@ const Solutions = () => {
         'Informations personnelles',
         'Scanner QR pour émargement'
       ],
-      images: [] // À venir
+      images: [profilImg]
     },
     {
       icon: Briefcase,
@@ -183,7 +192,7 @@ const Solutions = () => {
         'Informations de contrat',
         'Accès limité et sécurisé'
       ],
-      images: [] // À venir
+      images: [espaceTuteursImg]
     }
   ];
 
