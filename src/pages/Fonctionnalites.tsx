@@ -205,7 +205,7 @@ const Fonctionnalites = () => {
             </Link>
             
             <nav className="hidden md:flex items-center space-x-8">
-              <Link to="/solutions" className="text-foreground/70 hover:text-primary transition-colors">
+              <Link to="/" className="text-foreground/70 hover:text-primary transition-colors">
                 Solutions
               </Link>
               <Link to="/fonctionnalites" className="text-primary font-semibold">
@@ -377,7 +377,7 @@ const Fonctionnalites = () => {
             </div>
             <div className="flex flex-wrap justify-center gap-6 text-muted-foreground">
               <Link to="/" className="hover:text-primary transition-colors">Accueil</Link>
-              <Link to="/solutions" className="hover:text-primary transition-colors">Solutions</Link>
+              <Link to="/" className="hover:text-primary transition-colors">Solutions</Link>
               <Link to="/pourquoi-nous" className="hover:text-primary transition-colors">Pourquoi nous ?</Link>
               <Link to="/cgu" className="hover:text-primary transition-colors">CGU</Link>
               <Link to="/politique-confidentialite" className="hover:text-primary transition-colors">Confidentialité</Link>

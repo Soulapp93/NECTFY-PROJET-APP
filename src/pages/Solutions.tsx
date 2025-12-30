@@ -213,7 +213,7 @@ const Solutions = () => {
             </Link>
             
             <nav className="hidden md:flex items-center space-x-8">
-              <Link to="/solutions" className="text-primary font-semibold">
+              <Link to="/" className="text-primary font-semibold">
                 Solutions
               </Link>
               <Link to="/fonctionnalites" className="text-foreground/70 hover:text-primary transition-colors">

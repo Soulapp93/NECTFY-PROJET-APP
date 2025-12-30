@@ -6,6 +6,25 @@ import {
   ArrowRight, CheckCircle2, Sparkles, Play, Shield, Zap, Clock, CalendarClock
 } from 'lucide-react';
 
+// Imports des captures d'écran
+import tableauDeBordImg from '@/assets/screenshots/tableau-de-bord.png';
+import administrationImg from '@/assets/screenshots/administration.png';
+import gestionUtilisateursImg from '@/assets/screenshots/gestion-utilisateurs.png';
+import gestionFormations1Img from '@/assets/screenshots/gestion-formations-1.png';
+import gestionFormations2Img from '@/assets/screenshots/gestion-formations-2.png';
+import cahiersTextesImg from '@/assets/screenshots/cahiers-textes.png';
+import cahierTexteDetailImg from '@/assets/screenshots/cahier-texte-detail.png';
+import emploisTempsImg from '@/assets/screenshots/emplois-temps.png';
+import emploisTempsCalendrierImg from '@/assets/screenshots/emplois-temps-calendrier.png';
+import emargement1Img from '@/assets/screenshots/emargement-1.png';
+import emargement2Img from '@/assets/screenshots/emargement-2.png';
+import messagerie1Img from '@/assets/screenshots/messagerie-1.png';
+import messagerie2Img from '@/assets/screenshots/messagerie-2.png';
+import groupesImg from '@/assets/screenshots/groupes.png';
+import gestionEtablissementImg from '@/assets/screenshots/gestion-etablissement.png';
+import profilImg from '@/assets/screenshots/profil.png';
+import espaceTuteursImg from '@/assets/screenshots/espace-tuteurs.png';
+
 interface FeatureItem {
   id: string;
   icon: React.ElementType;
@@ -15,6 +34,7 @@ interface FeatureItem {
   benefits: string[];
   details: string[];
   imagePlaceholder: string;
+  images: string[];
 }
 
 const Index = () => {
@@ -32,7 +52,8 @@ const Index = () => {
         'Rappels automatiques pour les entrées manquantes',
         'Filtres par formation et par période'
       ],
-      imagePlaceholder: 'dashboard'
+      imagePlaceholder: 'dashboard',
+      images: [tableauDeBordImg]
     },
     {
       id: 'administration',
@@ -48,7 +69,8 @@ const Index = () => {
         'Onglet Emplois du Temps : planning visuel',
         'Onglet Émargements : génération et suivi'
       ],
-      imagePlaceholder: 'administration'
+      imagePlaceholder: 'administration',
+      images: [administrationImg]
     },
     {
       id: 'users',
@@ -65,7 +87,8 @@ const Index = () => {
         'Activation/désactivation des comptes',
         'Photo de profil et signature enregistrée'
       ],
-      imagePlaceholder: 'users'
+      imagePlaceholder: 'users',
+      images: [gestionUtilisateursImg]
     },
     {
       id: 'formations',
@@ -82,7 +105,8 @@ const Index = () => {
         'Documents partagés par module',
         'Corrections et notations intégrées'
       ],
-      imagePlaceholder: 'formations'
+      imagePlaceholder: 'formations',
+      images: [gestionFormations1Img, gestionFormations2Img]
     },
     {
       id: 'textbooks',
@@ -99,7 +123,8 @@ const Index = () => {
         'Export PDF des cahiers de textes',
         'Alertes pour entrées manquantes'
       ],
-      imagePlaceholder: 'textbooks'
+      imagePlaceholder: 'textbooks',
+      images: [cahiersTextesImg, cahierTexteDetailImg]
     },
     {
       id: 'schedule',
@@ -116,7 +141,8 @@ const Index = () => {
         'Notifications des changements',
         'Lien automatique avec émargements'
       ],
-      imagePlaceholder: 'schedule'
+      imagePlaceholder: 'schedule',
+      images: [emploisTempsImg, emploisTempsCalendrierImg]
     },
     {
       id: 'attendance',
@@ -134,7 +160,8 @@ const Index = () => {
         'Export PDF des feuilles signées',
         'Envoi de liens de signature par email'
       ],
-      imagePlaceholder: 'attendance'
+      imagePlaceholder: 'attendance',
+      images: [emargement1Img, emargement2Img]
     },
     {
       id: 'messaging',
@@ -151,7 +178,8 @@ const Index = () => {
         'Recherche dans les messages',
         'Transfert et réponse rapide'
       ],
-      imagePlaceholder: 'messaging'
+      imagePlaceholder: 'messaging',
+      images: [messagerie1Img, messagerie2Img]
     },
     {
       id: 'groups',
@@ -168,7 +196,8 @@ const Index = () => {
         'Historique des conversations',
         'Notifications de nouveaux messages'
       ],
-      imagePlaceholder: 'groups'
+      imagePlaceholder: 'groups',
+      images: [groupesImg]
     },
     {
       id: 'establishment',
@@ -185,7 +214,8 @@ const Index = () => {
         'Directeur et contacts',
         'Paramètres de notifications'
       ],
-      imagePlaceholder: 'establishment'
+      imagePlaceholder: 'establishment',
+      images: [gestionEtablissementImg]
     },
     {
       id: 'profiles',
@@ -202,7 +232,8 @@ const Index = () => {
         'Changement de mot de passe',
         'Historique des connexions'
       ],
-      imagePlaceholder: 'profiles'
+      imagePlaceholder: 'profiles',
+      images: [profilImg]
     },
     {
       id: 'tutors',
@@ -219,7 +250,8 @@ const Index = () => {
         'Informations du contrat d\'alternance',
         'Notifications des absences'
       ],
-      imagePlaceholder: 'tutors'
+      imagePlaceholder: 'tutors',
+      images: [espaceTuteursImg]
     }
   ];
 
@@ -242,10 +274,10 @@ const Index = () => {
             
             <nav className="hidden lg:flex items-center space-x-8">
               <a href="#fonctionnalites" className="text-foreground/70 hover:text-primary font-medium transition-colors">
-                Fonctionnalités
-              </a>
-              <Link to="/solutions" className="text-foreground/70 hover:text-primary font-medium transition-colors">
                 Solutions
+              </a>
+              <Link to="/fonctionnalites" className="text-foreground/70 hover:text-primary font-medium transition-colors">
+                Fonctionnalités
               </Link>
               <Link to="/pourquoi-nous" className="text-foreground/70 hover:text-primary font-medium transition-colors">
                 Pourquoi nous ?
@@ -308,7 +340,7 @@ const Index = () => {
               className="group px-8 py-4 border-2 border-border text-foreground rounded-xl hover:border-primary hover:text-primary hover:bg-primary/5 font-semibold text-lg transition-all flex items-center justify-center"
             >
               <Play className="mr-2 h-5 w-5" />
-              Découvrir les fonctionnalités
+              Découvrir les solutions
             </a>
           </div>
 
@@ -362,7 +394,7 @@ const Index = () => {
               <span className="text-primary font-medium text-sm">Gagnez du temps au quotidien</span>
             </div>
             <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-6">
-              Toutes les fonctionnalités dont vous avez besoin
+              Toutes les solutions dont vous avez besoin
             </h2>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
               Une plateforme complète avec 12 modules puissants pour gérer efficacement votre établissement de formation
@@ -418,33 +450,46 @@ const Index = () => {
                     </div>
                   </div>
 
-                  {/* Image Placeholder */}
+                  {/* Images */}
                   <div className="flex-1 w-full max-w-2xl">
-                    <div 
-                      className="relative bg-gradient-to-br from-card to-muted rounded-2xl border border-border shadow-xl overflow-hidden aspect-[16/10] group hover:shadow-2xl transition-all duration-500"
-                      data-feature-image={feature.id}
-                    >
-                      {/* Placeholder content */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
-                        <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                          <Icon className="h-10 w-10 text-primary" />
-                        </div>
-                        <p className="text-muted-foreground text-sm md:text-base">
-                          Capture d'écran : {feature.title}
-                        </p>
-                        <p className="text-muted-foreground/60 text-xs mt-2">
-                          Image à venir
-                        </p>
+                    {feature.images && feature.images.length > 0 ? (
+                      <div className="space-y-4">
+                        {feature.images.map((img, imgIndex) => (
+                          <div 
+                            key={imgIndex}
+                            className="relative rounded-2xl overflow-hidden shadow-2xl border border-border bg-card"
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-t from-primary/10 to-transparent pointer-events-none z-10"></div>
+                            <img 
+                              src={img} 
+                              alt={`${feature.title} - Capture ${imgIndex + 1}`}
+                              className="w-full h-auto object-cover"
+                            />
+                          </div>
+                        ))}
                       </div>
-                      
-                      {/* Decorative elements */}
-                      <div className="absolute top-4 left-4 w-3 h-3 rounded-full bg-red-400"></div>
-                      <div className="absolute top-4 left-10 w-3 h-3 rounded-full bg-yellow-400"></div>
-                      <div className="absolute top-4 left-16 w-3 h-3 rounded-full bg-green-400"></div>
-                      
-                      {/* Gradient overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent pointer-events-none"></div>
-                    </div>
+                    ) : (
+                      <div 
+                        className="relative bg-gradient-to-br from-card to-muted rounded-2xl border border-border shadow-xl overflow-hidden aspect-[16/10] group hover:shadow-2xl transition-all duration-500"
+                        data-feature-image={feature.id}
+                      >
+                        <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
+                          <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                            <Icon className="h-10 w-10 text-primary" />
+                          </div>
+                          <p className="text-muted-foreground text-sm md:text-base">
+                            Capture d'écran : {feature.title}
+                          </p>
+                          <p className="text-muted-foreground/60 text-xs mt-2">
+                            Image à venir
+                          </p>
+                        </div>
+                        <div className="absolute top-4 left-4 w-3 h-3 rounded-full bg-red-400"></div>
+                        <div className="absolute top-4 left-10 w-3 h-3 rounded-full bg-yellow-400"></div>
+                        <div className="absolute top-4 left-16 w-3 h-3 rounded-full bg-green-400"></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent pointer-events-none"></div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -503,8 +548,8 @@ const Index = () => {
             <div>
               <h4 className="font-semibold mb-4">Navigation</h4>
               <ul className="space-y-2 text-muted-foreground">
-                <li><a href="#fonctionnalites" className="hover:text-primary transition-colors">Fonctionnalités</a></li>
-                <li><Link to="/solutions" className="hover:text-primary transition-colors">Solutions</Link></li>
+                <li><a href="#fonctionnalites" className="hover:text-primary transition-colors">Solutions</a></li>
+                <li><Link to="/fonctionnalites" className="hover:text-primary transition-colors">Fonctionnalités</Link></li>
                 <li><Link to="/pourquoi-nous" className="hover:text-primary transition-colors">Pourquoi nous ?</Link></li>
               </ul>
             </div>
