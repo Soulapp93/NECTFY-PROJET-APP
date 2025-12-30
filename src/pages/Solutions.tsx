@@ -15,6 +15,7 @@ import gestionFormations2Img from '@/assets/screenshots/gestion-formations-2.png
 import cahiersTextesImg from '@/assets/screenshots/cahiers-textes.png';
 import emploisTempsImg from '@/assets/screenshots/emplois-temps.png';
 import emploisTempsCalendrierImg from '@/assets/screenshots/emplois-temps-calendrier.png';
+import cahierTexteDetailImg from '@/assets/screenshots/cahier-texte-detail.png';
 import emargement1Img from '@/assets/screenshots/emargement-1.png';
 import emargement2Img from '@/assets/screenshots/emargement-2.png';
 import messagerie1Img from '@/assets/screenshots/messagerie-1.png';
@@ -108,7 +109,7 @@ const Solutions = () => {
         'Navigation par semaines de l\'année',
         'Création rapide de créneaux'
       ],
-      images: [emploisTempsImg, emploisTempsCalendrierImg]
+      images: [emploisTempsImg, emploisTempsCalendrierImg, cahierTexteDetailImg]
     },
     {
       icon: ClipboardCheck,
