@@ -39,42 +39,130 @@ const handler = async (req: Request): Promise<Response> => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    // Generate password reset link using Supabase Admin API
-    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'recovery',
-      email: email,
-      options: {
-        redirectTo: redirectUrl,
-      }
-    });
+    // First, check if user exists in public.users table
+    const { data: publicUser, error: publicUserError } = await supabaseAdmin
+      .from('users')
+      .select('id, first_name, last_name, email, establishment_id, role')
+      .eq('email', email)
+      .single();
 
-    if (linkError) {
-      console.error('Error generating reset link:', linkError);
+    if (publicUserError || !publicUser) {
+      console.error('User not found in public.users:', publicUserError);
       return new Response(
-        JSON.stringify({ error: "Failed to generate reset link" }),
+        JSON.stringify({ error: "Aucun utilisateur trouvé avec cet email" }),
+        { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    console.log(`Found user in public.users: ${publicUser.id}`);
+
+    // Check if user exists in auth.users
+    const { data: authUserData, error: authListError } = await supabaseAdmin.auth.admin.listUsers();
+    
+    if (authListError) {
+      console.error('Error listing auth users:', authListError);
+      return new Response(
+        JSON.stringify({ error: "Erreur lors de la vérification du compte" }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    const resetLink = linkData.properties?.action_link;
+    const authUser = authUserData?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
+
+    let resetLink: string;
+
+    if (!authUser) {
+      // User doesn't have an auth account yet - create one with a temporary password
+      console.log(`User ${email} doesn't have auth account, creating one...`);
+      
+      const tempPassword = crypto.randomUUID() + 'Aa1!'; // Secure temporary password
+      
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email: email,
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: {
+          first_name: publicUser.first_name,
+          last_name: publicUser.last_name,
+          establishment_id: publicUser.establishment_id,
+        }
+      });
+
+      if (createError) {
+        console.error('Error creating auth user:', createError);
+        return new Response(
+          JSON.stringify({ error: "Erreur lors de la création du compte d'authentification" }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      console.log(`Created auth user: ${newUser.user?.id}`);
+
+      // Update public.users to link with auth user id
+      if (newUser.user && publicUser.id !== newUser.user.id) {
+        const { error: updateError } = await supabaseAdmin
+          .from('users')
+          .update({ id: newUser.user.id, is_activated: true })
+          .eq('email', email);
+        
+        if (updateError) {
+          console.error('Error updating public user id:', updateError);
+          // Continue anyway, the link can still be sent
+        }
+      }
+
+      // Generate recovery link for the new user
+      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+        type: 'recovery',
+        email: email,
+        options: {
+          redirectTo: redirectUrl,
+        }
+      });
+
+      if (linkError) {
+        console.error('Error generating reset link for new user:', linkError);
+        return new Response(
+          JSON.stringify({ error: "Erreur lors de la génération du lien de réinitialisation" }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      resetLink = linkData.properties?.action_link || '';
+    } else {
+      // User exists in auth, generate recovery link normally
+      console.log(`User ${email} exists in auth, generating recovery link...`);
+      
+      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+        type: 'recovery',
+        email: email,
+        options: {
+          redirectTo: redirectUrl,
+        }
+      });
+
+      if (linkError) {
+        console.error('Error generating reset link:', linkError);
+        return new Response(
+          JSON.stringify({ error: "Erreur lors de la génération du lien de réinitialisation" }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      resetLink = linkData.properties?.action_link || '';
+    }
 
     if (!resetLink) {
       console.error('No reset link generated');
       return new Response(
-        JSON.stringify({ error: "Failed to generate reset link" }),
+        JSON.stringify({ error: "Erreur lors de la génération du lien" }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    // Get user's first name for personalization
-    const { data: userData } = await supabaseAdmin
-      .from('users')
-      .select('first_name, last_name')
-      .eq('email', email)
-      .single();
+    console.log(`Reset link generated successfully for ${email}`);
 
-    const firstName = userData?.first_name || 'Utilisateur';
-    const fullName = userData ? `${userData.first_name} ${userData.last_name}` : 'Utilisateur';
+    const firstName = publicUser.first_name || 'Utilisateur';
 
     // Send branded email via Resend
     const emailResponse = await resend.emails.send({
@@ -175,10 +263,23 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
+    if (emailResponse.error) {
+      console.error("Resend error:", emailResponse.error);
+      // Even if email fails, return success with warning since link was generated
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          warning: "Lien généré mais l'email n'a pas pu être envoyé. Vérifiez la configuration Resend.",
+          resetLink: resetLink // Return link for admin to share manually if needed
+        }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     console.log("Password reset email sent successfully:", emailResponse);
 
     return new Response(
-      JSON.stringify({ success: true, message: "Password reset email sent" }),
+      JSON.stringify({ success: true, message: "Email de réinitialisation envoyé" }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: any) {
