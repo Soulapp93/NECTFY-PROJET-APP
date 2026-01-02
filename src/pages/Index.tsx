@@ -292,34 +292,34 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border shadow-sm">
+      {/* Header - Sticky avec fond violet */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-primary via-primary to-accent shadow-lg shadow-primary/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-3 md:py-4">
             <div className="flex items-center space-x-2 md:space-x-3 flex-shrink-0">
-              <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center shadow-lg">
-                <span className="text-primary-foreground font-bold text-sm md:text-lg">N</span>
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/30 shadow-lg">
+                <span className="text-white font-bold text-sm md:text-lg">N</span>
               </div>
               <div>
-                <h1 className="text-lg md:text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                <h1 className="text-lg md:text-2xl font-bold text-white tracking-tight">
                   NECTFY
                 </h1>
               </div>
             </div>
             
             <nav className="hidden lg:flex items-center space-x-8">
-              <a href="#fonctionnalites" className="text-foreground/70 hover:text-primary font-medium transition-colors">
+              <a href="#fonctionnalites" className="text-white/80 hover:text-white font-medium transition-all duration-300 hover:scale-105">
                 Solutions
               </a>
-              <Link to="/fonctionnalites" className="text-foreground/70 hover:text-primary font-medium transition-colors">
+              <Link to="/fonctionnalites" className="text-white/80 hover:text-white font-medium transition-all duration-300 hover:scale-105">
                 Fonctionnalités
               </Link>
-              <Link to="/pourquoi-nous" className="text-foreground/70 hover:text-primary font-medium transition-colors">
+              <Link to="/pourquoi-nous" className="text-white/80 hover:text-white font-medium transition-all duration-300 hover:scale-105">
                 Pourquoi nous ?
               </Link>
               <a 
                 href="#contact" 
-                className="text-foreground/70 hover:text-primary font-medium transition-colors"
+                className="text-white/80 hover:text-white font-medium transition-all duration-300 hover:scale-105"
               >
                 Contact
               </a>
@@ -328,13 +328,13 @@ const Index = () => {
             <div className="flex items-center space-x-2 md:space-x-4">
               <Link 
                 to="/auth" 
-                className="px-2 py-1.5 md:px-4 md:py-2 text-primary hover:text-primary/80 font-medium transition-colors text-sm md:text-base whitespace-nowrap"
+                className="px-2 py-1.5 md:px-4 md:py-2 text-white/90 hover:text-white font-medium transition-all duration-300 text-sm md:text-base whitespace-nowrap hover:scale-105"
               >
                 Se connecter
               </Link>
               <Link 
                 to="/create-establishment" 
-                className="hidden sm:inline-flex px-3 md:px-6 py-1.5 md:py-2 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-lg hover:shadow-lg transform hover:scale-105 font-medium transition-all text-xs md:text-base whitespace-nowrap"
+                className="hidden sm:inline-flex px-3 md:px-6 py-1.5 md:py-2 bg-white text-primary rounded-full hover:bg-white/90 hover:shadow-xl transform hover:scale-105 font-semibold transition-all duration-300 text-xs md:text-base whitespace-nowrap shadow-lg"
               >
                 Créer un compte
               </Link>
@@ -342,6 +342,9 @@ const Index = () => {
           </div>
         </div>
       </header>
+      
+      {/* Spacer pour compenser le header fixed */}
+      <div className="h-14 md:h-16" />
 
       {/* Hero Section */}
       <GradientBackground variant="orbs" className="py-16 md:py-28 px-4 sm:px-6 lg:px-8">
