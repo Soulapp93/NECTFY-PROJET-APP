@@ -59,7 +59,7 @@ import ExcelImportModal from '@/components/administration/ExcelImportModal';
 import CreateScheduleModal from './CreateScheduleModal';
 import { getModuleColor, extractModuleName } from '@/utils/moduleColors';
 import { navigateWeek, getWeekInfo, getWeekDays } from '@/utils/calendarUtils';
-import { formatTimeRange, isAutonomieSlot } from '@/utils/slotDisplay';
+import { formatTimeRange, isAutonomieSlot, getSlotModuleTitle, getSlotInstructorName } from '@/utils/slotDisplay';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -1403,6 +1403,7 @@ const ScheduleManagement = () => {
           onClose={() => setIsExcelImportModalOpen(false)}
           onSuccess={handleExcelImportSuccess}
           scheduleId={selectedSchedule?.id || ''}
+          formationId={selectedSchedule?.formation_id || ''}
         />
 
         <EventDetailsModal
@@ -1701,6 +1702,7 @@ const ScheduleManagement = () => {
         onClose={() => setIsExcelImportModalOpen(false)}
         onSuccess={handleExcelImportSuccess}
         scheduleId={selectedSchedule?.id || ''}
+        formationId={selectedSchedule?.formation_id || ''}
       />
 
       <EventDetailsModal

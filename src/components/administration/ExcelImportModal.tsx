@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,12 +11,14 @@ import { scheduleService } from '@/services/scheduleService';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ExcelImportModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
   scheduleId: string;
+  formationId?: string;
 }
 
 interface ParsedSlot {
@@ -28,6 +30,19 @@ interface ParsedSlot {
   classe: string;
   isValid: boolean;
   errorMessage?: string;
+  moduleId?: string;
+  instructorId?: string;
+}
+
+interface ModuleData {
+  id: string;
+  title: string;
+}
+
+interface InstructorData {
+  id: string;
+  first_name: string;
+  last_name: string;
 }
 
 // Fonction pour convertir une date Excel (numéro sériel) en chaîne YYYY-MM-DD
@@ -129,11 +144,76 @@ const parseHoraire = (horaire: string): { startTime: string; endTime: string } |
   return null;
 };
 
-const ExcelImportModal = ({ isOpen, onClose, onSuccess, scheduleId }: ExcelImportModalProps) => {
+const ExcelImportModal = ({ isOpen, onClose, onSuccess, scheduleId, formationId }: ExcelImportModalProps) => {
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [previewData, setPreviewData] = useState<ParsedSlot[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
+  const [modules, setModules] = useState<ModuleData[]>([]);
+  const [instructors, setInstructors] = useState<InstructorData[]>([]);
+
+  // Charger les modules et formateurs de la formation
+  useEffect(() => {
+    const loadFormationData = async () => {
+      if (!formationId) return;
+
+      try {
+        // Charger les modules de la formation
+        const { data: modulesData } = await supabase
+          .from('formation_modules')
+          .select('id, title')
+          .eq('formation_id', formationId);
+        
+        if (modulesData) {
+          setModules(modulesData);
+        }
+
+        // Charger les formateurs (tous les utilisateurs avec le rôle Formateur de l'établissement)
+        const { data: userData } = await supabase
+          .from('users')
+          .select('id, first_name, last_name')
+          .eq('role', 'Formateur');
+        
+        if (userData) {
+          setInstructors(userData);
+        }
+      } catch (error) {
+        console.error('Erreur chargement données formation:', error);
+      }
+    };
+
+    if (isOpen) {
+      loadFormationData();
+    }
+  }, [isOpen, formationId]);
+
+  // Fonction pour trouver un module par nom (recherche flexible)
+  const findModuleByName = (moduleName: string): ModuleData | undefined => {
+    if (!moduleName) return undefined;
+    const normalizedName = moduleName.toLowerCase().trim();
+    return modules.find(m => 
+      m.title.toLowerCase().trim() === normalizedName ||
+      m.title.toLowerCase().includes(normalizedName) ||
+      normalizedName.includes(m.title.toLowerCase())
+    );
+  };
+
+  // Fonction pour trouver un formateur par nom (recherche flexible)
+  const findInstructorByName = (formateurName: string): InstructorData | undefined => {
+    if (!formateurName) return undefined;
+    const normalizedName = formateurName.toLowerCase().trim();
+    
+    return instructors.find(i => {
+      const fullName = `${i.first_name} ${i.last_name}`.toLowerCase();
+      const reverseName = `${i.last_name} ${i.first_name}`.toLowerCase();
+      return fullName === normalizedName || 
+             reverseName === normalizedName ||
+             fullName.includes(normalizedName) ||
+             normalizedName.includes(fullName) ||
+             i.first_name.toLowerCase() === normalizedName ||
+             i.last_name.toLowerCase() === normalizedName;
+    });
+  };
 
   const downloadTemplate = () => {
     const template = [
@@ -219,7 +299,9 @@ const ExcelImportModal = ({ isOpen, onClose, onSuccess, scheduleId }: ExcelImpor
           module: String(moduleValue || '').trim(),
           formateur: String(formateurValue || '').trim(),
           classe: String(salleValue || '').trim(),
-          isValid: true
+          isValid: true,
+          moduleId: undefined,
+          instructorId: undefined
         };
 
         // Parser la date
@@ -249,10 +331,24 @@ const ExcelImportModal = ({ isOpen, onClose, onSuccess, scheduleId }: ExcelImpor
           slot.errorMessage = `Ligne ${i + 2}: Horaire manquant`;
         }
 
-        // Vérifier le module
+        // Vérifier le module et résoudre l'ID
         if (!slot.module) {
           slot.isValid = false;
           slot.errorMessage = `Ligne ${i + 2}: Module manquant`;
+        } else {
+          // Essayer de trouver le module correspondant dans la base
+          const foundModule = findModuleByName(slot.module);
+          if (foundModule) {
+            slot.moduleId = foundModule.id;
+          }
+        }
+
+        // Résoudre l'ID du formateur
+        if (slot.formateur) {
+          const foundInstructor = findInstructorByName(slot.formateur);
+          if (foundInstructor) {
+            slot.instructorId = foundInstructor.id;
+          }
         }
 
         parsedSlots.push(slot);
@@ -291,12 +387,16 @@ const ExcelImportModal = ({ isOpen, onClose, onSuccess, scheduleId }: ExcelImpor
         try {
           await scheduleService.createScheduleSlot({
             schedule_id: scheduleId,
+            module_id: slot.moduleId || undefined,
+            instructor_id: slot.instructorId || undefined,
             date: slot.date,
             start_time: slot.startTime,
             end_time: slot.endTime,
             room: slot.classe || undefined,
             color: getModuleColor(slot.module),
-            notes: `${slot.module}${slot.formateur ? ` - ${slot.formateur}` : ''}`
+            notes: (!slot.moduleId || !slot.instructorId) 
+              ? `${slot.module}${slot.formateur ? ` - ${slot.formateur}` : ''}` 
+              : undefined
           });
           successCount++;
         } catch (error) {
@@ -443,10 +543,20 @@ const ExcelImportModal = ({ isOpen, onClose, onSuccess, scheduleId }: ExcelImpor
                             : '-'}
                         </TableCell>
                         <TableCell className="max-w-[150px] truncate" title={slot.module}>
-                          {slot.module || '-'}
+                          <div className="flex items-center gap-1">
+                            <span className={slot.moduleId ? 'text-green-700' : 'text-amber-600'}>
+                              {slot.module || '-'}
+                            </span>
+                            {slot.moduleId && <CheckCircle2 className="h-3 w-3 text-green-600" />}
+                          </div>
                         </TableCell>
                         <TableCell className="max-w-[120px] truncate" title={slot.formateur}>
-                          {slot.formateur || '-'}
+                          <div className="flex items-center gap-1">
+                            <span className={slot.instructorId ? 'text-green-700' : (slot.formateur ? 'text-amber-600' : '')}>
+                              {slot.formateur || '-'}
+                            </span>
+                            {slot.instructorId && <CheckCircle2 className="h-3 w-3 text-green-600" />}
+                          </div>
                         </TableCell>
                         <TableCell className="max-w-[100px] truncate" title={slot.classe}>
                           {slot.classe || '-'}
@@ -472,6 +582,19 @@ const ExcelImportModal = ({ isOpen, onClose, onSuccess, scheduleId }: ExcelImpor
                   <AlertDescription className="text-xs">
                     Les lignes avec erreurs seront ignorées lors de l'import.
                     Survolez l'icône ⚠️ pour voir le détail de l'erreur.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Info sur les modules/formateurs non résolus */}
+              {previewData.some(s => s.isValid && (!s.moduleId || !s.instructorId)) && (
+                <Alert className="border-amber-200 bg-amber-50">
+                  <AlertCircle className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-xs text-amber-800">
+                    <strong>Module/Formateur en orange</strong> : le nom n'a pas été trouvé dans la base de données. 
+                    Le créneau sera créé avec les informations textuelles dans les notes.
+                    <br />
+                    <span className="text-green-700">✓ Vert</span> = lié automatiquement à la base de données.
                   </AlertDescription>
                 </Alert>
               )}

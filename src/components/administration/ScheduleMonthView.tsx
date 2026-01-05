@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ScheduleSlot } from '@/services/scheduleService';
-import { formatTimeRange, isAutonomieSession } from '@/utils/slotDisplay';
+import { formatTimeRange, isAutonomieSession, getSlotModuleTitle } from '@/utils/slotDisplay';
 
 interface ScheduleMonthViewProps {
   selectedDate: Date;
@@ -138,7 +138,6 @@ export const ScheduleMonthView: React.FC<ScheduleMonthViewProps> = ({
                   
                   <div className="space-y-1">
                     {daySlots.slice(0, 3).map((slot, slotIndex) => {
-                      const isAutonomie = isAutonomieSession(slot.session_type);
                       return (
                         <div
                           key={slotIndex}
@@ -154,7 +153,7 @@ export const ScheduleMonthView: React.FC<ScheduleMonthViewProps> = ({
                           }}
                         >
                           <div className="font-medium text-white truncate mb-1">
-                            {isAutonomie ? 'AUTONOMIE' : (slot.formation_modules?.title || 'Module')}
+                            {getSlotModuleTitle(slot)}
                           </div>
                           {/* Autonomie: uniquement le titre + horaire (sans icônes) */}
                           <div className="text-white/85">
