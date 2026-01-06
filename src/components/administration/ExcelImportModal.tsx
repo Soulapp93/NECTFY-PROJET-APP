@@ -45,39 +45,56 @@ interface InstructorData {
   last_name: string;
 }
 
-// Fonction pour convertir une date Excel (numéro sériel) en chaîne YYYY-MM-DD
+// Fonction pour convertir une date Excel en chaîne YYYY-MM-DD (sans décalage de fuseau horaire)
+const formatDateOnlyUTC = (date: Date): string => {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(date.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
 const excelDateToString = (excelDate: any): string => {
-  // Si c'est déjà une chaîne au format YYYY-MM-DD
+  if (!excelDate && excelDate !== 0) return '';
+
+  // XLSX peut parfois fournir un objet Date
+  if (excelDate instanceof Date && !isNaN(excelDate.getTime())) {
+    return formatDateOnlyUTC(excelDate);
+  }
+
+  // Si c'est une chaîne
   if (typeof excelDate === 'string') {
-    // Vérifier si c'est au format YYYY-MM-DD
-    if (/^\d{4}-\d{2}-\d{2}$/.test(excelDate)) {
-      return excelDate;
-    }
-    // Vérifier si c'est au format DD/MM/YYYY
-    if (/^\d{2}\/\d{2}\/\d{4}$/.test(excelDate)) {
-      const [day, month, year] = excelDate.split('/');
+    const v = excelDate.trim();
+
+    // YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+
+    // DD/MM/YYYY
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(v)) {
+      const [day, month, year] = v.split('/');
       return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
     }
-    // Vérifier si c'est au format DD-MM-YYYY
-    if (/^\d{2}-\d{2}-\d{4}$/.test(excelDate)) {
-      const [day, month, year] = excelDate.split('-');
+
+    // DD-MM-YYYY
+    if (/^\d{2}-\d{2}-\d{4}$/.test(v)) {
+      const [day, month, year] = v.split('-');
       return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
     }
-    // Essayer de parser comme date
-    const parsed = new Date(excelDate);
+
+    // Fallback: tentative de parsing (on re-formate en date-only UTC)
+    const parsed = new Date(v);
     if (!isNaN(parsed.getTime())) {
-      return parsed.toISOString().split('T')[0];
+      return formatDateOnlyUTC(parsed);
     }
   }
-  
+
   // Si c'est un numéro sériel Excel
-  if (typeof excelDate === 'number') {
-    // Excel utilise 1900 comme année de base, mais avec un bug pour 1900 comme année bissextile
-    const excelEpoch = new Date(1899, 11, 30);
-    const date = new Date(excelEpoch.getTime() + excelDate * 24 * 60 * 60 * 1000);
-    return date.toISOString().split('T')[0];
+  if (typeof excelDate === 'number' && isFinite(excelDate)) {
+    // Base Excel (1900-01-00) en UTC pour éviter les décalages locaux
+    const excelEpochUTC = Date.UTC(1899, 11, 30);
+    const dateUTC = new Date(excelEpochUTC + excelDate * 24 * 60 * 60 * 1000);
+    return formatDateOnlyUTC(dateUTC);
   }
-  
+
   return '';
 };
 
@@ -516,7 +533,7 @@ const ExcelImportModal = ({ isOpen, onClose, onSuccess, scheduleId, formationId 
                 </Button>
               </div>
 
-              <ScrollArea className="flex-1 border rounded-lg max-h-[250px]">
+              <ScrollArea className="flex-1 border rounded-lg max-h-[45vh]">
                 <Table>
                   <TableHeader>
                     <TableRow>
