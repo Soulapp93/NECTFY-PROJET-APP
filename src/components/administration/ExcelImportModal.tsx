@@ -533,7 +533,7 @@ const ExcelImportModal = ({ isOpen, onClose, onSuccess, scheduleId, formationId 
                 </Button>
               </div>
 
-              <ScrollArea className="flex-1 border rounded-lg h-[45vh] min-h-[240px]">
+              <ScrollArea className="border rounded-lg h-[200px] overflow-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
