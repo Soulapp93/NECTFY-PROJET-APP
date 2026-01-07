@@ -456,7 +456,7 @@ const ExcelImportModal = ({ isOpen, onClose, onSuccess, scheduleId, formationId 
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-[750px] h-[90vh] max-h-[800px] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileSpreadsheet className="h-5 w-5 text-primary" />
@@ -533,7 +533,7 @@ const ExcelImportModal = ({ isOpen, onClose, onSuccess, scheduleId, formationId 
                 </Button>
               </div>
 
-              <ScrollArea className="border rounded-lg h-[200px] overflow-auto">
+              <ScrollArea className="border rounded-lg flex-1 min-h-[150px]">
                 <Table>
                   <TableHeader>
                     <TableRow>
