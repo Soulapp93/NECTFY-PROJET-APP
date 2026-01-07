@@ -166,7 +166,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send branded email via Resend
     const emailResponse = await resend.emails.send({
-      from: "NECTFY <noreply@resend.dev>",
+      from: "NECTFY <contact@nectfy.com>",
       to: [email],
       subject: "Réinitialisez votre mot de passe NECTFY",
       html: `

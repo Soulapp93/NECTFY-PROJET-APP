@@ -39,7 +39,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailPromises = userEmails.map(async (email) => {
       try {
         const emailResponse = await resend.emails.send({
-          from: "NECTFY <onboarding@resend.dev>",
+          from: "NECTFY <contact@nectfy.com>",
           to: [email],
           subject: `NECTFY - ${title}`,
           html: `
