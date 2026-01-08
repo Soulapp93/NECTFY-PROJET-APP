@@ -101,18 +101,26 @@ serve(async (req) => {
     }
 
     // Créer un message dans la messagerie
-    // Récupérer l'admin qui envoie (premier admin de l'établissement)
-    const { data: adminUsers } = await supabase.auth.admin.listUsers();
-    const adminUser = adminUsers?.users?.[0];
+    // Récupérer un admin de l'établissement pour envoyer le message
+    const { data: adminUser } = await supabase
+      .from("users")
+      .select("id")
+      .eq("establishment_id", sheet.formation_id ? (await supabase.from("formations").select("establishment_id").eq("id", sheet.formation_id).single()).data?.establishment_id : null)
+      .in("role", ["Admin", "AdminPrincipal"])
+      .limit(1)
+      .single();
 
-    if (adminUser) {
+    // Fallback: utiliser l'instructeur comme expéditeur si pas d'admin trouvé
+    const senderId = adminUser?.id || sheet.instructor_id;
+
+    if (senderId) {
       // Message pour étudiants (sans le lien direct - le lien est dans les métadonnées/notifications)
       const messageContent = `Bonjour,\n\nUn lien d'émargement est disponible pour la session suivante :\n\n📚 Formation : ${sheet.formations.title}\n📅 Date : ${sessionDate}\n🕐 Horaire : ${sheet.start_time.substring(0, 5)} - ${sheet.end_time.substring(0, 5)}\n\nVeuillez vous connecter à votre espace NECTFY pour signer votre présence.\n\n⏰ Vous avez 24 heures pour signer.\n\nCordialement,\nL'administration`;
       
       const { data: message, error: messageError } = await supabase
         .from("messages")
         .insert({
-          sender_id: adminUser.id,
+          sender_id: senderId,
           subject: notificationTitle,
           content: messageContent,
           is_draft: false,
@@ -124,7 +132,7 @@ serve(async (req) => {
       if (!messageError && message) {
         // Créer les destinataires du message (étudiants + formateur)
         const allRecipientIds = [...studentIds];
-        if (sheet.instructor_id) {
+        if (sheet.instructor_id && sheet.instructor_id !== senderId) {
           allRecipientIds.push(sheet.instructor_id);
         }
         
@@ -136,6 +144,8 @@ serve(async (req) => {
 
         await supabase.from("message_recipients").insert(recipients);
       }
+    } else {
+      console.warn("No sender found for message, skipping message creation");
     }
 
     // Récupérer les emails pour l'envoi d'email Gmail
