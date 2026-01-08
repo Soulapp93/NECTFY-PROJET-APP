@@ -20,14 +20,21 @@ export const activationService = {
   },
 
   async sendActivationEmail(email: string, token: string, firstName: string, lastName: string) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
     // Appeler l'edge function pour envoyer l'email
     const { data, error } = await supabase.functions.invoke('send-activation-email', {
+      headers: session?.access_token
+        ? { Authorization: `Bearer ${session.access_token}` }
+        : undefined,
       body: {
         email,
         token,
         firstName,
-        lastName
-      }
+        lastName,
+      },
     });
 
     if (error) throw error;

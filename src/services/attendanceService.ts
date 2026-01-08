@@ -564,12 +564,19 @@ export const attendanceService = {
   // Envoyer le lien de signature aux étudiants
   async sendSignatureLink(attendanceSheetId: string, studentIds: string[]): Promise<void> {
     try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       // Appeler l'edge function pour envoyer les notifications
       const { error } = await supabase.functions.invoke('send-signature-link', {
+        headers: session?.access_token
+          ? { Authorization: `Bearer ${session.access_token}` }
+          : undefined,
         body: {
           attendanceSheetId,
-          studentIds
-        }
+          studentIds,
+        },
       });
 
       if (error) throw error;

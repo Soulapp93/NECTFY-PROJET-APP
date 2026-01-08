@@ -17,14 +17,21 @@ export const notificationService = {
 
       const userEmails = users.map(u => u.email);
 
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       // Appeler l'edge function pour envoyer les emails
       const { error: emailError } = await supabase.functions.invoke('send-notification-email', {
+        headers: session?.access_token
+          ? { Authorization: `Bearer ${session.access_token}` }
+          : undefined,
         body: {
           userEmails,
           title,
           message,
-          type
-        }
+          type,
+        },
       });
 
       if (emailError) {

@@ -106,13 +106,21 @@ const SendMessageModal: React.FC<SendMessageModalProps> = ({
 
       // Send email notification via Edge Function (only if not scheduled)
       if (!scheduleEnabled) {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
         const { error } = await supabase.functions.invoke('send-notification-email', {
+          headers: session?.access_token
+            ? { Authorization: `Bearer ${session.access_token}` }
+            : undefined,
           body: {
             userEmails: recipients.map(r => r.email),
             title: subject,
-            message: 'Vous avez reçu un nouveau message sur votre espace NECTFY. Veuillez vous connecter pour le consulter.',
-            type: 'message'
-          }
+            message:
+              'Vous avez reçu un nouveau message sur votre espace NECTFY. Veuillez vous connecter pour le consulter.',
+            type: 'message',
+          },
         });
 
         if (error) {

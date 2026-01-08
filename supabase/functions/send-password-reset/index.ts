@@ -40,19 +40,27 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
     // First, check if user exists in public.users table
-    const { data: publicUser, error: publicUserError } = await supabaseAdmin
+    // Note: some databases may contain duplicate emails; we pick the most recently created one.
+    const { data: publicUsers, error: publicUsersError } = await supabaseAdmin
       .from('users')
-      .select('id, first_name, last_name, email, establishment_id, role')
+      .select('id, first_name, last_name, email, establishment_id, role, created_at')
       .eq('email', email)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(2);
 
-    if (publicUserError || !publicUser) {
-      console.error('User not found in public.users:', publicUserError);
+    if (publicUsersError || !publicUsers || publicUsers.length === 0) {
+      console.error('User not found in public.users:', publicUsersError);
       return new Response(
         JSON.stringify({ error: "Aucun utilisateur trouvé avec cet email" }),
         { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
+
+    if (publicUsers.length > 1) {
+      console.warn(`Multiple public.users rows found for email ${email}. Using the most recent one.`);
+    }
+
+    const publicUser = publicUsers[0];
 
     console.log(`Found user in public.users: ${publicUser.id}`);
 
@@ -98,13 +106,13 @@ const handler = async (req: Request): Promise<Response> => {
 
       console.log(`Created auth user: ${newUser.user?.id}`);
 
-      // Update public.users to link with auth user id
+      // Update only the selected public.users row to avoid touching duplicates
       if (newUser.user && publicUser.id !== newUser.user.id) {
         const { error: updateError } = await supabaseAdmin
           .from('users')
           .update({ id: newUser.user.id, is_activated: true })
-          .eq('email', email);
-        
+          .eq('id', publicUser.id);
+
         if (updateError) {
           console.error('Error updating public user id:', updateError);
           // Continue anyway, the link can still be sent
