@@ -80,20 +80,28 @@ const handler = async (req: Request): Promise<Response> => {
     let resetLink: string;
 
     if (!authUser) {
-      // User doesn't have an auth account yet - create one with a temporary password
+      // User doesn't have an auth account yet - create one.
+      // IMPORTANT: our database already has a row in public.users for this email.
+      // Creating an auth user can trigger the "handle_new_user_signup" trigger which
+      // tries to INSERT into public.users and will fail due to the unique constraint
+      // (establishment_id, email). To avoid that, we DO NOT pass establishment_id in
+      // user_metadata here.
+      //
+      // We also force the auth user id to match the existing public.users.id so the
+      // rest of the app (RLS + joins) keeps working.
       console.log(`User ${email} doesn't have auth account, creating one...`);
-      
+
       const tempPassword = crypto.randomUUID() + 'Aa1!'; // Secure temporary password
-      
+
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        email: email,
+        id: publicUser.id,
+        email,
         password: tempPassword,
         email_confirm: true,
         user_metadata: {
           first_name: publicUser.first_name,
           last_name: publicUser.last_name,
-          establishment_id: publicUser.establishment_id,
-        }
+        },
       });
 
       if (createError) {
@@ -106,18 +114,11 @@ const handler = async (req: Request): Promise<Response> => {
 
       console.log(`Created auth user: ${newUser.user?.id}`);
 
-      // Update only the selected public.users row to avoid touching duplicates
-      if (newUser.user && publicUser.id !== newUser.user.id) {
-        const { error: updateError } = await supabaseAdmin
-          .from('users')
-          .update({ id: newUser.user.id, is_activated: true })
-          .eq('id', publicUser.id);
-
-        if (updateError) {
-          console.error('Error updating public user id:', updateError);
-          // Continue anyway, the link can still be sent
-        }
-      }
+      // Ensure activation flag is set (best-effort)
+      await supabaseAdmin
+        .from('users')
+        .update({ is_activated: true })
+        .eq('id', publicUser.id);
 
       // Generate recovery link for the new user
       const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
