@@ -198,10 +198,21 @@ const EnhancedUsersList: React.FC = () => {
     }
 
     try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        throw new Error('Session expirée : reconnectez-vous puis réessayez.');
+      }
+
       const redirectUrl = `${window.location.origin}/reset-password`;
 
       const { data, error } = await supabase.functions.invoke('send-password-reset', {
-        body: { email, redirectUrl }
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: { email, redirectUrl },
       });
 
       if (error) throw error;
