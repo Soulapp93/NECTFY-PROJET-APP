@@ -215,6 +215,29 @@ const EnhancedUsersList: React.FC = () => {
         body: { email, redirectUrl },
       });
 
+      // Handle 409 - account not activated, need to resend invitation
+      if (error?.message?.includes('409') || (data as any)?.action === 'resend_invitation') {
+        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+        if (user) {
+          toast.info("Ce compte n'est pas encore activé. Renvoi de l'invitation en cours...");
+          try {
+            await invitationService.sendInvitation({
+              email: user.email,
+              first_name: user.first_name,
+              last_name: user.last_name,
+              role: user.role as 'Admin' | 'Formateur' | 'Étudiant',
+            });
+            toast.success(`Invitation envoyée à ${email}`);
+          } catch (inviteError: any) {
+            console.error("Erreur lors de l'envoi de l'invitation:", inviteError);
+            toast.error("Impossible d'envoyer l'invitation. Veuillez réessayer.");
+          }
+        } else {
+          toast.error("Utilisateur non trouvé");
+        }
+        return;
+      }
+
       if (error) throw error;
 
       // si la fonction renvoie une erreur applicative dans le body
