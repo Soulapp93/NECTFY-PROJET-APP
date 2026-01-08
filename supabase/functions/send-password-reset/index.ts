@@ -98,93 +98,44 @@ const handler = async (req: Request): Promise<Response> => {
     let resetLink: string;
 
     if (!authUser) {
-      // User doesn't have an auth account yet - create one.
-      // IMPORTANT: our database already has a row in public.users for this email.
-      // Creating an auth user can trigger the "handle_new_user_signup" trigger which
-      // tries to INSERT into public.users and will fail due to the unique constraint
-      // (establishment_id, email). To avoid that, we DO NOT pass establishment_id in
-      // user_metadata here.
-      //
-      // We also force the auth user id to match the existing public.users.id so the
-      // rest of the app (RLS + joins) keeps working.
-      console.log(`User ${email} doesn't have auth account, creating one...`);
+      // IMPORTANT (new recommended system):
+      // We no longer create auth users inside the password reset flow.
+      // If the user hasn't accepted their invitation yet, they simply don't have an auth account.
+      // In this case, the correct action is to RESEND an invitation (activation) email, not a reset.
+      console.warn(`No auth account found for ${email}. Password reset cannot be sent.`);
 
-      const tempPassword = crypto.randomUUID() + 'Aa1!'; // Secure temporary password
-
-      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        id: publicUser.id,
-        email,
-        password: tempPassword,
-        email_confirm: true,
-        user_metadata: {
-          first_name: publicUser.first_name,
-          last_name: publicUser.last_name,
-        },
-      });
-
-      if (createError) {
-        console.error('Error creating auth user:', createError);
-        return new Response(
-          JSON.stringify({
-            error: "Erreur lors de la création du compte d'authentification",
-            details: {
-              message: createError.message,
-              status: (createError as any).status,
-              code: (createError as any).code,
-            },
-          }),
-          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-        );
-      }
-
-      console.log(`Created auth user: ${newUser.user?.id}`);
-
-      // Ensure activation flag is set (best-effort)
-      await supabaseAdmin
-        .from('users')
-        .update({ is_activated: true })
-        .eq('id', publicUser.id);
-
-      // Generate recovery link for the new user
-      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-        type: 'recovery',
-        email: email,
-        options: {
-          redirectTo: redirectUrl,
-        }
-      });
-
-      if (linkError) {
-        console.error('Error generating reset link for new user:', linkError);
-        return new Response(
-          JSON.stringify({ error: "Erreur lors de la génération du lien de réinitialisation" }),
-          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-        );
-      }
-
-      resetLink = linkData.properties?.action_link || '';
-    } else {
-      // User exists in auth, generate recovery link normally
-      console.log(`User ${email} exists in auth, generating recovery link...`);
-      
-      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-        type: 'recovery',
-        email: email,
-        options: {
-          redirectTo: redirectUrl,
-        }
-      });
-
-      if (linkError) {
-        console.error('Error generating reset link:', linkError);
-        return new Response(
-          JSON.stringify({ error: "Erreur lors de la génération du lien de réinitialisation" }),
-          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-        );
-      }
-
-      resetLink = linkData.properties?.action_link || '';
+      return new Response(
+        JSON.stringify({
+          error: "Compte non activé",
+          message:
+            "Cet utilisateur n'a pas encore activé son compte. Renvoyez plutôt une invitation d'activation.",
+          action: "resend_invitation",
+        }),
+        { status: 409, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
+
+    // User exists in auth, generate recovery link normally
+    console.log(`User ${email} exists in auth, generating recovery link...`);
+
+    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'recovery',
+      email: email,
+      options: {
+        redirectTo: redirectUrl,
+      }
+    });
+
+    if (linkError) {
+      console.error('Error generating reset link:', linkError);
+      return new Response(
+        JSON.stringify({ error: "Erreur lors de la génération du lien de réinitialisation" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    resetLink = linkData.properties?.action_link || '';
+
 
     if (!resetLink) {
       console.error('No reset link generated');
