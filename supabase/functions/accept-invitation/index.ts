@@ -103,22 +103,28 @@ const handler = async (req: Request): Promise<Response> => {
       }
       authUserId = existingAuthUser.id;
     } else {
-      // Create new auth user
+      // Create new auth user WITHOUT establishment_id to avoid trigger conflict
+      // The trigger handle_new_user_signup only creates a user if establishment_id is present
+      // We skip it here and create the user profile manually below
       const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
         email: invitation.email,
         password,
         email_confirm: true,
         user_metadata: {
           first_name: finalFirstName,
-          last_name: finalLastName,
-          establishment_id: invitation.establishment_id
+          last_name: finalLastName
+          // NOTE: NOT including establishment_id to prevent trigger from creating duplicate
         }
       });
 
       if (createError) {
         console.error("Error creating auth user:", createError);
         return new Response(
-          JSON.stringify({ error: "Erreur lors de la création du compte: " + createError.message }),
+          JSON.stringify({ 
+            error: "Erreur lors de la création du compte: " + createError.message,
+            code: (createError as any).code,
+            status: (createError as any).status
+          }),
           { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
