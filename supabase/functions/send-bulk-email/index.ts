@@ -45,7 +45,7 @@ const handler = async (req: Request): Promise<Response> => {
     for (const recipient of recipients) {
       try {
         const emailResponse = await resend.emails.send({
-          from: "NECTFY <contact@nectfy.com>",
+          from: "NECTFY <onboarding@resend.dev>",
           to: [recipient.email],
           subject: subject,
           html: `

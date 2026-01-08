@@ -30,7 +30,7 @@ const handler = async (req: Request): Promise<Response> => {
     const activationUrl = `${req.headers.get('origin') || 'http://localhost:5173'}/activation?token=${token}`;
 
     const emailResponse = await resend.emails.send({
-      from: "NECTFY <contact@nectfy.com>",
+      from: "NECTFY <onboarding@resend.dev>",
       to: [email],
       subject: "Activez votre compte - Plateforme de formation",
       html: `

@@ -142,7 +142,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send invitation email
     const emailResponse = await resend.emails.send({
-      from: "NECTFY <contact@nectfy.com>",
+      from: "NECTFY <onboarding@resend.dev>",
       to: [email],
       subject: `Invitation à rejoindre ${establishment.name} sur NECTFY`,
       html: `
