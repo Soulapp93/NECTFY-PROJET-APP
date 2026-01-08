@@ -13,6 +13,7 @@ import { useUsers } from '@/hooks/useUsers';
 import { useAllUserFormations } from '@/hooks/useAllUserFormations';
 import { useUserTutors } from '@/hooks/useUserTutors';
 import { User, CreateUserData } from '@/services/userService';
+import { invitationService } from '@/services/invitationService';
 import SimplifiedUserModal from './SimplifiedUserModal';
 import UserDetailModal from './UserDetailModal';
 import ExcelImport from './ExcelImport';
@@ -142,24 +143,76 @@ const EnhancedUsersList: React.FC = () => {
     XLSX.writeFile(wb, filename);
   };
 
-  const sendInvitation = (email: string) => {
-    console.log(`Renvoyer l'invitation à ${email}`);
+  const isValidEmail = (email: string) => {
+    const normalized = email.trim().toLowerCase();
+    // Bloque explicitement les emails avec virgule (cas fréquent de faute de frappe)
+    if (normalized.includes(',')) return false;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized);
   };
 
-  const handleResetPassword = async (email: string) => {
+  const sendInvitation = async (user: User) => {
+    const email = user.email.trim().toLowerCase();
+
+    if (!isValidEmail(email)) {
+      toast.error(`Email invalide: ${user.email}`);
+      return;
+    }
+
+    try {
+      // Retrouver une invitation en attente pour cet email
+      const { data: invitation, error: invitationError } = await supabase
+        .from('invitations')
+        .select('id')
+        .eq('email', email)
+        .eq('status', 'pending' as any)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (invitationError) throw invitationError;
+
+      if (!invitation?.id) {
+        toast.error("Aucune invitation en attente trouvée pour cet utilisateur");
+        return;
+      }
+
+      const result = await invitationService.resendInvitation(invitation.id);
+
+      if (result.success) {
+        toast.success(`Invitation renvoyée à ${email}`);
+      } else {
+        toast.error(result.error || "Erreur lors du renvoi de l'invitation");
+      }
+    } catch (err: any) {
+      console.error("Erreur lors du renvoi de l'invitation:", err);
+      toast.error(err?.message || "Erreur lors du renvoi de l'invitation");
+    }
+  };
+
+  const handleResetPassword = async (emailRaw: string) => {
+    const email = emailRaw.trim().toLowerCase();
+
+    if (!isValidEmail(email)) {
+      toast.error(`Email invalide: ${emailRaw}`);
+      return;
+    }
+
     try {
       const redirectUrl = `${window.location.origin}/reset-password`;
-      
+
       const { data, error } = await supabase.functions.invoke('send-password-reset', {
         body: { email, redirectUrl }
       });
-      
+
       if (error) throw error;
-      
+
+      // si la fonction renvoie une erreur applicative dans le body
+      if ((data as any)?.error) throw new Error((data as any).error);
+
       toast.success(`Lien de réinitialisation NECTFY envoyé à ${email}`);
-    } catch (error) {
-      console.error('Erreur lors de l\'envoi du lien:', error);
-      toast.error('Erreur lors de l\'envoi du lien de réinitialisation');
+    } catch (error: any) {
+      console.error("Erreur lors de l'envoi du lien:", error);
+      toast.error(error?.message || "Erreur lors de l'envoi du lien de réinitialisation");
     }
   };
 
@@ -583,7 +636,7 @@ const EnhancedUsersList: React.FC = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => sendInvitation(user.email)}
+                          onClick={() => sendInvitation(user)}
                           className="h-8 w-8 p-0"
                           title="Renvoyer l'invitation"
                         >
