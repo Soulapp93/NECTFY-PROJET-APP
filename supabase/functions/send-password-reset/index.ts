@@ -65,17 +65,35 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Found user in public.users: ${publicUser.id}`);
 
     // Check if user exists in auth.users
-    const { data: authUserData, error: authListError } = await supabaseAdmin.auth.admin.listUsers();
-    
-    if (authListError) {
-      console.error('Error listing auth users:', authListError);
-      return new Response(
-        JSON.stringify({ error: "Erreur lors de la vérification du compte" }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
+    // NOTE: listUsers() is paginated; we may need to scan multiple pages.
+    let authUser: any = null;
+    let page = 1;
+    const perPage = 1000;
 
-    const authUser = authUserData?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
+    while (!authUser) {
+      const { data: pageData, error: authListError } = await supabaseAdmin.auth.admin.listUsers({
+        page,
+        perPage,
+      });
+
+      if (authListError) {
+        console.error('Error listing auth users:', authListError);
+        return new Response(
+          JSON.stringify({ error: "Erreur lors de la vérification du compte" }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      const users = pageData?.users ?? [];
+      authUser = users.find((u) => (u.email ?? '').toLowerCase() === email.toLowerCase()) ?? null;
+
+      // If we got less than a full page, there are no more pages.
+      if (!authUser && users.length < perPage) break;
+
+      page += 1;
+      // Safety: avoid infinite loops
+      if (page > 20) break;
+    }
 
     let resetLink: string;
 
@@ -107,7 +125,14 @@ const handler = async (req: Request): Promise<Response> => {
       if (createError) {
         console.error('Error creating auth user:', createError);
         return new Response(
-          JSON.stringify({ error: "Erreur lors de la création du compte d'authentification" }),
+          JSON.stringify({
+            error: "Erreur lors de la création du compte d'authentification",
+            details: {
+              message: createError.message,
+              status: (createError as any).status,
+              code: (createError as any).code,
+            },
+          }),
           { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
