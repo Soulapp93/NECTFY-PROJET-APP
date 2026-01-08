@@ -26,9 +26,12 @@ export interface CreateInvitationData {
 export const invitationService = {
   async sendInvitation(data: CreateInvitationData): Promise<{ success: boolean; error?: string }> {
     try {
-      // Get current user info
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user?.id) {
+      // Get current user session (needed because send-invitation requires JWT)
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.user?.id || !session.access_token) {
         throw new Error('Utilisateur non connecté');
       }
 
@@ -43,13 +46,16 @@ export const invitationService = {
         throw new Error('Établissement non trouvé');
       }
 
-      // Call edge function to send invitation
+      // Call edge function to send invitation (explicit Authorization header)
       const { data: response, error } = await supabase.functions.invoke('send-invitation', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: {
           ...data,
           establishment_id: userData.establishment_id,
-          created_by: session.user.id
-        }
+          created_by: session.user.id,
+        },
       });
 
       if (error) throw error;
