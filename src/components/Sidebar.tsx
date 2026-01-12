@@ -163,10 +163,10 @@ const Sidebar = () => {
           >
             {/* Logo Container with glow effect */}
             <div className="w-11 h-11 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
-              <span className="text-transparent bg-clip-text bg-gradient-to-br from-violet-600 to-purple-600 font-bold text-xl">NF</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-br from-violet-600 to-purple-600 font-bold text-lg">NF</span>
             </div>
             {!collapsed && (
-              <h1 className="text-lg font-semibold text-white tracking-wide">NECTFY</h1>
+              <h1 className="text-lg font-semibold text-white tracking-wide">NECTFORMA</h1>
             )}
           </button>
           

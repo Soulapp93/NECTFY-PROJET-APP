@@ -87,7 +87,7 @@ const Dashboard = () => {
       {/* Header */}
       <PageHeader 
         title="Tableau de bord"
-        description="Bienvenue sur votre espace de gestion NECTFY"
+        description="Bienvenue sur votre espace de gestion NECTFORMA"
         icon={LayoutDashboard}
       />
 

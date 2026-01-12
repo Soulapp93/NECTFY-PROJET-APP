@@ -210,10 +210,10 @@ const Fonctionnalites = () => {
           <div className="flex justify-between items-center py-4">
             <Link to="/" className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center shadow-lg">
-                <span className="text-primary-foreground font-bold text-lg">N</span>
+                <span className="text-primary-foreground font-bold text-sm">NF</span>
               </div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                NECTFY
+                NECTFORMA
               </h1>
             </Link>
             
@@ -259,7 +259,7 @@ const Fonctionnalites = () => {
             Toutes les Fonctionnalités
           </h1>
           <p className="text-xl text-muted-foreground leading-relaxed">
-            Découvrez en détail chaque fonctionnalité de NECTFY, 
+            Découvrez en détail chaque fonctionnalité de NECTFORMA, 
             conçue pour simplifier la gestion de vos formations.
           </p>
         </div>
@@ -355,7 +355,7 @@ const Fonctionnalites = () => {
               Accessible partout, à tout moment
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              NECTFY est optimisé pour tous vos appareils : ordinateur, tablette et smartphone.
+              NECTFORMA est optimisé pour tous vos appareils : ordinateur, tablette et smartphone.
               Gérez vos formations où que vous soyez.
             </p>
           </div>
@@ -387,10 +387,10 @@ const Fonctionnalites = () => {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-3 mb-4 md:mb-0">
               <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">N</span>
+                <span className="text-primary-foreground font-bold text-sm">NF</span>
               </div>
               <div>
-                <h3 className="text-xl font-bold">NECTFY</h3>
+                <h3 className="text-xl font-bold">NECTFORMA</h3>
                 <p className="text-muted-foreground text-sm">© 2024 Tous droits réservés</p>
               </div>
             </div>

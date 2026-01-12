@@ -36,7 +36,7 @@ const MobileHeader = () => {
       }
     }
     
-    return 'NECTFY';
+    return 'NECTFORMA';
   };
 
   return (
@@ -66,7 +66,7 @@ const MobileHeader = () => {
         {/* Logo et Titre au centre */}
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 nect-gradient rounded-lg flex items-center justify-center shadow-sm">
-            <span className="text-primary-foreground font-bold text-sm">N</span>
+            <span className="text-primary-foreground font-bold text-xs">NF</span>
           </div>
           <h1 className="text-base font-semibold text-foreground truncate max-w-[140px]">
             {getPageTitle()}

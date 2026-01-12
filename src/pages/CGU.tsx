@@ -9,7 +9,7 @@ const CGU = () => {
       icon: FileText,
       title: "1. Objet",
       content: [
-        "Les présentes Conditions Générales d'Utilisation (ci-après \"CGU\") ont pour objet de définir les modalités et conditions d'utilisation de la plateforme NECTFY (ci-après \"la Plateforme\"), ainsi que les droits et obligations des parties dans ce cadre.",
+        "Les présentes Conditions Générales d'Utilisation (ci-après \"CGU\") ont pour objet de définir les modalités et conditions d'utilisation de la plateforme NECTFORMA (ci-après \"la Plateforme\"), ainsi que les droits et obligations des parties dans ce cadre.",
         "L'utilisation de la Plateforme implique l'acceptation pleine et entière des présentes CGU."
       ]
     },
@@ -18,7 +18,7 @@ const CGU = () => {
       title: "2. Accès à la Plateforme",
       content: [
         "La Plateforme est accessible gratuitement à tout utilisateur disposant d'un accès à Internet. Tous les frais supportés par l'utilisateur pour accéder au service (matériel informatique, logiciels, connexion Internet, etc.) sont à sa charge.",
-        "NECTFY met en œuvre tous les moyens raisonnables à sa disposition pour assurer un accès de qualité à la Plateforme, mais n'est tenue à aucune obligation d'y parvenir."
+        "NECTFORMA met en œuvre tous les moyens raisonnables à sa disposition pour assurer un accès de qualité à la Plateforme, mais n'est tenue à aucune obligation d'y parvenir."
       ]
     },
     {
@@ -30,7 +30,7 @@ const CGU = () => {
       list: [
         "Fournir des informations exactes, complètes et à jour",
         "Maintenir la confidentialité de ses identifiants de connexion",
-        "Informer immédiatement NECTFY de toute utilisation non autorisée de son compte",
+        "Informer immédiatement NECTFORMA de toute utilisation non autorisée de son compte",
         "Ne pas créer de compte pour le compte d'un tiers sans autorisation"
       ]
     },
@@ -38,7 +38,7 @@ const CGU = () => {
       icon: Database,
       title: "4. Services Proposés",
       content: [
-        "NECTFY propose une plateforme de gestion de formations incluant notamment :"
+        "NECTFORMA propose une plateforme de gestion de formations incluant notamment :"
       ],
       list: [
         "La gestion des formations et modules pédagogiques",
@@ -54,15 +54,15 @@ const CGU = () => {
       icon: Scale,
       title: "5. Propriété Intellectuelle",
       content: [
-        "Tous les contenus présents sur la Plateforme (textes, images, graphismes, logo, vidéos, etc.) sont la propriété exclusive de NECTFY ou de ses partenaires et sont protégés par les lois françaises et internationales relatives à la propriété intellectuelle.",
-        "Toute reproduction, représentation, modification, publication, adaptation de tout ou partie des éléments de la Plateforme, quel que soit le moyen ou le procédé utilisé, est interdite, sauf autorisation écrite préalable de NECTFY."
+        "Tous les contenus présents sur la Plateforme (textes, images, graphismes, logo, vidéos, etc.) sont la propriété exclusive de NECTFORMA ou de ses partenaires et sont protégés par les lois françaises et internationales relatives à la propriété intellectuelle.",
+        "Toute reproduction, représentation, modification, publication, adaptation de tout ou partie des éléments de la Plateforme, quel que soit le moyen ou le procédé utilisé, est interdite, sauf autorisation écrite préalable de NECTFORMA."
       ]
     },
     {
       icon: Database,
       title: "6. Protection des Données Personnelles",
       content: [
-        "NECTFY s'engage à respecter la réglementation applicable en matière de protection des données personnelles, notamment le Règlement Général sur la Protection des Données (RGPD)."
+        "NECTFORMA s'engage à respecter la réglementation applicable en matière de protection des données personnelles, notamment le Règlement Général sur la Protection des Données (RGPD)."
       ],
       link: {
         text: "Pour plus d'informations sur la collecte et le traitement de vos données personnelles, veuillez consulter notre ",
@@ -74,7 +74,7 @@ const CGU = () => {
       icon: AlertCircle,
       title: "7. Responsabilités",
       content: [
-        "NECTFY ne peut être tenue responsable :"
+        "NECTFORMA ne peut être tenue responsable :"
       ],
       list: [
         "Des dommages directs ou indirects causés au matériel de l'utilisateur lors de l'accès à la Plateforme",
@@ -87,15 +87,15 @@ const CGU = () => {
       icon: FileText,
       title: "8. Modification des CGU",
       content: [
-        "NECTFY se réserve le droit de modifier les présentes CGU à tout moment. Les utilisateurs seront informés de ces modifications par email et/ou par un avis sur la Plateforme. La poursuite de l'utilisation de la Plateforme après ces modifications vaut acceptation des nouvelles CGU."
+        "NECTFORMA se réserve le droit de modifier les présentes CGU à tout moment. Les utilisateurs seront informés de ces modifications par email et/ou par un avis sur la Plateforme. La poursuite de l'utilisation de la Plateforme après ces modifications vaut acceptation des nouvelles CGU."
       ]
     },
     {
       icon: AlertCircle,
       title: "9. Résiliation",
       content: [
-        "L'utilisateur peut résilier son compte à tout moment depuis les paramètres de son compte ou en contactant le support NECTFY.",
-        "NECTFY se réserve le droit de suspendre ou de supprimer le compte d'un utilisateur en cas de violation des présentes CGU, sans préavis ni indemnité."
+        "L'utilisateur peut résilier son compte à tout moment depuis les paramètres de son compte ou en contactant le support NECTFORMA.",
+        "NECTFORMA se réserve le droit de suspendre ou de supprimer le compte d'un utilisateur en cas de violation des présentes CGU, sans préavis ni indemnité."
       ]
     },
     {
@@ -111,7 +111,7 @@ const CGU = () => {
       content: [
         "Pour toute question concernant les présentes CGU, vous pouvez nous contacter à l'adresse :"
       ],
-      email: "contact@nectfy.com"
+      email: "contact@nectforma.com"
     }
   ];
 
@@ -123,10 +123,10 @@ const CGU = () => {
           <div className="flex justify-between items-center py-4">
             <Link to="/" className="flex items-center space-x-3 group">
               <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                <span className="text-primary-foreground font-bold text-lg">N</span>
+                <span className="text-primary-foreground font-bold text-sm">NF</span>
               </div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                NECTFY
+                NECTFORMA
               </h1>
             </Link>
             
@@ -248,10 +248,10 @@ const CGU = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">N</span>
+                <span className="text-primary-foreground font-bold text-sm">NF</span>
               </div>
               <div>
-                <h3 className="text-xl font-bold">NECTFY</h3>
+                <h3 className="text-xl font-bold">NECTFORMA</h3>
                 <p className="text-muted-foreground text-sm">© 2024 Tous droits réservés</p>
               </div>
             </div>

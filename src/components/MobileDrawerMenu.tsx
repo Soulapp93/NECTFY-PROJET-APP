@@ -196,10 +196,10 @@ const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({ isOpen, onClose }) 
         <div className="flex items-center justify-between p-4 border-b bg-primary">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">N</span>
+              <span className="text-primary-foreground font-bold text-sm">NF</span>
             </div>
             <div>
-              <h2 className="text-lg font-bold text-primary-foreground">NECTFY</h2>
+              <h2 className="text-lg font-bold text-primary-foreground">NECTFORMA</h2>
               <p className="text-xs text-primary-foreground/70">Gestion de formation</p>
             </div>
           </div>

@@ -42,16 +42,16 @@ const ChatWidget = () => {
       return "Excellente idée ! Vous pouvez demander une démonstration personnalisée via notre formulaire de contact. Notre équipe vous recontactera rapidement pour planifier une session.";
     }
     if (message.includes('support') || message.includes('aide') || message.includes('problème')) {
-      return "Notre équipe support est disponible par email à contact@nectfy.com. Pour une réponse rapide, utilisez le formulaire de contact avec le sujet 'Support technique'.";
+      return "Notre équipe support est disponible par email à contact@nectforma.com. Pour une réponse rapide, utilisez le formulaire de contact avec le sujet 'Support technique'.";
     }
     if (message.includes('fonctionnalité') || message.includes('module')) {
-      return "NECTFY propose 12 modules complets : Tableau de bord, Administration, Gestion des utilisateurs, Formations, Cahiers de textes, Emplois du temps, Émargements, Messagerie, Groupes, et plus encore !";
+      return "NECTFORMA propose 12 modules complets : Tableau de bord, Administration, Gestion des utilisateurs, Formations, Cahiers de textes, Emplois du temps, Émargements, Messagerie, Groupes, et plus encore !";
     }
     if (message.includes('émargement') || message.includes('signature') || message.includes('présence')) {
       return "Notre système d'émargement numérique permet de générer des feuilles automatiquement, de collecter des signatures électroniques via QR code, et de suivre les présences en temps réel. Tout est conforme aux réglementations !";
     }
     
-    return "Merci pour votre message ! Pour toute question spécifique, n'hésitez pas à nous contacter via le formulaire en bas de page ou par email à contact@nectfy.com. Notre équipe vous répondra rapidement.";
+    return "Merci pour votre message ! Pour toute question spécifique, n'hésitez pas à nous contacter via le formulaire en bas de page ou par email à contact@nectforma.com. Notre équipe vous répondra rapidement.";
   };
 
   const handleSend = () => {
@@ -110,7 +110,7 @@ const ChatWidget = () => {
                 <Bot className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="font-semibold">Assistant NECTFY</h3>
+                <h3 className="font-semibold">Assistant NECTFORMA</h3>
                 <p className="text-xs text-primary-foreground/80">En ligne • Répond instantanément</p>
               </div>
             </div>

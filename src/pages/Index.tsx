@@ -298,11 +298,11 @@ const Index = () => {
           <div className="flex justify-between items-center py-3 md:py-4">
             <div className="flex items-center space-x-2 md:space-x-3 flex-shrink-0">
               <div className="w-8 h-8 md:w-10 md:h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/30 shadow-lg">
-                <span className="text-white font-bold text-sm md:text-lg">N</span>
+                <span className="text-white font-bold text-xs md:text-sm">NF</span>
               </div>
               <div>
                 <h1 className="text-lg md:text-2xl font-bold text-white tracking-tight">
-                  NECTFY
+                  NECTFORMA
                 </h1>
               </div>
             </div>
@@ -368,7 +368,7 @@ const Index = () => {
           
           <AnimatedSection animation="fade-up" delay={300}>
             <p className="text-lg md:text-xl lg:text-2xl text-muted-foreground mb-10 md:mb-12 max-w-4xl mx-auto leading-relaxed px-2">
-              NECTFY est la solution complète pour digitaliser et automatiser 
+              NECTFORMA est la solution complète pour digitaliser et automatiser 
               la gestion de vos formations. <span className="text-foreground font-medium">12 modules puissants</span> pour tout gérer.
             </p>
           </AnimatedSection>
@@ -737,9 +737,9 @@ const Index = () => {
             <div className="md:col-span-2">
               <div className="flex items-center space-x-3 mb-4">
                 <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-lg">N</span>
+                  <span className="text-primary-foreground font-bold text-sm">NF</span>
                 </div>
-                <h3 className="text-xl font-bold">NECTFY</h3>
+                <h3 className="text-xl font-bold">NECTFORMA</h3>
               </div>
               <p className="text-muted-foreground mb-4 max-w-md">
                 La plateforme complète pour digitaliser et automatiser la gestion de vos formations professionnelles.
@@ -765,7 +765,7 @@ const Index = () => {
           </div>
           
           <div className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center text-muted-foreground text-sm">
-            <p>© 2024 NECTFY. Tous droits réservés.</p>
+            <p>© 2024 NECTFORMA. Tous droits réservés.</p>
             <p className="mt-2 md:mt-0">Made with ❤️ for formation professionals</p>
           </div>
         </div>

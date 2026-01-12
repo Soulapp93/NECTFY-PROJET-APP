@@ -9,7 +9,7 @@ const PolitiqueConfidentialite = () => {
       icon: Shield,
       title: "1. Introduction",
       content: [
-        "NECTFY (ci-après \"nous\", \"notre\" ou \"la Société\") s'engage à protéger la confidentialité et la sécurité des données personnelles de ses utilisateurs. La présente Politique de Confidentialité explique comment nous collectons, utilisons, partageons et protégeons vos données personnelles lorsque vous utilisez notre plateforme.",
+        "NECTFORMA (ci-après \"nous\", \"notre\" ou \"la Société\") s'engage à protéger la confidentialité et la sécurité des données personnelles de ses utilisateurs. La présente Politique de Confidentialité explique comment nous collectons, utilisons, partageons et protégeons vos données personnelles lorsque vous utilisez notre plateforme.",
         "Cette politique est conforme au Règlement Général sur la Protection des Données (RGPD) et à la loi Informatique et Libertés."
       ]
     },
@@ -118,7 +118,7 @@ const PolitiqueConfidentialite = () => {
         "**Droit d'opposition :** Vous opposer au traitement de vos données",
         "**Droit de retirer votre consentement :** À tout moment"
       ],
-      email: "privacy@nectfy.com",
+      email: "privacy@nectforma.com",
       emailLabel: "Pour exercer ces droits, contactez-nous à :"
     },
     {
@@ -162,8 +162,8 @@ const PolitiqueConfidentialite = () => {
         "Pour toute question concernant cette Politique de Confidentialité ou le traitement de vos données, vous pouvez nous contacter :"
       ],
       contactDetails: {
-        email: "privacy@nectfy.com",
-        address: "NECTFY - Service Protection des Données"
+        email: "privacy@nectforma.com",
+        address: "NECTFORMA - Service Protection des Données"
       }
     }
   ];
@@ -189,10 +189,10 @@ const PolitiqueConfidentialite = () => {
           <div className="flex justify-between items-center py-4">
             <Link to="/" className="flex items-center space-x-3 group">
               <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                <span className="text-primary-foreground font-bold text-lg">N</span>
+                <span className="text-primary-foreground font-bold text-sm">NF</span>
               </div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                NECTFY
+                NECTFORMA
               </h1>
             </Link>
             
@@ -379,10 +379,10 @@ const PolitiqueConfidentialite = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">N</span>
+                <span className="text-primary-foreground font-bold text-sm">NF</span>
               </div>
               <div>
-                <h3 className="text-xl font-bold">NECTFY</h3>
+                <h3 className="text-xl font-bold">NECTFORMA</h3>
                 <p className="text-muted-foreground text-sm">© 2024 Tous droits réservés</p>
               </div>
             </div>
