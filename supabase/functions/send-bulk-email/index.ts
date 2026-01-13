@@ -45,7 +45,7 @@ const handler = async (req: Request): Promise<Response> => {
     for (const recipient of recipients) {
       try {
         const emailResponse = await resend.emails.send({
-          from: "NECTFY <onboarding@resend.dev>",
+          from: "NECTFORMA <noreply@nectforma.com>",
           to: [recipient.email],
           subject: subject,
           html: `
@@ -54,7 +54,7 @@ const handler = async (req: Request): Promise<Response> => {
             <head>
               <meta charset="UTF-8">
               <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <title>${subject} - NECTFY</title>
+              <title>${subject} - NECTFORMA</title>
             </head>
             <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
               <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="min-height: 100vh;">
@@ -68,14 +68,14 @@ const handler = async (req: Request): Promise<Response> => {
                           <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
                             <tr>
                               <td style="background-color: #ffffff; width: 56px; height: 56px; border-radius: 12px; text-align: center; vertical-align: middle;">
-                                <span style="color: #8B5CF6; font-size: 28px; font-weight: bold; line-height: 56px;">N</span>
+                                <span style="color: #8B5CF6; font-size: 20px; font-weight: bold; line-height: 56px;">NF</span>
                               </td>
                               <td style="padding-left: 16px;">
-                                <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: bold; letter-spacing: -0.5px;">NECTFY</h1>
+                                <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: bold; letter-spacing: -0.5px;">NECTFORMA</h1>
                               </td>
                             </tr>
                           </table>
-                          <p style="margin: 16px 0 0; color: rgba(255, 255, 255, 0.9); font-size: 16px;">Plateforme de gestion éducative</p>
+                          <p style="margin: 16px 0 0; color: rgba(255, 255, 255, 0.9); font-size: 16px;">Plateforme de gestion de formation</p>
                         </td>
                       </tr>
                       
@@ -103,9 +103,9 @@ const handler = async (req: Request): Promise<Response> => {
                           <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
                             <tr>
                               <td align="center" style="padding: 24px 0 0;">
-                                <a href="https://nectfy.app" 
+                                <a href="https://nectforma.com" 
                                    style="display: inline-block; background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 600; padding: 12px 32px; border-radius: 8px; box-shadow: 0 4px 14px 0 rgba(139, 92, 246, 0.4);">
-                                  Accéder à NECTFY
+                                  Accéder à NECTFORMA
                                 </a>
                               </td>
                             </tr>
@@ -117,7 +117,7 @@ const handler = async (req: Request): Promise<Response> => {
                       <tr>
                         <td style="background-color: #f9fafb; padding: 32px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
                           <p style="margin: 0 0 8px; color: #6b7280; font-size: 14px;">
-                            © ${new Date().getFullYear()} NECTFY. Tous droits réservés.
+                            © ${new Date().getFullYear()} NECTFORMA. Tous droits réservés.
                           </p>
                           <p style="margin: 0; color: #9ca3af; font-size: 12px;">
                             Cet email a été envoyé à ${recipient.email}

@@ -33,15 +33,15 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Sending email notifications to ${userEmails.length} users`);
 
     // Get application URL from environment or use default
-    const appUrl = Deno.env.get("APP_URL") || "https://nectfy.app";
+    const appUrl = Deno.env.get("APP_URL") || "https://nectforma.com";
 
     // Envoyer un email à chaque utilisateur
     const emailPromises = userEmails.map(async (email) => {
       try {
         const emailResponse = await resend.emails.send({
-          from: "NECTFY <onboarding@resend.dev>",
+          from: "NECTFORMA <noreply@nectforma.com>",
           to: [email],
-          subject: `NECTFY - ${title}`,
+          subject: `NECTFORMA - ${title}`,
           html: `
             <!DOCTYPE html>
             <html>
@@ -51,9 +51,9 @@ const handler = async (req: Request): Promise<Response> => {
             </head>
             <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f4f5;">
               <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
-                <!-- Header with NECTFY branding -->
+                <!-- Header with NECTFORMA branding -->
                 <div style="background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); padding: 30px 40px; text-align: center;">
-                  <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: 1px;">NECTFY</h1>
+                  <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: 1px;">NECTFORMA</h1>
                   <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 14px;">Plateforme de gestion de formation</p>
                 </div>
                 
@@ -68,7 +68,7 @@ const handler = async (req: Request): Promise<Response> => {
                   <!-- Notification box -->
                   <div style="background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border-left: 4px solid #F59E0B; padding: 16px 20px; border-radius: 0 8px 8px 0; margin-bottom: 30px;">
                     <p style="margin: 0; color: #92400E; font-size: 14px;">
-                      <strong>📬 Vous avez reçu un message sur votre espace NECTFY</strong><br>
+                      <strong>📬 Vous avez reçu un message sur votre espace NECTFORMA</strong><br>
                       <span style="color: #A16207;">Veuillez vous connecter à votre compte pour voir tous les détails.</span>
                     </p>
                   </div>
@@ -77,7 +77,7 @@ const handler = async (req: Request): Promise<Response> => {
                   <div style="text-align: center; margin: 30px 0;">
                     <a href="${appUrl}/auth" 
                        style="display: inline-block; background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);">
-                      Se connecter à NECTFY
+                      Se connecter à NECTFORMA
                     </a>
                   </div>
                 </div>
@@ -85,10 +85,10 @@ const handler = async (req: Request): Promise<Response> => {
                 <!-- Footer -->
                 <div style="background-color: #18181B; padding: 25px 40px; text-align: center;">
                   <p style="color: #A1A1AA; font-size: 12px; margin: 0 0 8px 0;">
-                    Cet email a été envoyé automatiquement par NECTFY.
+                    Cet email a été envoyé automatiquement par NECTFORMA.
                   </p>
                   <p style="color: #71717A; font-size: 11px; margin: 0;">
-                    © ${new Date().getFullYear()} NECTFY - Tous droits réservés
+                    © ${new Date().getFullYear()} NECTFORMA - Tous droits réservés
                   </p>
                 </div>
               </div>

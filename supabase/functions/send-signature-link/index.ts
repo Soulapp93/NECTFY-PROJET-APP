@@ -47,7 +47,7 @@ serve(async (req) => {
     }
 
     // Construire le lien de signature
-    const appUrl = Deno.env.get("APP_URL") || "https://nectfy.app";
+    const appUrl = Deno.env.get("APP_URL") || "https://nectforma.com";
     const signatureLink = `${appUrl}/emargement/signer/${sheet.signature_link_token}`;
 
     const notificationTitle = "Lien d'émargement - " + sheet.formations.title;
@@ -57,7 +57,7 @@ serve(async (req) => {
       month: 'long', 
       day: 'numeric' 
     });
-    const notificationMessage = `Un lien d'émargement a été envoyé pour la session "${sheet.formations.title}" du ${sessionDate} (${sheet.start_time.substring(0, 5)} - ${sheet.end_time.substring(0, 5)}). Connectez-vous à NECTFY pour signer votre présence.`;
+    const notificationMessage = `Un lien d'émargement a été envoyé pour la session "${sheet.formations.title}" du ${sessionDate} (${sheet.start_time.substring(0, 5)} - ${sheet.end_time.substring(0, 5)}). Connectez-vous à NECTFORMA pour signer votre présence.`;
 
     // Créer les notifications pour chaque étudiant
     const notifications = studentIds.map((studentId: string) => ({
@@ -115,7 +115,7 @@ serve(async (req) => {
 
     if (senderId) {
       // Message pour étudiants (sans le lien direct - le lien est dans les métadonnées/notifications)
-      const messageContent = `Bonjour,\n\nUn lien d'émargement est disponible pour la session suivante :\n\n📚 Formation : ${sheet.formations.title}\n📅 Date : ${sessionDate}\n🕐 Horaire : ${sheet.start_time.substring(0, 5)} - ${sheet.end_time.substring(0, 5)}\n\nVeuillez vous connecter à votre espace NECTFY pour signer votre présence.\n\n⏰ Vous avez 24 heures pour signer.\n\nCordialement,\nL'administration`;
+      const messageContent = `Bonjour,\n\nUn lien d'émargement est disponible pour la session suivante :\n\n📚 Formation : ${sheet.formations.title}\n📅 Date : ${sessionDate}\n🕐 Horaire : ${sheet.start_time.substring(0, 5)} - ${sheet.end_time.substring(0, 5)}\n\nVeuillez vous connecter à votre espace NECTFORMA pour signer votre présence.\n\n⏰ Vous avez 24 heures pour signer.\n\nCordialement,\nL'administration`;
       
       const { data: message, error: messageError } = await supabase
         .from("messages")
@@ -169,7 +169,7 @@ serve(async (req) => {
           body: {
             userEmails,
             title: notificationTitle,
-            message: "Un lien d'émargement est disponible pour une session de formation. Connectez-vous à votre espace NECTFY pour signer votre présence.",
+            message: "Un lien d'émargement est disponible pour une session de formation. Connectez-vous à votre espace NECTFORMA pour signer votre présence.",
             type: "attendance"
           }
         });

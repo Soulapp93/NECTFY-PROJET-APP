@@ -54,6 +54,7 @@ interface FeatureItem {
 }
 
 const Index = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const features: FeatureItem[] = [
     {
       id: 'dashboard',
@@ -646,9 +647,46 @@ const Index = () => {
             {/* Contact Form */}
             <div className="bg-card rounded-2xl p-8 border border-border shadow-lg">
               <h3 className="text-2xl font-bold text-foreground mb-6">Envoyez-nous un message</h3>
-              <form className="space-y-6" onSubmit={(e) => {
+              <form className="space-y-6" onSubmit={async (e) => {
                 e.preventDefault();
-                toast.success("Message envoyé avec succès ! Nous vous répondrons dans les plus brefs délais.");
+                setIsSubmitting(true);
+                
+                const formData = new FormData(e.currentTarget);
+                const data = {
+                  firstName: formData.get('firstName') as string,
+                  lastName: formData.get('lastName') as string,
+                  email: formData.get('email') as string,
+                  subject: formData.get('subject') as string,
+                  message: formData.get('message') as string,
+                };
+
+                try {
+                  const response = await fetch(
+                    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-contact-form`,
+                    {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+                      },
+                      body: JSON.stringify(data),
+                    }
+                  );
+
+                  const result = await response.json();
+
+                  if (response.ok) {
+                    toast.success("Message envoyé avec succès ! Nous vous répondrons dans les plus brefs délais.");
+                    (e.target as HTMLFormElement).reset();
+                  } else {
+                    throw new Error(result.error || "Erreur lors de l'envoi");
+                  }
+                } catch (error) {
+                  console.error('Error sending contact form:', error);
+                  toast.error("Erreur lors de l'envoi du message. Veuillez réessayer.");
+                } finally {
+                  setIsSubmitting(false);
+                }
               }}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -658,6 +696,7 @@ const Index = () => {
                     <input
                       type="text"
                       id="firstName"
+                      name="firstName"
                       required
                       className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors text-foreground placeholder:text-muted-foreground"
                       placeholder="Votre prénom"
@@ -670,6 +709,7 @@ const Index = () => {
                     <input
                       type="text"
                       id="lastName"
+                      name="lastName"
                       required
                       className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors text-foreground placeholder:text-muted-foreground"
                       placeholder="Votre nom"
@@ -683,6 +723,7 @@ const Index = () => {
                   <input
                     type="email"
                     id="email"
+                    name="email"
                     required
                     className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors text-foreground placeholder:text-muted-foreground"
                     placeholder="votre@email.com"
@@ -694,6 +735,7 @@ const Index = () => {
                   </label>
                   <select
                     id="subject"
+                    name="subject"
                     required
                     className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors text-foreground"
                   >
@@ -711,6 +753,7 @@ const Index = () => {
                   </label>
                   <textarea
                     id="message"
+                    name="message"
                     rows={5}
                     required
                     className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors text-foreground placeholder:text-muted-foreground resize-none"
@@ -719,10 +762,11 @@ const Index = () => {
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-4 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-lg hover:shadow-lg transform hover:scale-[1.02] font-semibold text-lg transition-all flex items-center justify-center group"
+                  disabled={isSubmitting}
+                  className="w-full py-4 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-lg hover:shadow-lg transform hover:scale-[1.02] font-semibold text-lg transition-all flex items-center justify-center group disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
-                  Envoyer le message
-                  <Send className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  {isSubmitting ? 'Envoi en cours...' : 'Envoyer le message'}
+                  {!isSubmitting && <Send className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />}
                 </button>
               </form>
             </div>

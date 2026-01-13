@@ -137,14 +137,14 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Generate invitation link
-    const baseUrl = req.headers.get('origin') || 'https://nectfy.app';
+    const baseUrl = req.headers.get('origin') || 'https://nectforma.com';
     const invitationLink = `${baseUrl}/accept-invitation?token=${token}`;
 
     // Send invitation email
     const emailResponse = await resend.emails.send({
-      from: "NECTFY <onboarding@resend.dev>",
+      from: "NECTFORMA <noreply@nectforma.com>",
       to: [email],
-      subject: `Invitation à rejoindre ${establishment.name} sur NECTFY`,
+      subject: `Invitation à rejoindre ${establishment.name} sur NECTFORMA`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -155,7 +155,7 @@ const handler = async (req: Request): Promise<Response> => {
         <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px;">
           <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
             <div style="background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%); padding: 40px 30px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">NECTFY</h1>
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">NECTFORMA</h1>
               <p style="color: rgba(255,255,255,0.9); margin-top: 8px; font-size: 14px;">Plateforme de gestion de formation</p>
             </div>
             
@@ -195,7 +195,7 @@ const handler = async (req: Request): Promise<Response> => {
             
             <div style="background-color: #f9fafb; padding: 20px 30px; text-align: center; border-top: 1px solid #e5e7eb;">
               <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-                © ${new Date().getFullYear()} NECTFY. Tous droits réservés.
+                © ${new Date().getFullYear()} NECTFORMA. Tous droits réservés.
               </p>
             </div>
           </div>

@@ -151,16 +151,16 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send branded email via Resend
     const emailResponse = await resend.emails.send({
-      from: "NECTFY <onboarding@resend.dev>",
+      from: "NECTFORMA <noreply@nectforma.com>",
       to: [email],
-      subject: "Réinitialisez votre mot de passe NECTFY",
+      subject: "Réinitialisez votre mot de passe NECTFORMA",
       html: `
         <!DOCTYPE html>
         <html lang="fr">
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Réinitialisation de mot de passe - NECTFY</title>
+          <title>Réinitialisation de mot de passe - NECTFORMA</title>
         </head>
         <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
           <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="min-height: 100vh;">
@@ -174,14 +174,14 @@ const handler = async (req: Request): Promise<Response> => {
                       <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
                         <tr>
                           <td style="background-color: #ffffff; width: 56px; height: 56px; border-radius: 12px; text-align: center; vertical-align: middle;">
-                            <span style="color: #8B5CF6; font-size: 28px; font-weight: bold; line-height: 56px;">N</span>
+                            <span style="color: #8B5CF6; font-size: 20px; font-weight: bold; line-height: 56px;">NF</span>
                           </td>
                           <td style="padding-left: 16px;">
-                            <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: bold; letter-spacing: -0.5px;">NECTFY</h1>
+                            <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: bold; letter-spacing: -0.5px;">NECTFORMA</h1>
                           </td>
                         </tr>
                       </table>
-                      <p style="margin: 16px 0 0; color: rgba(255, 255, 255, 0.9); font-size: 16px;">Plateforme de gestion éducative</p>
+                      <p style="margin: 16px 0 0; color: rgba(255, 255, 255, 0.9); font-size: 16px;">Plateforme de gestion de formation</p>
                     </td>
                   </tr>
                   
@@ -197,7 +197,7 @@ const handler = async (req: Request): Promise<Response> => {
                       </p>
                       
                       <p style="margin: 0 0 24px; color: #4b5563; font-size: 16px; line-height: 1.6;">
-                        Vous avez demandé à réinitialiser le mot de passe de votre compte NECTFY. Cliquez sur le bouton ci-dessous pour créer un nouveau mot de passe :
+                        Vous avez demandé à réinitialiser le mot de passe de votre compte NECTFORMA. Cliquez sur le bouton ci-dessous pour créer un nouveau mot de passe :
                       </p>
                       
                       <!-- CTA Button -->
@@ -231,7 +231,7 @@ const handler = async (req: Request): Promise<Response> => {
                   <tr>
                     <td style="background-color: #f9fafb; padding: 32px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
                       <p style="margin: 0 0 8px; color: #6b7280; font-size: 14px;">
-                        © ${new Date().getFullYear()} NECTFY. Tous droits réservés.
+                        © ${new Date().getFullYear()} NECTFORMA. Tous droits réservés.
                       </p>
                       <p style="margin: 0; color: #9ca3af; font-size: 12px;">
                         Cet email a été envoyé à ${email}
