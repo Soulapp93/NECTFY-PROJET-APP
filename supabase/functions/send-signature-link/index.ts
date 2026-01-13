@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { Resend } from "https://esm.sh/resend@2.0.0";
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -47,7 +50,7 @@ serve(async (req) => {
     }
 
     // Construire le lien de signature
-    const appUrl = Deno.env.get("APP_URL") || "https://nectforma.com";
+    const appUrl = Deno.env.get("APP_URL") || "https://nectforma.lovable.app";
     const signatureLink = `${appUrl}/emargement/signer/${sheet.signature_link_token}`;
 
     const notificationTitle = "Lien d'émargement - " + sheet.formations.title;
@@ -94,14 +97,9 @@ serve(async (req) => {
 
     if (notifError) {
       console.error("Error creating notifications:", notifError);
-      return new Response(
-        JSON.stringify({ error: "Failed to send notifications" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
     }
 
     // Créer un message dans la messagerie
-    // Récupérer un admin de l'établissement pour envoyer le message
     const { data: adminUser } = await supabase
       .from("users")
       .select("id")
@@ -110,11 +108,9 @@ serve(async (req) => {
       .limit(1)
       .single();
 
-    // Fallback: utiliser l'instructeur comme expéditeur si pas d'admin trouvé
     const senderId = adminUser?.id || sheet.instructor_id;
 
     if (senderId) {
-      // Message pour étudiants (sans le lien direct - le lien est dans les métadonnées/notifications)
       const messageContent = `Bonjour,\n\nUn lien d'émargement est disponible pour la session suivante :\n\n📚 Formation : ${sheet.formations.title}\n📅 Date : ${sessionDate}\n🕐 Horaire : ${sheet.start_time.substring(0, 5)} - ${sheet.end_time.substring(0, 5)}\n\nVeuillez vous connecter à votre espace NECTFORMA pour signer votre présence.\n\n⏰ Vous avez 24 heures pour signer.\n\nCordialement,\nL'administration`;
       
       const { data: message, error: messageError } = await supabase
@@ -130,7 +126,6 @@ serve(async (req) => {
         .single();
 
       if (!messageError && message) {
-        // Créer les destinataires du message (étudiants + formateur)
         const allRecipientIds = [...studentIds];
         if (sheet.instructor_id && sheet.instructor_id !== senderId) {
           allRecipientIds.push(sheet.instructor_id);
@@ -144,11 +139,10 @@ serve(async (req) => {
 
         await supabase.from("message_recipients").insert(recipients);
       }
-    } else {
-      console.warn("No sender found for message, skipping message creation");
     }
 
-    // Récupérer les emails pour l'envoi d'email Gmail
+    // ENVOI DES EMAILS VIA RESEND
+    // Récupérer les emails des étudiants et formateur
     const allUserIds = [...studentIds];
     if (sheet.instructor_id) {
       allUserIds.push(sheet.instructor_id);
@@ -156,37 +150,185 @@ serve(async (req) => {
 
     const { data: users, error: usersError } = await supabase
       .from("users")
-      .select("email")
+      .select("id, email, first_name, last_name")
       .in("id", allUserIds);
 
+    const emailResults: { email: string; success: boolean; error?: string }[] = [];
+
     if (!usersError && users && users.length > 0) {
-      const userEmails = users.map(u => u.email);
-      
-      // Appeler l'edge function pour envoyer les emails
-      // NOTE: L'email ne contient PAS le lien direct, seulement une notification
-      try {
-        await supabase.functions.invoke("send-notification-email", {
-          body: {
-            userEmails,
-            title: notificationTitle,
-            message: "Un lien d'émargement est disponible pour une session de formation. Connectez-vous à votre espace NECTFORMA pour signer votre présence.",
-            type: "attendance"
+      console.log(`Sending signature link emails to ${users.length} users via Resend`);
+
+      for (const user of users) {
+        try {
+          const isInstructor = user.id === sheet.instructor_id;
+          const firstName = user.first_name || 'Utilisateur';
+          
+          const emailResponse = await resend.emails.send({
+            from: "NECTFORMA <noreply@nectforma.com>",
+            to: [user.email],
+            subject: `NECTFORMA - ${notificationTitle}`,
+            html: `
+              <!DOCTYPE html>
+              <html lang="fr">
+              <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Lien d'émargement - NECTFORMA</title>
+              </head>
+              <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="min-height: 100vh;">
+                  <tr>
+                    <td align="center" style="padding: 40px 20px;">
+                      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); overflow: hidden;">
+                        
+                        <!-- Header with gradient -->
+                        <tr>
+                          <td style="background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); padding: 40px 40px 30px; text-align: center;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                              <tr>
+                                <td style="background-color: #ffffff; width: 56px; height: 56px; border-radius: 12px; text-align: center; vertical-align: middle;">
+                                  <span style="color: #8B5CF6; font-size: 20px; font-weight: bold; line-height: 56px;">NF</span>
+                                </td>
+                                <td style="padding-left: 16px;">
+                                  <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: bold; letter-spacing: -0.5px;">NECTFORMA</h1>
+                                </td>
+                              </tr>
+                            </table>
+                            <p style="margin: 16px 0 0; color: rgba(255, 255, 255, 0.9); font-size: 16px;">Plateforme de gestion de formation</p>
+                          </td>
+                        </tr>
+                        
+                        <!-- Content -->
+                        <tr>
+                          <td style="padding: 40px;">
+                            <h2 style="margin: 0 0 24px; color: #1f2937; font-size: 24px; font-weight: 600; text-align: center;">
+                              📝 Lien d'émargement disponible
+                            </h2>
+                            
+                            <p style="margin: 0 0 16px; color: #4b5563; font-size: 16px; line-height: 1.6;">
+                              Bonjour <strong>${firstName}</strong>,
+                            </p>
+                            
+                            <p style="margin: 0 0 24px; color: #4b5563; font-size: 16px; line-height: 1.6;">
+                              ${isInstructor 
+                                ? `Un lien d'émargement a été généré pour votre session. Les étudiants ont été notifiés.`
+                                : `Un lien d'émargement est disponible pour votre session de formation.`
+                              }
+                            </p>
+                            
+                            <!-- Session details -->
+                            <div style="background-color: #f9fafb; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                  <td style="padding: 8px 0;">
+                                    <span style="color: #6b7280; font-size: 14px;">📚 Formation :</span>
+                                    <strong style="color: #1f2937; font-size: 14px; margin-left: 8px;">${sheet.formations.title}</strong>
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td style="padding: 8px 0;">
+                                    <span style="color: #6b7280; font-size: 14px;">📅 Date :</span>
+                                    <strong style="color: #1f2937; font-size: 14px; margin-left: 8px;">${sessionDate}</strong>
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td style="padding: 8px 0;">
+                                    <span style="color: #6b7280; font-size: 14px;">🕐 Horaire :</span>
+                                    <strong style="color: #1f2937; font-size: 14px; margin-left: 8px;">${sheet.start_time.substring(0, 5)} - ${sheet.end_time.substring(0, 5)}</strong>
+                                  </td>
+                                </tr>
+                                ${sheet.room ? `
+                                <tr>
+                                  <td style="padding: 8px 0;">
+                                    <span style="color: #6b7280; font-size: 14px;">📍 Salle :</span>
+                                    <strong style="color: #1f2937; font-size: 14px; margin-left: 8px;">${sheet.room}</strong>
+                                  </td>
+                                </tr>
+                                ` : ''}
+                              </table>
+                            </div>
+                            
+                            <!-- CTA Button -->
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                              <tr>
+                                <td align="center" style="padding: 16px 0;">
+                                  <a href="${signatureLink}" 
+                                     style="display: inline-block; background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; padding: 16px 40px; border-radius: 12px; box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.4);">
+                                    ✍️ Signer ma présence
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                            
+                            <!-- Warning -->
+                            <div style="margin-top: 24px; padding: 16px; background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border-radius: 8px; border-left: 4px solid #F59E0B;">
+                              <p style="margin: 0; color: #92400E; font-size: 14px;">
+                                <strong>⏰ Important :</strong> Ce lien expire dans 24 heures. Pensez à signer votre présence avant l'expiration.
+                              </p>
+                            </div>
+                            
+                            <div style="margin-top: 24px; padding: 16px; background-color: #f9fafb; border-radius: 8px;">
+                              <p style="margin: 0; color: #6b7280; font-size: 13px; line-height: 1.5;">
+                                Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur :
+                              </p>
+                              <p style="margin: 8px 0 0; word-break: break-all;">
+                                <a href="${signatureLink}" style="color: #8B5CF6; font-size: 13px; text-decoration: underline;">${signatureLink}</a>
+                              </p>
+                            </div>
+                          </td>
+                        </tr>
+                        
+                        <!-- Footer -->
+                        <tr>
+                          <td style="background-color: #f9fafb; padding: 32px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0 0 8px; color: #6b7280; font-size: 14px;">
+                              © ${new Date().getFullYear()} NECTFORMA. Tous droits réservés.
+                            </p>
+                            <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+                              Cet email a été envoyé à ${user.email}
+                            </p>
+                          </td>
+                        </tr>
+                        
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </body>
+              </html>
+            `,
+          });
+
+          if (emailResponse.error) {
+            console.error(`Resend error for ${user.email}:`, emailResponse.error);
+            emailResults.push({ email: user.email, success: false, error: emailResponse.error.message });
+          } else {
+            console.log(`Email sent successfully to ${user.email}:`, emailResponse.data?.id);
+            emailResults.push({ email: user.email, success: true });
           }
-        });
-        console.log(`Gmail notifications sent to ${userEmails.length} users (students + instructor)`);
-      } catch (emailError) {
-        console.error("Failed to send Gmail notifications:", emailError);
-        // Ne pas bloquer si l'envoi d'email échoue
+        } catch (emailError: any) {
+          console.error(`Failed to send email to ${user.email}:`, emailError);
+          emailResults.push({ email: user.email, success: false, error: emailError.message });
+        }
       }
     }
 
+    const successCount = emailResults.filter(r => r.success).length;
+    const failCount = emailResults.filter(r => !r.success).length;
+
     console.log(`Sent signature link to ${studentIds.length} students and instructor for attendance sheet ${attendanceSheetId}`);
+    console.log(`Email results: ${successCount} success, ${failCount} failed`);
 
     return new Response(
       JSON.stringify({
         success: true,
         message: `Notifications sent to ${studentIds.length} students${sheet.instructor_id ? ' and instructor' : ''}`,
-        link: signatureLink
+        link: signatureLink,
+        emailResults: {
+          sent: successCount,
+          failed: failCount,
+          details: emailResults
+        }
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
