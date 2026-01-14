@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Resend } from "https://esm.sh/resend@2.0.0";
+import { Resend } from "npm:resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -150,8 +150,13 @@ const handler = async (req: Request): Promise<Response> => {
     const firstName = publicUser.first_name || 'Utilisateur';
 
     // Send branded email via Resend
+    // Use verified Resend domain - fallback to resend.dev for testing if custom domain not verified
+    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "NECTFORMA <onboarding@resend.dev>";
+    
+    console.log(`Sending password reset email to ${email} from ${fromEmail}`);
+    
     const emailResponse = await resend.emails.send({
-      from: "NECTFORMA <noreply@nectforma.com>",
+      from: fromEmail,
       to: [email],
       subject: "Réinitialisez votre mot de passe NECTFORMA",
       html: `

@@ -1,6 +1,5 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "https://esm.sh/resend@2.0.0";
+import { Resend } from "npm:resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -29,8 +28,13 @@ const handler = async (req: Request): Promise<Response> => {
     // URL d'activation (vous devrez adapter selon votre domaine)
     const activationUrl = `${req.headers.get('origin') || 'http://localhost:5173'}/activation?token=${token}`;
 
+    // Use verified Resend domain - fallback to resend.dev for testing if custom domain not verified
+    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "NECTFORMA <onboarding@resend.dev>";
+    
+    console.log(`Sending activation email to ${email} from ${fromEmail}`);
+    
     const emailResponse = await resend.emails.send({
-      from: "NECTFORMA <noreply@nectforma.com>",
+      from: fromEmail,
       to: [email],
       subject: "Activez votre compte NECTFORMA",
       html: `

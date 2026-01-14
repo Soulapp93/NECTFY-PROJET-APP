@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Resend } from "https://esm.sh/resend@2.0.0";
+import { Resend } from "npm:resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -141,8 +141,13 @@ const handler = async (req: Request): Promise<Response> => {
     const invitationLink = `${baseUrl}/accept-invitation?token=${token}`;
 
     // Send invitation email
+    // Use verified Resend domain - fallback to resend.dev for testing if custom domain not verified
+    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "NECTFORMA <onboarding@resend.dev>";
+    
+    console.log(`Sending invitation email to ${email} from ${fromEmail}`);
+    
     const emailResponse = await resend.emails.send({
-      from: "NECTFORMA <noreply@nectforma.com>",
+      from: fromEmail,
       to: [email],
       subject: `Invitation à rejoindre ${establishment.name} sur NECTFORMA`,
       html: `
@@ -204,12 +209,26 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    // Check for Resend errors
+    if (emailResponse.error) {
+      console.error("Resend API error:", emailResponse.error);
+      return new Response(
+        JSON.stringify({ 
+          error: "Erreur lors de l'envoi de l'email",
+          details: emailResponse.error.message,
+          invitation_id: invitation.id
+        }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    console.log("Invitation email sent successfully:", emailResponse);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         invitation_id: invitation.id,
+        email_id: emailResponse.id,
         message: "Invitation envoyée avec succès" 
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }

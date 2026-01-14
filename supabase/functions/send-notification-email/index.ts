@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "https://esm.sh/resend@2.0.0";
+import { Resend } from "npm:resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -35,11 +35,16 @@ const handler = async (req: Request): Promise<Response> => {
     // Get application URL from environment or use default
     const appUrl = Deno.env.get("APP_URL") || "https://nectforma.com";
 
+    // Use verified Resend domain - fallback to resend.dev for testing if custom domain not verified
+    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "NECTFORMA <onboarding@resend.dev>";
+    
     // Envoyer un email à chaque utilisateur
     const emailPromises = userEmails.map(async (email) => {
       try {
+        console.log(`Sending notification email to ${email} from ${fromEmail}`);
+        
         const emailResponse = await resend.emails.send({
-          from: "NECTFORMA <noreply@nectforma.com>",
+          from: fromEmail,
           to: [email],
           subject: `NECTFORMA - ${title}`,
           html: `
