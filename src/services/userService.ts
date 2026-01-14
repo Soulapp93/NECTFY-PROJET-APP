@@ -119,14 +119,60 @@ export const userService = {
     // Get the current user's establishment_id
     const establishmentId = await getCurrentUserEstablishmentId();
 
+    const normalizedEmail = userData.email.trim().toLowerCase();
+
+    // 1) Idempotency: if user already exists in this establishment, reuse it
+    const { data: existingUser, error: existingError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('establishment_id', establishmentId)
+      .eq('email', normalizedEmail)
+      .maybeSingle();
+
+    // Ignore "no rows"; surface other errors
+    if (existingError && (existingError as any).code !== 'PGRST116') {
+      throw existingError;
+    }
+
+    if (existingUser) {
+      // Ensure formations are assigned (best-effort)
+      if (formationIds.length > 0) {
+        const assignments = formationIds.map((formationId) => ({
+          user_id: existingUser.id,
+          formation_id: formationId,
+        }));
+
+        // upsert avoids failing on duplicates if a unique constraint exists
+        const { error: assignmentError } = await supabase
+          .from('user_formation_assignments')
+          .upsert(assignments, { onConflict: 'user_id,formation_id', ignoreDuplicates: true } as any);
+
+        if (assignmentError) {
+          // Do not block the flow for formation assignment issues in this path
+          console.error('Erreur lors de l\'assignation des formations (utilisateur existant):', assignmentError);
+        }
+      }
+
+      // Re-send activation link if needed (best-effort)
+      if (!existingUser.is_activated) {
+        await sendActivationEmail(existingUser as User, establishmentId);
+      }
+
+      return existingUser as User;
+    }
+
+    // 2) Create new user
     const { data, error } = await supabase
       .from('users')
-      .insert([{
-        ...userData,
-        establishment_id: establishmentId,
-        is_activated: false,
-        status: 'En attente'
-      }])
+      .insert([
+        {
+          ...userData,
+          email: normalizedEmail,
+          establishment_id: establishmentId,
+          is_activated: false,
+          status: 'En attente',
+        },
+      ])
       .select()
       .single();
 
