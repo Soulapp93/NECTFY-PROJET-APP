@@ -1,6 +1,5 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { activationService } from './activationService';
 
 export interface User {
   id: string;
@@ -48,6 +47,34 @@ async function getCurrentUserEstablishmentId(): Promise<string> {
   return userData.establishment_id;
 }
 
+// Helper function to send activation email
+async function sendActivationEmail(user: User, establishmentId: string): Promise<void> {
+  try {
+    console.log(`Sending activation email to ${user.email}...`);
+    
+    const { data, error } = await supabase.functions.invoke('send-user-activation', {
+      body: {
+        userId: user.id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        role: user.role,
+        establishmentId: establishmentId
+      }
+    });
+
+    if (error) {
+      console.error('Error sending activation email:', error);
+      throw error;
+    }
+
+    console.log('Activation email sent successfully:', data);
+  } catch (error) {
+    console.error('Failed to send activation email:', error);
+    // Don't throw - we don't want to fail user creation if email fails
+  }
+}
+
 export const userService = {
   async getUsers(): Promise<User[]> {
     // RLS will automatically filter by establishment
@@ -79,7 +106,9 @@ export const userService = {
       .from('users')
       .insert([{
         ...userData,
-        establishment_id: establishmentId
+        establishment_id: establishmentId,
+        is_activated: false,
+        status: 'En attente'
       }])
       .select()
       .single();
@@ -140,22 +169,13 @@ export const userService = {
         if (assignmentError) {
           console.error('Erreur lors de l\'assignation tuteur-étudiant:', assignmentError);
         }
-
-        // Envoyer l'email d'activation au tuteur
-        try {
-          await activationService.sendActivationEmail(
-            tutorData.email,
-            'tutor-activation-token',
-            tutorData.first_name,
-            tutorData.last_name
-          );
-        } catch (emailError) {
-          console.error('Erreur lors de l\'envoi de l\'email au tuteur:', emailError);
-        }
       } catch (tutorError) {
         console.error('Erreur lors de la création du tuteur:', tutorError);
       }
     }
+
+    // Send activation email automatically
+    await sendActivationEmail(data, establishmentId);
 
     return data;
   },
@@ -248,6 +268,8 @@ export const userService = {
     const usersWithEstablishment = usersToInsert.map((user) => ({
       ...user,
       establishment_id: establishmentId,
+      is_activated: false,
+      status: 'En attente' as const
     }));
 
     const { data, error } = await supabase
@@ -256,6 +278,25 @@ export const userService = {
       .select();
 
     if (error) throw error;
+
+    // Send activation emails to all created users
+    if (data && data.length > 0) {
+      console.log(`Sending activation emails to ${data.length} users...`);
+      
+      // Send emails in parallel but don't block on failures
+      const emailPromises = data.map(user => sendActivationEmail(user, establishmentId));
+      await Promise.allSettled(emailPromises);
+      
+      console.log('Activation emails sent for bulk import');
+    }
+
     return data || [];
+  },
+
+  // Resend activation email for a specific user
+  async resendActivationEmail(userId: string): Promise<void> {
+    const user = await this.getUserById(userId);
+    const establishmentId = await getCurrentUserEstablishmentId();
+    await sendActivationEmail(user, establishmentId);
   }
 };

@@ -37,6 +37,7 @@ import PourquoiNous from './pages/PourquoiNous';
 import CGU from './pages/CGU';
 import PolitiqueConfidentialite from './pages/PolitiqueConfidentialite';
 import ResetPassword from './pages/ResetPassword';
+import Activation from './pages/Activation';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -57,7 +58,7 @@ const AppContent = () => {
   const isCreateEstablishmentPage = location.pathname === '/create-establishment' || location.pathname === '/creer-etablissement';
   const isAcceptInvitationPage = location.pathname === '/accept-invitation';
   const isResetPasswordPage = location.pathname === '/reset-password';
-  
+  const isActivationPage = location.pathname === '/activation';
 
   if (isAuthPage) {
     return (
@@ -95,6 +96,16 @@ const AppContent = () => {
       <div className="min-h-screen w-full">
         <Routes>
           <Route path="/reset-password" element={<ResetPassword />} />
+        </Routes>
+      </div>
+    );
+  }
+
+  if (isActivationPage) {
+    return (
+      <div className="min-h-screen w-full">
+        <Routes>
+          <Route path="/activation" element={<Activation />} />
         </Routes>
       </div>
     );
