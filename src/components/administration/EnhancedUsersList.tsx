@@ -247,6 +247,43 @@ const EnhancedUsersList: React.FC = () => {
 
       const redirectUrl = `${window.location.origin}/reset-password`;
 
+      const parseNotActivatedPayload = async (invokeError: any, invokeData: any) => {
+        // 1) Sometimes the function returns 200 with an "action" in data
+        if (invokeData?.action === 'resend_invitation' || invokeData?.error === 'Compte non activé') {
+          return invokeData;
+        }
+
+        const ctx = invokeError?.context;
+        if (!ctx) return null;
+
+        // 2) supabase-js often puts the response JSON into context.body (string)
+        const bodyRaw = (ctx as any)?.body;
+        if (typeof bodyRaw === 'string') {
+          try {
+            return JSON.parse(bodyRaw);
+          } catch {
+            // ignore
+          }
+        }
+
+        // 3) Sometimes context contains a Response
+        const resp = (ctx as any)?.response;
+        if (resp && typeof resp.json === 'function') {
+          try {
+            return await resp.clone().json();
+          } catch {
+            // ignore
+          }
+        }
+
+        // 4) As a last resort, if status is 409 we assume it's "not activated"
+        if ((ctx as any)?.status === 409) {
+          return { action: 'resend_invitation' };
+        }
+
+        return null;
+      };
+
       const response = await supabase.functions.invoke('send-password-reset', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -258,23 +295,8 @@ const EnhancedUsersList: React.FC = () => {
       const error = response.error;
 
       // Handle 409 - account not activated, need to resend activation
-      // Supabase invoke puts the non-2xx status in `error`, while the JSON body may be in `error.context`
-      const ctxRaw = (error as any)?.context;
-      const ctx =
-        typeof ctxRaw === 'string'
-          ? (() => {
-              try {
-                return JSON.parse(ctxRaw);
-              } catch {
-                return null;
-              }
-            })()
-          : (typeof ctxRaw === 'object' ? ctxRaw : null);
-
-      const isNotActivated =
-        data?.action === 'resend_invitation' ||
-        data?.error === 'Compte non activé' ||
-        ctx?.action === 'resend_invitation';
+      const notActivatedPayload = await parseNotActivatedPayload(error, data);
+      const isNotActivated = notActivatedPayload?.action === 'resend_invitation';
 
       if (isNotActivated) {
         await sendActivationLink(email, session.access_token);
@@ -289,21 +311,23 @@ const EnhancedUsersList: React.FC = () => {
       toast.success(`Lien de réinitialisation NECTFY envoyé à ${email}`);
     } catch (error: any) {
       console.error("Erreur lors de l'envoi du lien:", error);
-      
-      // Also check in catch block for 409/non-activated scenario
-      const ctxRaw = (error as any)?.context;
-      const ctx =
-        typeof ctxRaw === 'string'
-          ? (() => {
-              try {
-                return JSON.parse(ctxRaw);
-              } catch {
-                return null;
-              }
-            })()
-          : (typeof ctxRaw === 'object' ? ctxRaw : null);
 
-      if (ctx?.action === 'resend_invitation') {
+      // Also check in catch block for 409/non-activated scenario
+      const notActivatedPayload = await (async () => {
+        const ctx = (error as any)?.context;
+        const bodyRaw = (ctx as any)?.body;
+        if (typeof bodyRaw === 'string') {
+          try {
+            return JSON.parse(bodyRaw);
+          } catch {
+            return null;
+          }
+        }
+        if ((ctx as any)?.status === 409) return { action: 'resend_invitation' };
+        return null;
+      })();
+
+      if (notActivatedPayload?.action === 'resend_invitation') {
         const {
           data: { session },
         } = await supabase.auth.getSession();
@@ -313,7 +337,7 @@ const EnhancedUsersList: React.FC = () => {
           return;
         }
       }
-      
+
       toast.error(error?.message || "Erreur lors de l'envoi du lien de réinitialisation");
     }
   };
