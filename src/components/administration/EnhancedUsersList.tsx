@@ -191,28 +191,40 @@ const EnhancedUsersList: React.FC = () => {
 
   // Helper function to send activation link
   const sendActivationLink = async (email: string, accessToken: string) => {
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (user && user.id) {
-      toast.info("Ce compte n'est pas encore activé. Envoi du lien d'activation...");
-      try {
-        const activationResponse = await supabase.functions.invoke('send-user-activation', {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: { userId: user.id },
-        });
-        
-        if (activationResponse.error || activationResponse.data?.error) {
-          throw new Error(activationResponse.data?.error || activationResponse.error?.message);
-        }
-        
-        toast.success(`Lien d'activation envoyé à ${email}`);
-      } catch (activationError: any) {
-        console.error("Erreur lors de l'envoi du lien d'activation:", activationError);
-        toast.error(activationError?.message || "Impossible d'envoyer le lien d'activation. Veuillez réessayer.");
-      }
-    } else {
+    const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+
+    if (!user?.id) {
       toast.error("Utilisateur non trouvé");
+      return;
+    }
+
+    toast.info("Ce compte n'est pas encore activé. Envoi du lien d'activation...");
+
+    try {
+      const activationResponse = await supabase.functions.invoke('send-user-activation', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: {
+          userId: user.id,
+          email: user.email,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          role: user.role,
+          establishmentId: user.establishment_id,
+        },
+      });
+
+      if (activationResponse.error || activationResponse.data?.error) {
+        throw new Error(activationResponse.data?.error || activationResponse.error?.message);
+      }
+
+      toast.success(`Lien d'activation envoyé à ${email}`);
+    } catch (activationError: any) {
+      console.error("Erreur lors de l'envoi du lien d'activation:", activationError);
+      toast.error(
+        activationError?.message || "Impossible d'envoyer le lien d'activation. Veuillez réessayer."
+      );
     }
   };
 
@@ -246,11 +258,23 @@ const EnhancedUsersList: React.FC = () => {
       const error = response.error;
 
       // Handle 409 - account not activated, need to resend activation
-      // Check both data and error for activation required signal
-      const isNotActivated = 
-        data?.action === 'resend_invitation' || 
+      // Supabase invoke puts the non-2xx status in `error`, while the JSON body may be in `error.context`
+      const ctxRaw = (error as any)?.context;
+      const ctx =
+        typeof ctxRaw === 'string'
+          ? (() => {
+              try {
+                return JSON.parse(ctxRaw);
+              } catch {
+                return null;
+              }
+            })()
+          : (typeof ctxRaw === 'object' ? ctxRaw : null);
+
+      const isNotActivated =
+        data?.action === 'resend_invitation' ||
         data?.error === 'Compte non activé' ||
-        error?.message?.includes('non-2xx');
+        ctx?.action === 'resend_invitation';
 
       if (isNotActivated) {
         await sendActivationLink(email, session.access_token);
@@ -267,8 +291,23 @@ const EnhancedUsersList: React.FC = () => {
       console.error("Erreur lors de l'envoi du lien:", error);
       
       // Also check in catch block for 409/non-activated scenario
-      if (error?.message?.includes('non-2xx') || error?.message?.includes('409')) {
-        const { data: { session } } = await supabase.auth.getSession();
+      const ctxRaw = (error as any)?.context;
+      const ctx =
+        typeof ctxRaw === 'string'
+          ? (() => {
+              try {
+                return JSON.parse(ctxRaw);
+              } catch {
+                return null;
+              }
+            })()
+          : (typeof ctxRaw === 'object' ? ctxRaw : null);
+
+      if (ctx?.action === 'resend_invitation') {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
         if (session?.access_token) {
           await sendActivationLink(email, session.access_token);
           return;
