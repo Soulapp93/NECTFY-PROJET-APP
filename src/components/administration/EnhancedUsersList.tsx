@@ -219,8 +219,15 @@ const EnhancedUsersList: React.FC = () => {
       const error = response.error;
 
       // Handle 409 - account not activated, need to resend activation
-      // The edge function returns action: 'resend_invitation' in the response body
-      if (data?.action === 'resend_invitation' || data?.error === 'Compte non activé') {
+      // When edge function returns 409, the response body is in error.context or we check error.message
+      const isNotActivated = 
+        data?.action === 'resend_invitation' || 
+        data?.error === 'Compte non activé' ||
+        error?.message?.includes('409') ||
+        error?.message?.includes('Compte non activé') ||
+        (typeof error?.context === 'object' && error?.context?.action === 'resend_invitation');
+
+      if (isNotActivated) {
         const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
         if (user && user.id) {
           toast.info("Ce compte n'est pas encore activé. Envoi du lien d'activation...");
