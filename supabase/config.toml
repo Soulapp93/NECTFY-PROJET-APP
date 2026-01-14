@@ -23,3 +23,15 @@ verify_jwt = true
 
 [functions.send-bulk-email]
 verify_jwt = true
+
+[functions.send-user-activation]
+verify_jwt = true
+
+[functions.send-activation-email]
+verify_jwt = true
+
+[functions.activate-user-account]
+verify_jwt = false
+
+[functions.send-notification-email]
+verify_jwt = true
