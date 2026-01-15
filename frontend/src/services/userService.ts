@@ -59,7 +59,18 @@ async function sendInvitation(
   try {
     console.log(`Création invitation pour ${email}...`);
     
+    // Get session for JWT authentication
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.access_token) {
+      console.error('Session non trouvée pour l\'envoi d\'invitation');
+      return { success: false, error: 'Session non trouvée' };
+    }
+    
     const { data, error } = await supabase.functions.invoke('send-invitation', {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
       body: {
         email,
         first_name: firstName,
