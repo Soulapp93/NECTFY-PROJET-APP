@@ -92,7 +92,7 @@ serve(async (req) => {
     }
 
     // Resend invitation via Supabase Auth
-    const baseUrl = redirect_url || `${req.headers.get("origin") || "https://nectforme.lovable.app"}`;
+    const baseUrl = redirect_url || `${req.headers.get("origin") || "https://nectforma.com"}`;
     
     const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
       redirectTo: `${baseUrl}/activation`,
