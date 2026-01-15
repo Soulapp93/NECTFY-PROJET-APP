@@ -51,7 +51,7 @@ serve(async (req) => {
     }
 
     // Construire le lien de signature
-    const appUrl = Deno.env.get("APP_URL") || "https://nectforma.lovable.app";
+    const appUrl = Deno.env.get("APP_URL") || "https://nectforma.com";
     const signatureLink = `${appUrl}/emargement/signer/${sheet.signature_link_token}`;
 
     const notificationTitle = "Lien d'émargement - " + sheet.formations.title;
