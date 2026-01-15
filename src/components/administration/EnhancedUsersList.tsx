@@ -284,11 +284,11 @@ const EnhancedUsersList: React.FC = () => {
         return null;
       };
 
-      // Use new native reset-password function
-      const response = await supabase.functions.invoke('reset-password-native', {
+      // Use Resend-based reset-password function
+      const response = await supabase.functions.invoke('send-password-reset', {
         body: { 
           email, 
-          redirect_url: window.location.origin 
+          redirectUrl: `${window.location.origin}/reset-password`
         },
       });
 
