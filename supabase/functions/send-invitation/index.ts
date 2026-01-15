@@ -1,8 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { Resend } from "npm:resend@2.0.0";
 
-// TODO: Amazon SES integration will be added here
-// import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -36,6 +36,7 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "noreply@nectforma.com";
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
@@ -142,26 +143,66 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`[send-invitation] Invitation created for ${email}`);
     console.log(`[send-invitation] Invitation link: ${invitationLink}`);
-    
-    // TODO: Amazon SES email sending will be implemented here
-    // For now, email sending is disabled - will be replaced with Amazon SES
-    console.log(`[send-invitation] ⚠️ Email sending disabled - Amazon SES integration pending`);
-    console.log(`[send-invitation] Email template data:`, {
-      to: email,
+
+    // Send email via Resend
+    const firstName = first_name || 'Utilisateur';
+    const roleLabel = getRoleLabel(role);
+
+    const emailResponse = await resend.emails.send({
+      from: `NECTFORMA <${fromEmail}>`,
+      to: [email],
       subject: `Invitation à rejoindre ${establishment.name} sur NECTFORMA`,
-      firstName: first_name || 'Utilisateur',
-      establishmentName: establishment.name,
-      role: getRoleLabel(role),
-      invitationLink
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 28px;">NECTFORMA</h1>
+            <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">Plateforme de gestion de formation</p>
+          </div>
+          
+          <div style="background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; border-top: none;">
+            <h2 style="color: #333; margin-top: 0;">Bonjour ${firstName},</h2>
+            
+            <p>Vous êtes invité(e) à rejoindre <strong>${establishment.name}</strong> sur NECTFORMA en tant que <strong>${roleLabel}</strong>.</p>
+            
+            <p>Pour créer votre compte et accéder à votre espace, cliquez sur le bouton ci-dessous :</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${invitationLink}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 16px;">
+                Accepter l'invitation
+              </a>
+            </div>
+            
+            <p style="color: #666; font-size: 14px;">Ce lien est valable pendant <strong>48 heures</strong>.</p>
+            
+            <p style="color: #666; font-size: 14px;">Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :</p>
+            <p style="background: #f5f5f5; padding: 10px; border-radius: 5px; word-break: break-all; font-size: 12px;">${invitationLink}</p>
+          </div>
+          
+          <div style="background: #f8f9fa; padding: 20px; text-align: center; border-radius: 0 0 10px 10px; border: 1px solid #e0e0e0; border-top: none;">
+            <p style="color: #666; margin: 0; font-size: 12px;">
+              © ${new Date().getFullYear()} NECTFORMA. Tous droits réservés.
+            </p>
+          </div>
+        </body>
+        </html>
+      `,
     });
+
+    console.log("[send-invitation] Email sent successfully:", emailResponse);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         invitation_id: invitation.id,
         invitation_link: invitationLink,
-        message: "Invitation créée (email désactivé - en attente d'Amazon SES)",
-        email_pending: true
+        message: "Invitation envoyée avec succès",
+        email_sent: true
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );

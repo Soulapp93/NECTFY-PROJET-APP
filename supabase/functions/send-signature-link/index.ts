@@ -1,8 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { Resend } from "npm:resend@2.0.0";
 
-// TODO: Amazon SES integration will be added here
-// import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,6 +16,7 @@ serve(async (req) => {
   }
 
   try {
+    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "noreply@nectforma.com";
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -141,30 +142,143 @@ serve(async (req) => {
       }
     }
 
-    // TODO: Amazon SES email sending will be implemented here
-    // For now, email sending is disabled - will be replaced with Amazon SES
-    console.log(`[send-signature-link] ⚠️ Email sending disabled - Amazon SES integration pending`);
-    console.log(`[send-signature-link] Email template data:`, {
-      recipients: studentIds.length,
-      subject: `NECTFORMA - ${notificationTitle}`,
-      signatureLink,
-      sessionDate
-    });
+    // Get student emails for sending
+    const { data: students } = await supabase
+      .from("users")
+      .select("id, email, first_name, last_name")
+      .in("id", studentIds);
+
+    const emailResults = {
+      sent: 0,
+      failed: 0,
+      details: [] as any[]
+    };
+
+    // Send emails to students
+    if (students && students.length > 0) {
+      for (const student of students) {
+        try {
+          await resend.emails.send({
+            from: `NECTFORMA <${fromEmail}>`,
+            to: [student.email],
+            subject: `NECTFORMA - ${notificationTitle}`,
+            html: `
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              </head>
+              <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                  <h1 style="color: white; margin: 0; font-size: 28px;">NECTFORMA</h1>
+                  <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">Émargement</p>
+                </div>
+                
+                <div style="background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; border-top: none;">
+                  <h2 style="color: #333; margin-top: 0;">Bonjour ${student.first_name},</h2>
+                  
+                  <p>Un lien d'émargement est disponible pour la session suivante :</p>
+                  
+                  <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <p style="margin: 5px 0;"><strong>📚 Formation :</strong> ${sheet.formations.title}</p>
+                    <p style="margin: 5px 0;"><strong>📅 Date :</strong> ${sessionDate}</p>
+                    <p style="margin: 5px 0;"><strong>🕐 Horaire :</strong> ${sheet.start_time.substring(0, 5)} - ${sheet.end_time.substring(0, 5)}</p>
+                  </div>
+                  
+                  <div style="text-align: center; margin: 30px 0;">
+                    <a href="${signatureLink}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 16px;">
+                      Signer ma présence
+                    </a>
+                  </div>
+                  
+                  <p style="color: #e74c3c; font-size: 14px; text-align: center;">⏰ Vous avez 24 heures pour signer.</p>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 20px; text-align: center; border-radius: 0 0 10px 10px; border: 1px solid #e0e0e0; border-top: none;">
+                  <p style="color: #666; margin: 0; font-size: 12px;">
+                    © ${new Date().getFullYear()} NECTFORMA. Tous droits réservés.
+                  </p>
+                </div>
+              </body>
+              </html>
+            `,
+          });
+          emailResults.sent++;
+          emailResults.details.push({ email: student.email, success: true });
+        } catch (error: any) {
+          emailResults.failed++;
+          emailResults.details.push({ email: student.email, success: false, error: error.message });
+          console.error(`Failed to send email to ${student.email}:`, error);
+        }
+      }
+    }
+
+    // Send email to instructor if present
+    if (sheet.instructor_id && sheet.users) {
+      try {
+        await resend.emails.send({
+          from: `NECTFORMA <${fromEmail}>`,
+          to: [sheet.users.email],
+          subject: `NECTFORMA - ${notificationTitle}`,
+          html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h1 style="color: white; margin: 0; font-size: 28px;">NECTFORMA</h1>
+                <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">Émargement</p>
+              </div>
+              
+              <div style="background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; border-top: none;">
+                <h2 style="color: #333; margin-top: 0;">Bonjour ${sheet.users.first_name},</h2>
+                
+                <p>Le lien d'émargement a été envoyé aux étudiants pour votre session :</p>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                  <p style="margin: 5px 0;"><strong>📚 Formation :</strong> ${sheet.formations.title}</p>
+                  <p style="margin: 5px 0;"><strong>📅 Date :</strong> ${sessionDate}</p>
+                  <p style="margin: 5px 0;"><strong>🕐 Horaire :</strong> ${sheet.start_time.substring(0, 5)} - ${sheet.end_time.substring(0, 5)}</p>
+                  <p style="margin: 5px 0;"><strong>👥 Étudiants notifiés :</strong> ${studentIds.length}</p>
+                </div>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="${signatureLink}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 16px;">
+                    Accéder à l'émargement
+                  </a>
+                </div>
+              </div>
+              
+              <div style="background: #f8f9fa; padding: 20px; text-align: center; border-radius: 0 0 10px 10px; border: 1px solid #e0e0e0; border-top: none;">
+                <p style="color: #666; margin: 0; font-size: 12px;">
+                  © ${new Date().getFullYear()} NECTFORMA. Tous droits réservés.
+                </p>
+              </div>
+            </body>
+            </html>
+          `,
+        });
+        emailResults.sent++;
+      } catch (error: any) {
+        emailResults.failed++;
+        console.error(`Failed to send email to instructor ${sheet.users.email}:`, error);
+      }
+    }
 
     console.log(`Sent signature link notifications to ${studentIds.length} students for attendance sheet ${attendanceSheetId}`);
+    console.log(`[send-signature-link] Email results: ${emailResults.sent} sent, ${emailResults.failed} failed`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Notifications envoyées à ${studentIds.length} étudiant(s)${sheet.instructor_id ? ' et au formateur' : ''} (emails désactivés - en attente d'Amazon SES)`,
+        message: `Notifications et emails envoyés à ${studentIds.length} étudiant(s)${sheet.instructor_id ? ' et au formateur' : ''}`,
         link: signatureLink,
-        email_pending: true,
-        emailResults: {
-          sent: 0,
-          failed: 0,
-          pending: studentIds.length + (sheet.instructor_id ? 1 : 0),
-          details: []
-        }
+        email_sent: true,
+        emailResults
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
