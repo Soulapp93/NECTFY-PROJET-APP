@@ -420,11 +420,14 @@ export const userService = {
     
     const { data: { session } } = await supabase.auth.getSession();
     
-    if (!session?.user?.id) {
+    if (!session?.user?.id || !session.access_token) {
       throw new Error('Session non trouvée');
     }
 
     const { data, error } = await supabase.functions.invoke('send-invitation', {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
       body: {
         email: user.email,
         first_name: user.first_name,
@@ -443,7 +446,7 @@ export const userService = {
       throw new Error(data.error);
     }
 
-    console.log('✅ Invitation créée (email en attente Amazon SES)');
+    console.log('✅ Invitation créée');
     console.log('🔗 Lien d\'invitation:', data?.invitation_link);
     
     return { invitation_link: data?.invitation_link };
