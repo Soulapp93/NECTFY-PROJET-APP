@@ -47,39 +47,31 @@ async function getCurrentUserEstablishmentId(): Promise<string> {
   return userData.establishment_id;
 }
 
-// NEW: Native Supabase invitation via invite-user-native edge function
-async function sendNativeInvitation(
+// Send invitation via Resend edge function (reliable)
+async function sendResendInvitation(
   email: string,
   firstName: string,
   lastName: string,
   role: string,
-  establishmentId: string
-): Promise<{ success: boolean; user_id?: string; error?: string }> {
+  establishmentId: string,
+  createdBy: string
+): Promise<{ success: boolean; invitation_id?: string; error?: string }> {
   try {
-    console.log(`Envoi invitation native Supabase à ${email}...`);
+    console.log(`Envoi invitation Resend à ${email}...`);
     
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.access_token) {
-      throw new Error('Session non trouvée');
-    }
-    
-    const { data, error } = await supabase.functions.invoke('invite-user-native', {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
+    const { data, error } = await supabase.functions.invoke('send-invitation', {
       body: {
         email,
         first_name: firstName,
         last_name: lastName,
         role,
         establishment_id: establishmentId,
-        redirect_url: window.location.origin
+        created_by: createdBy
       }
     });
 
     if (error) {
-      console.error('Erreur invitation native:', error);
+      console.error('Erreur invitation Resend:', error);
       return { success: false, error: error.message };
     }
     
@@ -88,10 +80,10 @@ async function sendNativeInvitation(
       return { success: false, error: data.error };
     }
 
-    console.log('✅ Invitation native envoyée:', data);
-    return { success: true, user_id: data.user_id };
+    console.log('✅ Invitation Resend envoyée:', data);
+    return { success: true, invitation_id: data.invitation_id };
   } catch (error: any) {
-    console.error('Erreur lors de l\'invitation native:', error);
+    console.error('Erreur lors de l\'invitation Resend:', error);
     return { success: false, error: error.message };
   }
 }
@@ -189,41 +181,67 @@ export const userService = {
           .upsert(assignments, { onConflict: 'user_id,formation_id', ignoreDuplicates: true } as any);
       }
 
-      // Resend invitation if not activated
+      // Resend invitation via Resend if not activated
       if (!existingUser.is_activated) {
-        await supabase.functions.invoke('resend-invitation-native', {
-          headers: {
-            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-          },
-          body: { email: normalizedEmail }
+        const { data: { session } } = await supabase.auth.getSession();
+        await supabase.functions.invoke('send-invitation', {
+          body: { 
+            email: normalizedEmail,
+            first_name: existingUser.first_name,
+            last_name: existingUser.last_name,
+            role: existingUser.role,
+            establishment_id: establishmentId,
+            created_by: session?.user?.id
+          }
         });
       }
 
       return existingUser as User;
     }
 
-    // NEW: Use native Supabase invitation - this creates both auth user and users table entry
-    const inviteResult = await sendNativeInvitation(
+    // Get current user for created_by
+    const { data: { session } } = await supabase.auth.getSession();
+    const createdBy = session?.user?.id;
+    
+    if (!createdBy) {
+      throw new Error('Session utilisateur non trouvée');
+    }
+
+    // Create user in database first
+    const { data: newUser, error: insertError } = await supabase
+      .from('users')
+      .insert({
+        first_name: userData.first_name,
+        last_name: userData.last_name,
+        email: normalizedEmail,
+        role: userData.role,
+        status: 'En attente',
+        phone: userData.phone,
+        profile_photo_url: userData.profile_photo_url,
+        establishment_id: establishmentId,
+        is_activated: false
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('Erreur création utilisateur:', insertError);
+      throw new Error(insertError.message);
+    }
+
+    // Send invitation email via Resend
+    const inviteResult = await sendResendInvitation(
       normalizedEmail,
       userData.first_name,
       userData.last_name,
       userData.role,
-      establishmentId
+      establishmentId,
+      createdBy
     );
 
-    if (!inviteResult.success || !inviteResult.user_id) {
-      throw new Error(inviteResult.error || 'Échec de l\'invitation');
-    }
-
-    // Get the created user
-    const { data: newUser, error: fetchError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', inviteResult.user_id)
-      .single();
-
-    if (fetchError || !newUser) {
-      throw new Error('Utilisateur créé mais impossible de le récupérer');
+    if (!inviteResult.success) {
+      console.warn('Email invitation non envoyé:', inviteResult.error);
+      // Don't throw - user is created, just email failed
     }
 
     // Assign formations
@@ -372,21 +390,26 @@ export const userService = {
     return createdUsers;
   },
 
-  // Resend activation email using native Supabase invitation
+  // Resend activation email via Resend
   async resendActivationEmail(userId: string): Promise<void> {
     const user = await this.getUserById(userId);
+    const establishmentId = await getCurrentUserEstablishmentId();
     
     const { data: { session } } = await supabase.auth.getSession();
     
-    if (!session?.access_token) {
+    if (!session?.user?.id) {
       throw new Error('Session non trouvée');
     }
 
-    const { data, error } = await supabase.functions.invoke('resend-invitation-native', {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: { email: user.email }
+    const { data, error } = await supabase.functions.invoke('send-invitation', {
+      body: {
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        role: user.role,
+        establishment_id: establishmentId,
+        created_by: session.user.id
+      }
     });
 
     if (error) {
@@ -397,6 +420,6 @@ export const userService = {
       throw new Error(data.error);
     }
 
-    console.log('✅ Invitation renvoyée via Supabase Auth natif');
+    console.log('✅ Invitation renvoyée via Resend');
   }
 };
