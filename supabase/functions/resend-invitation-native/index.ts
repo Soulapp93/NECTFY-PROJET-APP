@@ -53,7 +53,14 @@ serve(async (req) => {
       .eq("id", requestingUser.id)
       .single();
 
-    if (!requestingUserData || !["Administrateur", "Administrateur principal"].includes(requestingUserData.role)) {
+    const allowedRoles = [
+      "Admin",
+      "AdminPrincipal",
+      "Administrateur",
+      "Administrateur principal",
+    ];
+
+    if (!requestingUserData || !allowedRoles.includes(requestingUserData.role)) {
       return new Response(
         JSON.stringify({ error: "Droits insuffisants" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }

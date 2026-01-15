@@ -35,3 +35,13 @@ verify_jwt = false
 
 [functions.send-notification-email]
 verify_jwt = true
+
+# Native Supabase Auth email flows
+[functions.invite-user-native]
+verify_jwt = false
+
+[functions.resend-invitation-native]
+verify_jwt = false
+
+[functions.reset-password-native]
+verify_jwt = false
