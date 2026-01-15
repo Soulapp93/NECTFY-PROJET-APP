@@ -6,8 +6,9 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "::",
-    port: 8080,
+    host: "0.0.0.0",
+    port: 3000,
+    allowedHosts: true,
   },
   plugins: [
     react(),
@@ -24,6 +25,7 @@ export default defineConfig(({ mode }) => ({
   },
   assetsInclude: ['**/*.pdf'],
   build: {
+    outDir: 'build',
     minify: mode === 'production' ? 'terser' : false,
     sourcemap: mode === 'development',
     rollupOptions: {
