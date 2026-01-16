@@ -5,7 +5,7 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  root: path.resolve(__dirname, "frontend"),
+  root: "frontend",
   server: {
     host: "0.0.0.0",
     port: 3000,
@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => ({
   ].filter(Boolean),
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./frontend/src"),
+      "@": path.resolve(__dirname, "frontend/src"),
     },
   },
   optimizeDeps: {
@@ -26,7 +26,7 @@ export default defineConfig(({ mode }) => ({
   },
   assetsInclude: ['**/*.pdf'],
   build: {
-    outDir: path.resolve(__dirname, 'frontend/build'),
+    outDir: "build",
     minify: mode === 'production' ? 'terser' : false,
     sourcemap: mode === 'development',
     rollupOptions: {
