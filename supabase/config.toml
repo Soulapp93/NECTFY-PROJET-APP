@@ -1,1 +1,7 @@
 project_id = "cvuyglhivifusdahoztd"
+
+[functions.send-invitation]
+verify_jwt = false
+
+[functions.send-activation-email]
+verify_jwt = false
