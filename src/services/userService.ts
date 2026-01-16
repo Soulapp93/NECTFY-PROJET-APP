@@ -47,7 +47,7 @@ async function getCurrentUserEstablishmentId(): Promise<string> {
   return userData.establishment_id;
 }
 
-// Send activation email via Elastic Email
+// Envoie l'email d'activation via Edge Function (token généré côté serveur)
 async function sendActivationEmail(
   userId: string,
   email: string,
@@ -55,58 +55,31 @@ async function sendActivationEmail(
   lastName: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    console.log(`Création token d'activation pour ${email}...`);
-    
-    // Get session for JWT authentication
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.access_token) {
-      console.error('Session non trouvée pour l\'envoi d\'email');
-      return { success: false, error: 'Session non trouvée' };
-    }
-    
-    // Create activation token
-    const token = crypto.randomUUID() + '-' + Date.now();
-    
-    const { error: tokenError } = await supabase
-      .from('user_activation_tokens')
-      .insert([{
-        user_id: userId,
-        token: token
-      }]);
+    const normalizedEmail = email.trim().toLowerCase();
 
-    if (tokenError) {
-      console.error('Erreur création token:', tokenError);
-      return { success: false, error: tokenError.message };
-    }
-
-    // Send activation email via Elastic Email
     const { data, error } = await supabase.functions.invoke('send-activation-email', {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
       body: {
-        email,
-        token,
+        userId,
+        email: normalizedEmail,
         firstName,
-        lastName
-      }
+        lastName,
+      },
     });
 
     if (error) {
       console.error('Erreur envoi email:', error);
       return { success: false, error: error.message };
     }
-    
+
     if (data?.error) {
       console.error('Erreur API email:', data.error);
       return { success: false, error: data.error };
     }
 
-    console.log('✅ Email d\'activation envoyé:', data);
+    console.log("✅ Email d'activation envoyé:", data);
     return { success: true };
   } catch (error: any) {
-    console.error('Erreur lors de l\'envoi de l\'email d\'activation:', error);
+    console.error("Erreur lors de l'envoi de l'email d'activation:", error);
     return { success: false, error: error.message };
   }
 }
