@@ -1,10 +1,12 @@
 import React from 'react';
-import { X, User, Mail, Phone, Building, Calendar, FileText } from 'lucide-react';
+import { X, User, Mail, Phone, Building, Calendar, FileText, GraduationCap, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { User as UserType } from '@/services/userService';
 import { useUserFormations } from '@/hooks/useUserFormations';
 import { useUserTutors } from '@/hooks/useUserTutors';
+import { useInstructorFormations } from '@/hooks/useInstructorFormations';
+import { useTutorStudents } from '@/hooks/useTutorStudents';
 
 interface UserDetailModalProps {
   isOpen: boolean;
@@ -15,11 +17,15 @@ interface UserDetailModalProps {
 const UserDetailModal: React.FC<UserDetailModalProps> = ({ isOpen, onClose, user }) => {
   const { getUserFormations } = useUserFormations();
   const { getUserTutors } = useUserTutors();
+  const { getInstructorFormations } = useInstructorFormations();
+  const { getTutorStudents } = useTutorStudents();
 
   if (!user) return null;
 
   const userFormations = getUserFormations(user.id!);
   const userTutors = getUserTutors(user.id!);
+  const instructorFormations = getInstructorFormations(user.id!);
+  // Note: Les tuteurs sont dans la table "tutors" séparée, pas "users"
 
   const getRoleBadge = (role: string) => {
     const roleConfig: Record<string, { bg: string; text: string }> = {
@@ -153,12 +159,12 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({ isOpen, onClose, user
             </div>
           </div>
 
-          {/* Formations */}
-          {userFormations.length > 0 && (
+          {/* Formations pour les étudiants */}
+          {user.role === 'Étudiant' && userFormations.length > 0 && (
             <div className="bg-muted/30 rounded-xl p-4 border border-border">
               <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
                 <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <FileText className="h-4 w-4 text-primary" />
+                  <GraduationCap className="h-4 w-4 text-primary" />
                 </div>
                 Formations ({userFormations.length})
               </h3>
@@ -167,6 +173,7 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({ isOpen, onClose, user
                   <div 
                     key={assignment.id} 
                     className="bg-background rounded-lg p-4 border border-border hover:border-primary/30 transition-colors"
+                    style={{ borderLeftColor: assignment.formation.color || undefined, borderLeftWidth: assignment.formation.color ? '4px' : undefined }}
                   >
                     <h4 className="font-semibold text-foreground">{assignment.formation.title}</h4>
                     <p className="text-sm text-muted-foreground mt-1">{assignment.formation.level}</p>
@@ -179,70 +186,115 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({ isOpen, onClose, user
             </div>
           )}
 
+          {/* Message si aucune formation pour les étudiants */}
+          {user.role === 'Étudiant' && userFormations.length === 0 && (
+            <div className="bg-muted/30 rounded-xl p-4 border border-border">
+              <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <GraduationCap className="h-4 w-4 text-primary" />
+                </div>
+                Formations
+              </h3>
+              <p className="text-sm text-muted-foreground italic">Aucune formation assignée</p>
+            </div>
+          )}
+
           {/* Tuteurs (pour les étudiants) */}
-          {user.role === 'Étudiant' && userTutors.length > 0 && (
+          {user.role === 'Étudiant' && (
             <div className="bg-muted/30 rounded-xl p-4 border border-border">
               <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
                 <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
                   <Building className="h-4 w-4 text-primary" />
                 </div>
-                Tuteurs en entreprise ({userTutors.length})
+                Tuteur en entreprise {userTutors.length > 0 && `(${userTutors.length})`}
               </h3>
-              <div className="space-y-3">
-                {userTutors.map((tutor, index) => (
-                  <div 
-                    key={index} 
-                    className="bg-background rounded-lg p-4 border border-border hover:border-primary/30 transition-colors"
-                  >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <h4 className="font-semibold text-foreground">
-                          {tutor.tutor_first_name} {tutor.tutor_last_name}
-                        </h4>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">{tutor.tutor_email}</span>
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <Building className="h-3.5 w-3.5 text-primary" />
-                          <span className="font-medium text-foreground">{tutor.company_name}</span>
-                        </div>
-                        {tutor.position && (
-                          <p className="text-sm text-muted-foreground">{tutor.position}</p>
-                        )}
-                      </div>
-                    </div>
-                    {tutor.contract_type && (
-                      <div className="mt-3 pt-3 border-t border-border">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Type de contrat</span>
-                            <p className="text-foreground font-medium">{tutor.contract_type}</p>
+              {userTutors.length > 0 ? (
+                <div className="space-y-3">
+                  {userTutors.map((tutor, index) => (
+                    <div 
+                      key={index} 
+                      className="bg-background rounded-lg p-4 border border-border hover:border-primary/30 transition-colors"
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="font-semibold text-foreground">
+                            {tutor.tutor_first_name} {tutor.tutor_last_name}
+                          </h4>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">{tutor.tutor_email}</span>
                           </div>
-                          {tutor.contract_start_date && (
-                            <div>
-                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Début</span>
-                              <p className="text-foreground font-medium">
-                                {new Date(tutor.contract_start_date).toLocaleDateString('fr-FR')}
-                              </p>
-                            </div>
-                          )}
-                          {tutor.contract_end_date && (
-                            <div>
-                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Fin</span>
-                              <p className="text-foreground font-medium">
-                                {new Date(tutor.contract_end_date).toLocaleDateString('fr-FR')}
-                              </p>
-                            </div>
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Building className="h-3.5 w-3.5 text-primary" />
+                            <span className="font-medium text-foreground">{tutor.company_name}</span>
+                          </div>
+                          {tutor.position && (
+                            <p className="text-sm text-muted-foreground">{tutor.position}</p>
                           )}
                         </div>
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                      {tutor.contract_type && (
+                        <div className="mt-3 pt-3 border-t border-border">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div>
+                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Type de contrat</span>
+                              <p className="text-foreground font-medium">{tutor.contract_type}</p>
+                            </div>
+                            {tutor.contract_start_date && (
+                              <div>
+                                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Début</span>
+                                <p className="text-foreground font-medium">
+                                  {new Date(tutor.contract_start_date).toLocaleDateString('fr-FR')}
+                                </p>
+                              </div>
+                            )}
+                            {tutor.contract_end_date && (
+                              <div>
+                                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Fin</span>
+                                <p className="text-foreground font-medium">
+                                  {new Date(tutor.contract_end_date).toLocaleDateString('fr-FR')}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">Aucun tuteur assigné</p>
+              )}
+            </div>
+          )}
+
+          {/* Formations pour les formateurs */}
+          {user.role === 'Formateur' && (
+            <div className="bg-muted/30 rounded-xl p-4 border border-border">
+              <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <GraduationCap className="h-4 w-4 text-primary" />
+                </div>
+                Formations enseignées {instructorFormations.length > 0 && `(${instructorFormations.length})`}
+              </h3>
+              {instructorFormations.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {instructorFormations.map((formation, index) => (
+                    <div 
+                      key={index} 
+                      className="bg-background rounded-lg p-4 border border-border hover:border-primary/30 transition-colors"
+                      style={{ borderLeftColor: formation.color || undefined, borderLeftWidth: formation.color ? '4px' : undefined }}
+                    >
+                      <h4 className="font-semibold text-foreground">{formation.title}</h4>
+                      <p className="text-sm text-muted-foreground mt-1">{formation.level}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">Aucune formation assignée</p>
+              )}
             </div>
           )}
         </div>

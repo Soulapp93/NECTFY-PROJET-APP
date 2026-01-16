@@ -12,12 +12,14 @@ import {
   Phone,
   Edit2,
   Trash2,
-  UserPlus
+  UserPlus,
+  Eye
 } from 'lucide-react';
 import { useTutors } from '@/hooks/useTutors';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { TutorModal } from './TutorModal';
 import { AssignStudentModal } from './AssignStudentModal';
+import TutorDetailModal from './TutorDetailModal';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -37,6 +39,7 @@ export const TutorsList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedTutor, setSelectedTutor] = useState<Tutor | null>(null);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [tutorToDelete, setTutorToDelete] = useState<Tutor | null>(null);
@@ -76,6 +79,11 @@ export const TutorsList: React.FC = () => {
   const handleAssignStudent = (tutor: Tutor) => {
     setSelectedTutor(tutor);
     setIsAssignModalOpen(true);
+  };
+
+  const handleViewTutor = (tutor: Tutor) => {
+    setSelectedTutor(tutor);
+    setIsDetailModalOpen(true);
   };
 
   const handleSave = async (tutorData: any) => {
@@ -155,13 +163,25 @@ export const TutorsList: React.FC = () => {
                 <Button
                   size="sm"
                   variant="outline"
+                  onClick={() => handleViewTutor(tutor)}
+                  className="flex-1 gap-1"
+                >
+                  <Eye className="h-3 w-3" />
+                  Voir
+                </Button>
+                
+                <Button
+                  size="sm"
+                  variant="outline"
                   onClick={() => handleEditTutor(tutor)}
                   className="flex-1 gap-1"
                 >
                   <Edit2 className="h-3 w-3" />
                   Modifier
                 </Button>
-                
+              </div>
+              
+              <div className="flex gap-2">
                 <Button
                   size="sm"
                   variant="outline"
@@ -171,17 +191,17 @@ export const TutorsList: React.FC = () => {
                   <UserPlus className="h-3 w-3" />
                   Assigner
                 </Button>
+                
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => handleDeleteTutor(tutor)}
+                  className="flex-1 gap-1"
+                >
+                  <Trash2 className="h-3 w-3" />
+                  Supprimer
+                </Button>
               </div>
-              
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => handleDeleteTutor(tutor)}
-                className="w-full gap-1"
-              >
-                <Trash2 className="h-3 w-3" />
-                Supprimer
-              </Button>
             </CardContent>
           </Card>
         ))}
@@ -209,6 +229,12 @@ export const TutorsList: React.FC = () => {
       <AssignStudentModal
         isOpen={isAssignModalOpen}
         onClose={() => setIsAssignModalOpen(false)}
+        tutor={selectedTutor}
+      />
+
+      <TutorDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
         tutor={selectedTutor}
       />
 
