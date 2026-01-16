@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { scheduleService, ScheduleSlot } from '@/services/scheduleService';
 import { useCurrentUser } from './useCurrentUser';
 import { useUserFormations } from './useUserFormations';
@@ -12,17 +12,32 @@ export const useUserSchedules = () => {
   const { userId, userRole } = useCurrentUser();
   const { userFormations } = useUserFormations();
   
-  // Extraire les IDs de formation depuis les données utilisateur
-  const formationIds = userFormations?.map(uf => uf.formation_id) || [];
+  // Mémoriser les IDs de formation pour éviter les re-renders inutiles
+  const formationIds = useMemo(() => {
+    return userFormations?.map(uf => uf.formation_id) || [];
+  }, [userFormations]);
+  
+  // Utiliser une ref pour éviter les appels dupliqués
+  const fetchingRef = useRef(false);
+  const lastFetchParamsRef = useRef<string>('');
 
-  const fetchSchedules = async () => {
+  const fetchSchedules = useCallback(async () => {
     // Les tuteurs utilisent useTutorSchedules, pas ce hook
     if (!userId || !userRole || userRole === 'Tuteur') {
       setSchedules([]);
       return;
     }
 
+    // Créer une clé unique pour les paramètres actuels
+    const fetchParams = `${userId}-${userRole}-${formationIds.join(',')}`;
+    
+    // Éviter les appels dupliqués avec les mêmes paramètres
+    if (fetchingRef.current || lastFetchParamsRef.current === fetchParams) {
+      return;
+    }
+
     try {
+      fetchingRef.current = true;
       setLoading(true);
       setError(null);
 
@@ -33,35 +48,38 @@ export const useUserSchedules = () => {
         if (formationIds.length > 0) {
           data = await scheduleService.getStudentSchedules(formationIds);
         } else {
-          // Si pas de formations trouvées, afficher tous les emplois du temps publiés (fallback)
-          data = await scheduleService.getAllPublishedSchedules();
+          // Si pas de formations trouvées, ne rien afficher
+          data = [];
         }
-      } else if (userRole === 'Formateur' || userRole === 'Tuteur') {
-        // Pour les formateurs/tuteurs : récupérer tous les cours auxquels ils sont assignés
+      } else if (userRole === 'Formateur') {
+        // Pour les formateurs : récupérer tous les cours auxquels ils sont assignés
         data = await scheduleService.getInstructorSchedules(userId);
       } else if (userRole === 'Admin' || userRole === 'AdminPrincipal') {
         // Pour les administrateurs : voir tous les emplois du temps publiés
         data = await scheduleService.getAllPublishedSchedules();
       }
 
+      lastFetchParamsRef.current = fetchParams;
       setSchedules(data || []);
     } catch (err) {
       console.error('fetchSchedules - Error:', err);
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement des emplois du temps');
     } finally {
       setLoading(false);
+      fetchingRef.current = false;
     }
-  };
+  }, [userId, userRole, formationIds]);
 
+  // Effet pour charger les données initiales
   useEffect(() => {
-    if (userId && userRole) {
+    if (userId && userRole && userRole !== 'Tuteur') {
       fetchSchedules();
     }
-  }, [userId, userRole, userFormations]);
+  }, [fetchSchedules]);
 
   // Synchronisation en temps réel avec Supabase
   useEffect(() => {
-    if (!userId || !userRole) return;
+    if (!userId || !userRole || userRole === 'Tuteur') return;
 
     // S'abonner aux changements sur schedule_slots
     const slotsSubscription = supabase
@@ -74,7 +92,8 @@ export const useUserSchedules = () => {
           table: 'schedule_slots'
         },
         () => {
-          // Rafraîchir les données quand un créneau change
+          // Réinitialiser le dernier fetch pour forcer un nouveau chargement
+          lastFetchParamsRef.current = '';
           fetchSchedules();
         }
       )
@@ -91,7 +110,7 @@ export const useUserSchedules = () => {
           table: 'schedules'
         },
         () => {
-          // Rafraîchir les données quand un emploi du temps change
+          lastFetchParamsRef.current = '';
           fetchSchedules();
         }
       )
@@ -101,12 +120,15 @@ export const useUserSchedules = () => {
       slotsSubscription.unsubscribe();
       schedulesSubscription.unsubscribe();
     };
-  }, [userId, userRole, userFormations]);
+  }, [userId, userRole, fetchSchedules]);
 
   return {
     schedules,
     loading,
     error,
-    refetch: fetchSchedules
+    refetch: () => {
+      lastFetchParamsRef.current = '';
+      return fetchSchedules();
+    }
   };
 };
