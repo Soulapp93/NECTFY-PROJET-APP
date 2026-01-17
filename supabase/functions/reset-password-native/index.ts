@@ -20,6 +20,8 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     
+    console.log("🔄 Reset password request received");
+    
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
@@ -30,7 +32,10 @@ serve(async (req) => {
     const body: ResetPasswordRequest = await req.json();
     const { email, redirect_url } = body;
 
+    console.log(`📧 Processing reset for email: ${email}`);
+
     if (!email) {
+      console.log("❌ Email is missing");
       return new Response(
         JSON.stringify({ error: "Email requis" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -40,11 +45,14 @@ serve(async (req) => {
     // Check if user exists in our users table
     const { data: userData, error: userError } = await supabaseAdmin
       .from("users")
-      .select("id, is_activated, status")
+      .select("id, email, first_name, last_name, role, is_activated, status")
       .eq("email", email.toLowerCase())
       .single();
 
+    console.log(`📋 User lookup result:`, { userData, userError: userError?.message });
+
     if (userError || !userData) {
+      console.log(`⚠️ User not found in public.users table for email: ${email}`);
       // Don't reveal if user exists or not for security
       return new Response(
         JSON.stringify({ success: true, message: "Si l'email existe, un lien de réinitialisation a été envoyé" }),
@@ -52,17 +60,34 @@ serve(async (req) => {
       );
     }
 
+    console.log(`👤 User found: ${userData.first_name} ${userData.last_name}, role: ${userData.role}, is_activated: ${userData.is_activated}, status: ${userData.status}`);
+
+    // Check if user exists in auth.users
+    const { data: authUserData, error: authUserError } = await supabaseAdmin.auth.admin.listUsers();
+    const authUser = authUserData?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
+    
+    console.log(`🔐 Auth user lookup:`, { 
+      found: !!authUser, 
+      authUserId: authUser?.id,
+      authUserEmail: authUser?.email,
+      emailConfirmed: authUser?.email_confirmed_at,
+      authUserError: authUserError?.message 
+    });
+
     // If user is not activated, resend invitation instead
     if (!userData.is_activated || userData.status === "pending") {
-      // Use inviteUserByEmail to resend activation
+      console.log(`📨 User not activated, sending invitation instead`);
+      
       const baseUrl = redirect_url || `${req.headers.get("origin") || "https://nectforme.lovable.app"}`;
       
-      const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+      const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
         redirectTo: `${baseUrl}/activation`,
       });
 
+      console.log(`📨 Invite result:`, { inviteData: inviteData?.user?.id, inviteError: inviteError?.message });
+
       if (inviteError) {
-        console.error("Erreur renvoi invitation:", inviteError);
+        console.error("❌ Erreur renvoi invitation:", inviteError);
         return new Response(
           JSON.stringify({ 
             action: "resend_invitation",
@@ -73,6 +98,7 @@ serve(async (req) => {
         );
       }
 
+      console.log(`✅ Invitation sent successfully for non-activated user`);
       return new Response(
         JSON.stringify({ 
           action: "resend_invitation",
@@ -86,12 +112,45 @@ serve(async (req) => {
     // User is activated, send password reset via Supabase Auth
     const baseUrl = redirect_url || `${req.headers.get("origin") || "https://nectforme.lovable.app"}`;
     
-    const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
+    console.log(`🔑 Sending password reset email to: ${email}, redirectTo: ${baseUrl}/reset-password`);
+    
+    const { data: resetData, error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
       redirectTo: `${baseUrl}/reset-password`,
     });
 
+    console.log(`🔑 Reset password result:`, { resetData, resetError: resetError?.message, resetErrorCode: (resetError as any)?.code });
+
     if (resetError) {
-      console.error("Erreur reset password:", resetError);
+      console.error("❌ Erreur reset password:", resetError);
+      
+      // Check if this is because user doesn't exist in auth.users
+      if (resetError.message?.includes("User not found") || (resetError as any)?.code === "user_not_found") {
+        console.log("⚠️ User not found in auth.users - may need to create auth account first");
+        
+        // Try to invite the user instead (this will create the auth account)
+        const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+          redirectTo: `${baseUrl}/activation`,
+          data: {
+            first_name: userData.first_name,
+            last_name: userData.last_name,
+          }
+        });
+
+        console.log(`📨 Fallback invite result:`, { inviteData: inviteData?.user?.id, inviteError: inviteError?.message });
+
+        if (!inviteError) {
+          console.log(`✅ Fallback invitation sent - user will receive activation email`);
+          return new Response(
+            JSON.stringify({ 
+              action: "resend_invitation",
+              success: true, 
+              message: "Un lien d'activation a été envoyé (compte auth non trouvé)"
+            }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+      
       return new Response(
         JSON.stringify({ error: resetError.message }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -109,7 +168,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("Erreur reset-password-native:", error);
+    console.error("❌ Erreur reset-password-native:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
