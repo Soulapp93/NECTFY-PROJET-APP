@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentUser } from './useCurrentUser';
 
@@ -24,7 +24,7 @@ export const useTutorFormations = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTutorFormations = useCallback(async () => {
+  const fetchTutorFormations = async () => {
     if (!userId || userRole !== 'Tuteur') {
       setFormations([]);
       return;
@@ -34,57 +34,31 @@ export const useTutorFormations = () => {
       setLoading(true);
       setError(null);
       
-      console.log('🔍 Fetching tutor formations for userId:', userId);
-      
-      // Récupérer les apprentis du tuteur via la table d’assignation (autorisé côté RLS)
-      const { data: assignments, error: assignmentsError } = await supabase
+      // 1. Récupérer les étudiants assignés au tuteur
+      const { data: studentAssignments, error: assignmentError } = await supabase
         .from('tutor_student_assignments')
-        .select(
-          `
+        .select(`
           student_id,
-          users:student_id(
+          users!tutor_student_assignments_student_id_fkey(
             id,
             first_name,
             last_name,
             email
           )
-        `
-        )
+        `)
         .eq('tutor_id', userId)
         .eq('is_active', true);
-
-      if (assignmentsError) {
-        console.error('❌ Error fetching tutor students assignments:', assignmentsError);
-        throw assignmentsError;
-      }
-
-      const studentsData = (assignments ?? [])
-        .map((a: any) => ({
-          student_id: a.student_id,
-          student_first_name: a.users?.first_name ?? '',
-          student_last_name: a.users?.last_name ?? '',
-          student_email: a.users?.email ?? '',
-        }))
-        .filter((s: any) => Boolean(s.student_id));
-
-      console.log('📋 Students data from tutor_student_assignments:', studentsData);
-
-      if (studentsData.length === 0) {
-        console.log('ℹ️ No students found for this tutor');
+      
+      if (assignmentError) throw assignmentError;
+      
+      if (!studentAssignments || studentAssignments.length === 0) {
         setFormations([]);
         return;
       }
-
-      // Récupérer les IDs des étudiants
-      const studentIds = [...new Set(studentsData.map((s: any) => s.student_id))];
-      console.log('👥 Student IDs:', studentIds);
-
-      if (studentIds.length === 0) {
-        setFormations([]);
-        return;
-      }
-
-      // Récupérer les formations des étudiants via user_formation_assignments
+      
+      const studentIds = studentAssignments.map(sa => sa.student_id);
+      
+      // 2. Récupérer les formations de ces étudiants via user_formation_assignments
       const { data: formationAssignments, error: formationError } = await supabase
         .from('user_formation_assignments')
         .select(`
@@ -104,21 +78,17 @@ export const useTutorFormations = () => {
         `)
         .in('user_id', studentIds);
       
-      if (formationError) {
-        console.error('❌ Error fetching formation assignments:', formationError);
-        throw formationError;
-      }
+      if (formationError) throw formationError;
 
-      console.log('📚 Formation assignments:', formationAssignments);
-
-      // Combiner les données
+      // 3. Combiner les données
       const enrichedData: TutorFormation[] = [];
       
       formationAssignments?.forEach(fa => {
-        const studentData = studentsData.find(s => s.student_id === fa.user_id);
+        const studentAssignment = studentAssignments.find(sa => sa.student_id === fa.user_id);
+        const student = studentAssignment?.users as any;
         const formation = fa.formations as any;
         
-        if (studentData && formation) {
+        if (student && formation) {
           enrichedData.push({
             formation_id: formation.id,
             formation_title: formation.title,
@@ -130,29 +100,28 @@ export const useTutorFormations = () => {
             formation_duration: formation.duration,
             modules_count: formation.formation_modules?.length || 0,
             student_id: fa.user_id,
-            student_first_name: studentData.student_first_name || '',
-            student_last_name: studentData.student_last_name || '',
-            student_email: studentData.student_email || ''
+            student_first_name: student.first_name,
+            student_last_name: student.last_name,
+            student_email: student.email
           });
         }
       });
 
-      console.log('✅ Enriched formations data:', enrichedData);
       setFormations(enrichedData);
     } catch (err) {
-      console.error('❌ Erreur lors du chargement des formations tuteur:', err);
+      console.error('Erreur lors du chargement des formations tuteur:', err);
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement des formations');
     } finally {
       setLoading(false);
     }
-  }, [userId, userRole]);
+  };
 
   useEffect(() => {
     fetchTutorFormations();
-  }, [fetchTutorFormations]);
+  }, [userId, userRole]);
 
   // Récupérer les formations uniques
-  const getUniqueFormations = useCallback(() => {
+  const getUniqueFormations = () => {
     const uniqueFormations = new Map();
     formations.forEach(formation => {
       if (!uniqueFormations.has(formation.formation_id)) {
@@ -169,7 +138,7 @@ export const useTutorFormations = () => {
       });
     });
     return Array.from(uniqueFormations.values());
-  }, [formations]);
+  };
 
   return {
     formations,

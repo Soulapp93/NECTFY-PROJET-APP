@@ -1,10 +1,37 @@
 project_id = "cvuyglhivifusdahoztd"
 
-[functions.send-invitation]
+[functions.update-class-status]
 verify_jwt = false
 
-[functions.send-activation-email]
+[functions.check-expired-attendance-links]
+verify_jwt = false
+
+[functions.check-expired-attendance-links.schedule]
+cron = "*/5 * * * *"
+
+[functions.create-establishment]
+verify_jwt = false
+
+[functions.send-invitation]
+verify_jwt = true
+
+[functions.accept-invitation]
 verify_jwt = false
 
 [functions.send-password-reset]
+verify_jwt = true
+
+[functions.send-bulk-email]
+verify_jwt = true
+
+[functions.send-user-activation]
+verify_jwt = true
+
+[functions.send-activation-email]
+verify_jwt = true
+
+[functions.activate-user-account]
 verify_jwt = false
+
+[functions.send-notification-email]
+verify_jwt = true

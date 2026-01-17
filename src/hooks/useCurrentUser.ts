@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 export const useCurrentUser = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [establishmentId, setEstablishmentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -13,37 +12,23 @@ export const useCurrentUser = () => {
     // Nettoyer toute ancienne session démo au démarrage
     sessionStorage.removeItem('demo_user');
     
-    const fetchUserData = async (uid: string) => {
+    const fetchUserRole = async (uid: string) => {
       try {
         // Utiliser la fonction SQL (SECURITY DEFINER) pour éviter les problèmes RLS côté client
-        const { data: roleData, error: roleError } = await supabase.rpc('get_current_user_role');
+        const { data, error } = await supabase.rpc('get_current_user_role');
 
         if (!mounted) return;
 
-        if (roleError) {
-          console.error('Erreur lors de la récupération du rôle (rpc get_current_user_role):', roleError);
+        if (error) {
+          console.error('Erreur lors de la récupération du rôle (rpc get_current_user_role):', error);
           setUserRole(null);
-        } else {
-          setUserRole(roleData ?? null);
+          return;
         }
 
-        // Récupérer l'establishment_id de l'utilisateur
-        const { data: establishmentData, error: establishmentError } = await supabase.rpc('get_current_user_establishment');
-        
-        if (!mounted) return;
-        
-        if (establishmentError) {
-          console.error('Erreur lors de la récupération de l\'établissement:', establishmentError);
-          setEstablishmentId(null);
-        } else {
-          setEstablishmentId(establishmentData ?? null);
-        }
+        setUserRole(data ?? null);
       } catch (error) {
-        console.error('Erreur lors de la récupération des données utilisateur:', error);
-        if (mounted) {
-          setUserRole(null);
-          setEstablishmentId(null);
-        }
+        console.error('Erreur lors de la récupération du rôle:', error);
+        if (mounted) setUserRole(null);
       }
     };
 
@@ -55,18 +40,16 @@ export const useCurrentUser = () => {
         
         if (session?.user?.id) {
           setUserId(session.user.id);
-          await fetchUserData(session.user.id);
+          await fetchUserRole(session.user.id);
         } else {
           setUserId(null);
           setUserRole(null);
-          setEstablishmentId(null);
         }
       } catch (error) {
         console.error('Erreur lors de la récupération de l\'utilisateur:', error);
         if (mounted) {
           setUserId(null);
           setUserRole(null);
-          setEstablishmentId(null);
         }
       } finally {
         if (mounted) setLoading(false);
@@ -83,7 +66,7 @@ export const useCurrentUser = () => {
           // Déférer le fetch pour éviter les deadlocks
           setTimeout(() => {
             if (mounted) {
-              fetchUserData(session.user.id).finally(() => {
+              fetchUserRole(session.user.id).finally(() => {
                 if (mounted) setLoading(false);
               });
             }
@@ -91,7 +74,6 @@ export const useCurrentUser = () => {
         } else {
           setUserId(null);
           setUserRole(null);
-          setEstablishmentId(null);
           setLoading(false);
         }
       }
@@ -105,7 +87,7 @@ export const useCurrentUser = () => {
     };
   }, []);
 
-  return { userId, userRole, establishmentId, loading };
+  return { userId, userRole, loading };
 };
 
 // Créer un hook pour récupérer les informations utilisateur avec tuteur/apprenti

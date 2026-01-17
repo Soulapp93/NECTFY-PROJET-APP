@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentUser } from './useCurrentUser';
@@ -16,14 +17,14 @@ export interface UserFormationAssignment {
 }
 
 export const useUserFormations = () => {
-  const [allFormations, setAllFormations] = useState<UserFormationAssignment[]>([]);
+  const [userFormations, setUserFormations] = useState<UserFormationAssignment[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { userId, establishmentId } = useCurrentUser();
+  const { userId } = useCurrentUser();
 
-  const fetchAllFormations = async () => {
-    if (!establishmentId) {
-      setAllFormations([]);
+  const fetchUserFormations = async () => {
+    if (!userId) {
+      setUserFormations([]);
       return;
     }
 
@@ -31,7 +32,6 @@ export const useUserFormations = () => {
       setLoading(true);
       setError(null);
       
-      // Récupérer toutes les assignations de l'établissement
       const { data, error } = await supabase
         .from('user_formation_assignments')
         .select(`
@@ -39,17 +39,12 @@ export const useUserFormations = () => {
           user_id,
           formation_id,
           assigned_at,
-          formation:formations(id, title, level, color, establishment_id)
-        `);
+          formation:formations(id, title, level, color)
+        `)
+        .eq('user_id', userId);
       
       if (error) throw error;
-      
-      // Filtrer par establishment_id de la formation
-      const filteredData = (data || []).filter(
-        (item: any) => item.formation?.establishment_id === establishmentId
-      );
-      
-      setAllFormations(filteredData as UserFormationAssignment[]);
+      setUserFormations(data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement des formations');
     } finally {
@@ -58,23 +53,18 @@ export const useUserFormations = () => {
   };
 
   useEffect(() => {
-    fetchAllFormations();
-  }, [establishmentId]);
+    fetchUserFormations();
+  }, [userId]);
 
-  // Récupérer les formations d'un utilisateur spécifique
-  const getUserFormations = (targetUserId: string): UserFormationAssignment[] => {
-    return allFormations.filter(assignment => assignment.user_id === targetUserId);
+  const getUserFormations = (userId: string) => {
+    return userFormations.filter(assignment => assignment.user_id === userId);
   };
-
-  // Récupérer les formations de l'utilisateur courant
-  const userFormations = userId ? getUserFormations(userId) : [];
 
   return {
     userFormations,
-    allFormations,
     loading,
     error,
     getUserFormations,
-    refetch: fetchAllFormations
+    refetch: fetchUserFormations
   };
 };

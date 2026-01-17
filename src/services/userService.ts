@@ -47,43 +47,96 @@ async function getCurrentUserEstablishmentId(): Promise<string> {
   return userData.establishment_id;
 }
 
-// Envoie l'email d'activation via Edge Function (token généré côté serveur)
-async function sendActivationEmail(
-  userId: string,
+// NEW: Native Supabase invitation via invite-user-native edge function
+async function sendNativeInvitation(
   email: string,
   firstName: string,
-  lastName: string
-): Promise<{ success: boolean; error?: string }> {
+  lastName: string,
+  role: string,
+  establishmentId: string
+): Promise<{ success: boolean; user_id?: string; error?: string }> {
   try {
-    const normalizedEmail = email.trim().toLowerCase();
-
-    const { data, error } = await supabase.functions.invoke('send-activation-email', {
-      body: {
-        userId,
-        email: normalizedEmail,
-        firstName,
-        lastName,
+    console.log(`Envoi invitation native Supabase à ${email}...`);
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.access_token) {
+      throw new Error('Session non trouvée');
+    }
+    
+    const { data, error } = await supabase.functions.invoke('invite-user-native', {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
       },
+      body: {
+        email,
+        first_name: firstName,
+        last_name: lastName,
+        role,
+        establishment_id: establishmentId,
+        redirect_url: window.location.origin
+      }
     });
 
     if (error) {
-      console.error('Erreur envoi email:', error);
+      console.error('Erreur invitation native:', error);
       return { success: false, error: error.message };
     }
-
+    
     if (data?.error) {
-      console.error('Erreur API email:', data.error);
+      console.error('Erreur API invitation:', data.error);
       return { success: false, error: data.error };
     }
 
-    console.log("✅ Email d'activation envoyé:", data);
-    return { success: true };
+    console.log('✅ Invitation native envoyée:', data);
+    return { success: true, user_id: data.user_id };
   } catch (error: any) {
-    console.error("Erreur lors de l'envoi de l'email d'activation:", error);
+    console.error('Erreur lors de l\'invitation native:', error);
     return { success: false, error: error.message };
   }
 }
 
+// Legacy: send activation email (fallback for existing users)
+async function sendLegacyActivationEmail(user: User, establishmentId: string): Promise<void> {
+  try {
+    console.log(`Sending legacy activation email to ${user.email}...`);
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.access_token) {
+      console.error('No session found - cannot send activation email');
+      return;
+    }
+    
+    const { data, error } = await supabase.functions.invoke('send-user-activation', {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: {
+        userId: user.id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        role: user.role,
+        establishmentId: establishmentId
+      }
+    });
+
+    if (error) {
+      console.error('Error sending activation email:', error);
+      throw error;
+    }
+    
+    if (data?.error) {
+      console.error('Activation email API error:', data.error);
+      throw new Error(data.error);
+    }
+
+    console.log('Legacy activation email sent successfully:', data);
+  } catch (error) {
+    console.error('Failed to send activation email:', error);
+  }
+}
 
 export const userService = {
   async getUsers(): Promise<User[]> {
@@ -136,63 +189,41 @@ export const userService = {
           .upsert(assignments, { onConflict: 'user_id,formation_id', ignoreDuplicates: true } as any);
       }
 
-      // Resend activation email if not activated
+      // Resend invitation if not activated
       if (!existingUser.is_activated) {
-        await sendActivationEmail(
-          existingUser.id,
-          normalizedEmail,
-          existingUser.first_name,
-          existingUser.last_name
-        );
-        console.log('Email d\'activation renvoyé pour:', normalizedEmail);
+        await supabase.functions.invoke('resend-invitation-native', {
+          headers: {
+            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          },
+          body: { email: normalizedEmail }
+        });
       }
 
       return existingUser as User;
     }
 
-    // Get current user for created_by
-    const { data: { session } } = await supabase.auth.getSession();
-    const createdBy = session?.user?.id;
-    
-    if (!createdBy) {
-      throw new Error('Session utilisateur non trouvée');
-    }
-
-    // Create user in database first
-    const { data: newUser, error: insertError } = await supabase
-      .from('users')
-      .insert({
-        first_name: userData.first_name,
-        last_name: userData.last_name,
-        email: normalizedEmail,
-        role: userData.role,
-        status: 'En attente',
-        phone: userData.phone,
-        profile_photo_url: userData.profile_photo_url,
-        establishment_id: establishmentId,
-        is_activated: false
-      })
-      .select()
-      .single();
-
-    if (insertError) {
-      console.error('Erreur création utilisateur:', insertError);
-      throw new Error(insertError.message);
-    }
-
-    // Send activation email via Elastic Email
-    const emailResult = await sendActivationEmail(
-      newUser.id,
+    // NEW: Use native Supabase invitation - this creates both auth user and users table entry
+    const inviteResult = await sendNativeInvitation(
       normalizedEmail,
       userData.first_name,
-      userData.last_name
+      userData.last_name,
+      userData.role,
+      establishmentId
     );
 
-    if (!emailResult.success) {
-      console.warn('Email d\'activation non envoyé:', emailResult.error);
-      // Don't throw - user is created, just email failed
-    } else {
-      console.log('✅ Email d\'activation envoyé à:', normalizedEmail);
+    if (!inviteResult.success || !inviteResult.user_id) {
+      throw new Error(inviteResult.error || 'Échec de l\'invitation');
+    }
+
+    // Get the created user
+    const { data: newUser, error: fetchError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', inviteResult.user_id)
+      .single();
+
+    if (fetchError || !newUser) {
+      throw new Error('Utilisateur créé mais impossible de le récupérer');
     }
 
     // Assign formations
@@ -341,22 +372,31 @@ export const userService = {
     return createdUsers;
   },
 
-  // Resend activation email
-  async resendActivationEmail(userId: string): Promise<{ success: boolean }> {
+  // Resend activation email using native Supabase invitation
+  async resendActivationEmail(userId: string): Promise<void> {
     const user = await this.getUserById(userId);
     
-    const result = await sendActivationEmail(
-      user.id,
-      user.email,
-      user.first_name,
-      user.last_name
-    );
-
-    if (!result.success) {
-      throw new Error(result.error || 'Erreur lors de l\'envoi de l\'email');
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.access_token) {
+      throw new Error('Session non trouvée');
     }
 
-    console.log('✅ Email d\'activation renvoyé à:', user.email);
-    return { success: true };
+    const { data, error } = await supabase.functions.invoke('resend-invitation-native', {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: { email: user.email }
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (data?.error) {
+      throw new Error(data.error);
+    }
+
+    console.log('✅ Invitation renvoyée via Supabase Auth natif');
   }
 };

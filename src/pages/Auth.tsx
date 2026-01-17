@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Shield, Users, GraduationCap, UserCheck, Briefcase, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import ForgotPasswordModal from '@/components/auth/ForgotPasswordModal';
 
 // Comptes de démo pour les tests
 const DEMO_ACCOUNTS = [
@@ -56,7 +55,6 @@ const Auth = () => {
   const [demoReady, setDemoReady] = useState(false);
   const [settingUpDemo, setSettingUpDemo] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -333,13 +331,9 @@ const Auth = () => {
                   <input type="checkbox" className="rounded border-gray-300 text-primary focus:ring-primary" />
                   <span className="ml-2 text-sm text-gray-600">Se souvenir de moi</span>
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setShowForgotPassword(true)}
-                  className="text-sm text-primary hover:text-primary/80"
-                >
+                <a href="#" className="text-sm text-primary hover:text-primary/80">
                   Mot de passe oublié ?
-                </button>
+                </a>
               </div>
 
               <button
@@ -404,11 +398,6 @@ const Auth = () => {
           </div>
         </div>
       </div>
-
-      <ForgotPasswordModal 
-        open={showForgotPassword} 
-        onOpenChange={setShowForgotPassword} 
-      />
     </div>
   );
 };

@@ -89,69 +89,149 @@ export default {
 			},
 			keyframes: {
 				'accordion-down': {
-					from: { height: '0' },
-					to: { height: 'var(--radix-accordion-content-height)' }
+					from: {
+						height: '0'
+					},
+					to: {
+						height: 'var(--radix-accordion-content-height)'
+					}
 				},
 				'accordion-up': {
-					from: { height: 'var(--radix-accordion-content-height)' },
-					to: { height: '0' }
+					from: {
+						height: 'var(--radix-accordion-content-height)'
+					},
+					to: {
+						height: '0'
+					}
 				},
 				'fade-in': {
-					from: { opacity: '0', transform: 'translateY(10px)' },
-					to: { opacity: '1', transform: 'translateY(0)' }
+					from: {
+						opacity: '0',
+						transform: 'translateY(10px)'
+					},
+					to: {
+						opacity: '1',
+						transform: 'translateY(0)'
+					}
 				},
 				'fade-in-up': {
-					from: { opacity: '0', transform: 'translateY(30px)' },
-					to: { opacity: '1', transform: 'translateY(0)' }
+					from: {
+						opacity: '0',
+						transform: 'translateY(30px)'
+					},
+					to: {
+						opacity: '1',
+						transform: 'translateY(0)'
+					}
 				},
 				'fade-in-left': {
-					from: { opacity: '0', transform: 'translateX(-30px)' },
-					to: { opacity: '1', transform: 'translateX(0)' }
+					from: {
+						opacity: '0',
+						transform: 'translateX(-30px)'
+					},
+					to: {
+						opacity: '1',
+						transform: 'translateX(0)'
+					}
 				},
 				'fade-in-right': {
-					from: { opacity: '0', transform: 'translateX(30px)' },
-					to: { opacity: '1', transform: 'translateX(0)' }
+					from: {
+						opacity: '0',
+						transform: 'translateX(30px)'
+					},
+					to: {
+						opacity: '1',
+						transform: 'translateX(0)'
+					}
 				},
 				'slide-in-right': {
-					from: { transform: 'translateX(100%)' },
-					to: { transform: 'translateX(0)' }
+					from: {
+						transform: 'translateX(100%)'
+					},
+					to: {
+						transform: 'translateX(0)'
+					}
 				},
 				'pulse-glow': {
-					'0%, 100%': { opacity: '1', transform: 'scale(1)' },
-					'50%': { opacity: '0.8', transform: 'scale(1.1)' }
+					'0%, 100%': {
+						opacity: '1',
+						transform: 'scale(1)'
+					},
+					'50%': {
+						opacity: '0.8',
+						transform: 'scale(1.1)'
+					}
 				},
 				'float': {
-					'0%, 100%': { transform: 'translateY(0px)' },
-					'50%': { transform: 'translateY(-10px)' }
+					'0%, 100%': {
+						transform: 'translateY(0px)'
+					},
+					'50%': {
+						transform: 'translateY(-10px)'
+					}
 				},
 				'float-delayed': {
-					'0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
-					'33%': { transform: 'translateY(-8px) rotate(1deg)' },
-					'66%': { transform: 'translateY(-4px) rotate(-1deg)' }
+					'0%, 100%': {
+						transform: 'translateY(0px) rotate(0deg)'
+					},
+					'33%': {
+						transform: 'translateY(-8px) rotate(1deg)'
+					},
+					'66%': {
+						transform: 'translateY(-4px) rotate(-1deg)'
+					}
 				},
 				'shimmer': {
-					'0%': { backgroundPosition: '-200% 0' },
-					'100%': { backgroundPosition: '200% 0' }
+					'0%': {
+						backgroundPosition: '-200% 0'
+					},
+					'100%': {
+						backgroundPosition: '200% 0'
+					}
 				},
 				'gradient-x': {
-					'0%, 100%': { backgroundPosition: '0% 50%' },
-					'50%': { backgroundPosition: '100% 50%' }
+					'0%, 100%': {
+						backgroundPosition: '0% 50%'
+					},
+					'50%': {
+						backgroundPosition: '100% 50%'
+					}
 				},
 				'spin-slow': {
-					from: { transform: 'rotate(0deg)' },
-					to: { transform: 'rotate(360deg)' }
+					from: {
+						transform: 'rotate(0deg)'
+					},
+					to: {
+						transform: 'rotate(360deg)'
+					}
 				},
 				'bounce-subtle': {
-					'0%, 100%': { transform: 'translateY(0)' },
-					'50%': { transform: 'translateY(-5px)' }
+					'0%, 100%': {
+						transform: 'translateY(0)'
+					},
+					'50%': {
+						transform: 'translateY(-5px)'
+					}
 				},
 				'scale-up': {
-					from: { transform: 'scale(0.95)', opacity: '0' },
-					to: { transform: 'scale(1)', opacity: '1' }
+					from: {
+						transform: 'scale(0.95)',
+						opacity: '0'
+					},
+					to: {
+						transform: 'scale(1)',
+						opacity: '1'
+					}
 				},
 				'blur-in': {
-					from: { filter: 'blur(10px)', opacity: '0' },
-					to: { filter: 'blur(0)', opacity: '1' }
+					from: {
+						filter: 'blur(10px)',
+						opacity: '0'
+					},
+					to: {
+						filter: 'blur(0)',
+						opacity: '1'
+					}
 				}
 			},
 			animation: {

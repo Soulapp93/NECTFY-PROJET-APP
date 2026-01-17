@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,7 +11,7 @@ const corsHeaders = {
 
 interface PasswordResetRequest {
   email: string;
-  redirectUrl?: string;
+  redirectUrl: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -19,237 +21,263 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    console.log("send-password-reset: Starting...");
-    
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "onboarding@resend.dev";
-    
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Parse request body
-    const body: PasswordResetRequest = await req.json();
-    const { email, redirectUrl } = body;
+    const { email, redirectUrl }: PasswordResetRequest = await req.json();
 
-    console.log("send-password-reset: Processing for:", email);
+    console.log(`Processing password reset request for: ${email}`);
 
     if (!email) {
       return new Response(
-        JSON.stringify({ error: "Email requis" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Email is required" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
+    // Create Supabase admin client
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
 
-    // Check if user exists in the users table (get most recent if multiple)
-    const { data: users, error: userError } = await supabaseAdmin
+    // First, check if user exists in public.users table
+    // Note: some databases may contain duplicate emails; we pick the most recently created one.
+    const { data: publicUsers, error: publicUsersError } = await supabaseAdmin
       .from('users')
-      .select('id, first_name, last_name, is_activated, establishment_id')
-      .eq('email', normalizedEmail)
+      .select('id, first_name, last_name, email, establishment_id, role, created_at')
+      .eq('email', email)
       .order('created_at', { ascending: false })
-      .limit(1);
+      .limit(2);
 
-    if (userError) {
-      console.error("send-password-reset: Error fetching user:", userError);
+    if (publicUsersError || !publicUsers || publicUsers.length === 0) {
+      console.error('User not found in public.users:', publicUsersError);
       return new Response(
-        JSON.stringify({ error: "Erreur lors de la vérification de l'utilisateur" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Aucun utilisateur trouvé avec cet email" }),
+        { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    const user = users && users.length > 0 ? users[0] : null;
-
-    if (!user) {
-      console.log("send-password-reset: User not found:", normalizedEmail);
-      // Return success anyway to prevent email enumeration
-      return new Response(
-        JSON.stringify({ success: true, message: "Si l'email existe, un lien a été envoyé" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (publicUsers.length > 1) {
+      console.warn(`Multiple public.users rows found for email ${email}. Using the most recent one.`);
     }
 
-    // Check if user is activated
-    if (!user.is_activated) {
-      console.log("send-password-reset: User not activated:", normalizedEmail);
-      return new Response(
-        JSON.stringify({ 
-          error: "Compte non activé",
-          action: "resend_invitation"
-        }),
-        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const publicUser = publicUsers[0];
+
+    console.log(`Found user in public.users: ${publicUser.id}`);
 
     // Check if user exists in auth.users
-    const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
-    
-    if (authError) {
-      console.error("send-password-reset: Error listing auth users:", authError);
-      return new Response(
-        JSON.stringify({ error: "Erreur lors de la vérification" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // NOTE: listUsers() is paginated; we may need to scan multiple pages.
+    let authUser: any = null;
+    let page = 1;
+    const perPage = 1000;
+
+    while (!authUser) {
+      const { data: pageData, error: authListError } = await supabaseAdmin.auth.admin.listUsers({
+        page,
+        perPage,
+      });
+
+      if (authListError) {
+        console.error('Error listing auth users:', authListError);
+        return new Response(
+          JSON.stringify({ error: "Erreur lors de la vérification du compte" }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      const users = pageData?.users ?? [];
+      authUser = users.find((u) => (u.email ?? '').toLowerCase() === email.toLowerCase()) ?? null;
+
+      // If we got less than a full page, there are no more pages.
+      if (!authUser && users.length < perPage) break;
+
+      page += 1;
+      // Safety: avoid infinite loops
+      if (page > 20) break;
     }
 
-    const authUser = authUsers?.users?.find(u => u.email?.toLowerCase() === normalizedEmail);
-    
+    let resetLink: string;
+
     if (!authUser) {
-      console.log("send-password-reset: Auth user not found:", normalizedEmail);
+      // IMPORTANT (new recommended system):
+      // We no longer create auth users inside the password reset flow.
+      // If the user hasn't accepted their invitation yet, they simply don't have an auth account.
+      // In this case, the correct action is to RESEND an invitation (activation) email, not a reset.
+      console.warn(`No auth account found for ${email}. Password reset cannot be sent.`);
+
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: "Compte non activé",
-          action: "resend_invitation"
+          message:
+            "Cet utilisateur n'a pas encore activé son compte. Renvoyez plutôt une invitation d'activation.",
+          action: "resend_invitation",
         }),
-        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 409, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    // Generate password reset link
-    const finalRedirectUrl = redirectUrl || "https://nectforme.lovable.app/reset-password";
-    
-    const { data: resetData, error: resetError } = await supabaseAdmin.auth.admin.generateLink({
+    // User exists in auth, generate recovery link normally
+    console.log(`User ${email} exists in auth, generating recovery link...`);
+
+    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',
-      email: normalizedEmail,
+      email: email,
       options: {
-        redirectTo: finalRedirectUrl
+        redirectTo: redirectUrl,
       }
     });
 
-    if (resetError) {
-      console.error("send-password-reset: Error generating reset link:", resetError);
+    if (linkError) {
+      console.error('Error generating reset link:', linkError);
       return new Response(
-        JSON.stringify({ error: "Impossible de générer le lien de réinitialisation" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Erreur lors de la génération du lien de réinitialisation" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    const resetLink = resetData?.properties?.action_link;
-    
+    resetLink = linkData.properties?.action_link || '';
+
+
     if (!resetLink) {
-      console.error("send-password-reset: No reset link generated");
+      console.error('No reset link generated');
       return new Response(
-        JSON.stringify({ error: "Impossible de générer le lien" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Erreur lors de la génération du lien" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    console.log("send-password-reset: Reset link generated successfully");
+    console.log(`Reset link generated successfully for ${email}`);
 
-    // If Resend is configured, send email
-    if (resendApiKey) {
-      const resend = new Resend(resendApiKey);
-      const displayName = `${user.first_name}${user.last_name ? ` ${user.last_name}` : ""}`;
+    const firstName = publicUser.first_name || 'Utilisateur';
 
-      const htmlContent = `
+    // Send branded email via Resend
+    // Use verified Resend domain - fallback to resend.dev for testing if custom domain not verified
+    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "NECTFORMA <onboarding@resend.dev>";
+    
+    console.log(`[send-password-reset] Sending password reset email to ${email} from ${fromEmail}`);
+    console.log(`[send-password-reset] Reset link generated successfully`);
+    
+    const emailResponse = await resend.emails.send({
+      from: fromEmail,
+      to: [email],
+      subject: "Réinitialisez votre mot de passe NECTFORMA",
+      html: `
         <!DOCTYPE html>
-        <html>
+        <html lang="fr">
         <head>
-          <meta charset="utf-8">
+          <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Réinitialisation de mot de passe - NECTFORMA</title>
         </head>
-        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5;">
-          <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px 16px 0 0; padding: 40px; text-align: center;">
-              <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">NectForMe</h1>
-              <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">Réinitialisation du mot de passe</p>
-            </div>
-            
-            <div style="background: white; padding: 40px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-              <h2 style="color: #333; margin: 0 0 20px 0; font-size: 24px;">Bonjour ${displayName} !</h2>
-              
-              <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-                Vous avez demandé la réinitialisation de votre mot de passe. Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe :
-              </p>
-              
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${resetLink}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
-                  Réinitialiser mon mot de passe
-                </a>
-              </div>
-              
-              <p style="color: #888; font-size: 14px; line-height: 1.6; margin: 30px 0 0 0;">
-                Ce lien expirera dans 1 heure. Si vous n'avez pas demandé cette réinitialisation, vous pouvez ignorer cet email.
-              </p>
-              
-              <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-              
-              <p style="color: #888; font-size: 12px; text-align: center; margin: 0;">
-                Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
-                <a href="${resetLink}" style="color: #667eea; word-break: break-all;">${resetLink}</a>
-              </p>
-            </div>
-            
-            <p style="color: #888; font-size: 12px; text-align: center; margin: 20px 0 0 0;">
-              © 2024 NectForMe. Tous droits réservés.
-            </p>
-          </div>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="min-height: 100vh;">
+            <tr>
+              <td align="center" style="padding: 40px 20px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); overflow: hidden;">
+                  
+                  <!-- Header with gradient -->
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); padding: 40px 40px 30px; text-align: center;">
+                      <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                        <tr>
+                          <td style="background-color: #ffffff; width: 56px; height: 56px; border-radius: 12px; text-align: center; vertical-align: middle;">
+                            <span style="color: #8B5CF6; font-size: 20px; font-weight: bold; line-height: 56px;">NF</span>
+                          </td>
+                          <td style="padding-left: 16px;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: bold; letter-spacing: -0.5px;">NECTFORMA</h1>
+                          </td>
+                        </tr>
+                      </table>
+                      <p style="margin: 16px 0 0; color: rgba(255, 255, 255, 0.9); font-size: 16px;">Plateforme de gestion de formation</p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Content -->
+                  <tr>
+                    <td style="padding: 40px;">
+                      <h2 style="margin: 0 0 24px; color: #1f2937; font-size: 24px; font-weight: 600; text-align: center;">
+                        Réinitialisation de mot de passe
+                      </h2>
+                      
+                      <p style="margin: 0 0 16px; color: #4b5563; font-size: 16px; line-height: 1.6;">
+                        Bonjour <strong>${firstName}</strong>,
+                      </p>
+                      
+                      <p style="margin: 0 0 24px; color: #4b5563; font-size: 16px; line-height: 1.6;">
+                        Vous avez demandé à réinitialiser le mot de passe de votre compte NECTFORMA. Cliquez sur le bouton ci-dessous pour créer un nouveau mot de passe :
+                      </p>
+                      
+                      <!-- CTA Button -->
+                      <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                        <tr>
+                          <td align="center" style="padding: 16px 0;">
+                            <a href="${resetLink}" 
+                               style="display: inline-block; background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; padding: 16px 40px; border-radius: 12px; box-shadow: 0 4px 14px 0 rgba(139, 92, 246, 0.4);">
+                              Réinitialiser mon mot de passe
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                      
+                      <p style="margin: 24px 0 16px; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                        Ce lien expirera dans <strong>24 heures</strong>. Si vous n'avez pas demandé cette réinitialisation, vous pouvez ignorer cet email en toute sécurité.
+                      </p>
+                      
+                      <div style="margin-top: 24px; padding: 16px; background-color: #f9fafb; border-radius: 8px; border-left: 4px solid #8B5CF6;">
+                        <p style="margin: 0; color: #6b7280; font-size: 13px; line-height: 1.5;">
+                          Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur :
+                        </p>
+                        <p style="margin: 8px 0 0; word-break: break-all;">
+                          <a href="${resetLink}" style="color: #8B5CF6; font-size: 13px; text-decoration: underline;">${resetLink}</a>
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                  
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background-color: #f9fafb; padding: 32px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
+                      <p style="margin: 0 0 8px; color: #6b7280; font-size: 14px;">
+                        © ${new Date().getFullYear()} NECTFORMA. Tous droits réservés.
+                      </p>
+                      <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+                        Cet email a été envoyé à ${email}
+                      </p>
+                    </td>
+                  </tr>
+                  
+                </table>
+              </td>
+            </tr>
+          </table>
         </body>
         </html>
-      `;
+      `,
+    });
 
-      try {
-        const emailResponse = await resend.emails.send({
-          from: `NectForMe <${fromEmail}>`,
-          to: [normalizedEmail],
-          subject: "Réinitialisation de votre mot de passe NectForMe",
-          html: htmlContent,
-        });
-
-        if (emailResponse.error) {
-          console.error("send-password-reset: Resend error:", emailResponse.error);
-          // Return the link anyway for manual use
-          return new Response(
-            JSON.stringify({ 
-              success: true, 
-              email_pending: true,
-              resetLink,
-              message: "Email non envoyé, utilisez le lien ci-dessous"
-            }),
-            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-
-        console.log("send-password-reset: Email sent successfully via Resend");
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            message: "Email de réinitialisation envoyé"
-          }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      } catch (emailError: any) {
-        console.error("send-password-reset: Email sending failed:", emailError);
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            email_pending: true,
-            resetLink,
-            message: "Email non envoyé, lien généré"
-          }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+    if (emailResponse.error) {
+      console.error("Resend error:", emailResponse.error);
+      // Even if email fails, return success with warning since link was generated
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          warning: "Lien généré mais l'email n'a pas pu être envoyé. Vérifiez la configuration Resend.",
+          resetLink: resetLink // Return link for admin to share manually if needed
+        }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
-    // Resend not configured - return link for manual use
-    console.log("send-password-reset: Resend not configured, returning link");
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        email_pending: true,
-        resetLink,
-        message: "Lien généré (email non configuré)"
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.log("Password reset email sent successfully:", emailResponse);
 
-  } catch (error: any) {
-    console.error("send-password-reset: Unexpected error:", error);
     return new Response(
-      JSON.stringify({ error: error.message || "Une erreur inattendue s'est produite" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ success: true, message: "Email de réinitialisation envoyé" }),
+      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+  } catch (error: any) {
+    console.error("Error in send-password-reset function:", error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 };

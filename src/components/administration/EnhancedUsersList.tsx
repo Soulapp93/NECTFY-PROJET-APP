@@ -284,11 +284,11 @@ const EnhancedUsersList: React.FC = () => {
         return null;
       };
 
-      // Password reset function (Amazon SES pending)
-      const response = await supabase.functions.invoke('send-password-reset', {
+      // Use new native reset-password function
+      const response = await supabase.functions.invoke('reset-password-native', {
         body: { 
           email, 
-          redirectUrl: `${window.location.origin}/reset-password`
+          redirect_url: window.location.origin 
         },
       });
 
@@ -297,23 +297,14 @@ const EnhancedUsersList: React.FC = () => {
 
       // Handle account not activated - invitation will be resent automatically
       if (data?.action === 'resend_invitation') {
-        toast.info(`Compte non activé - Veuillez renvoyer une invitation`);
+        toast.success(`Compte non activé - Nouveau lien d'activation envoyé à ${email}`);
         return;
       }
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      // Show reset link if email is pending (Amazon SES)
-      if (data?.email_pending && data?.resetLink) {
-        toast.success(`Lien généré (copiez-le manuellement)`);
-        console.log('🔗 Lien de réinitialisation:', data.resetLink);
-        // Copy to clipboard
-        await navigator.clipboard.writeText(data.resetLink);
-        toast.info('Lien copié dans le presse-papiers');
-      } else {
-        toast.success(`Lien de réinitialisation généré pour ${email}`);
-      }
+      toast.success(`Lien de réinitialisation envoyé à ${email}`);
     } catch (error: any) {
       console.error("Erreur lors de l'envoi du lien:", error);
 
