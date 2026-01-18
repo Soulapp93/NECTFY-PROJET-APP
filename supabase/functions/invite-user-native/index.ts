@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.2";
+import { Resend } from "npm:resend@2.0.0";
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,6 +17,16 @@ interface InviteUserRequest {
   establishment_id: string;
   redirect_url?: string;
 }
+
+const getRoleLabel = (role: string): string => {
+  const labels: Record<string, string> = {
+    'Admin': 'Administrateur',
+    'AdminPrincipal': 'Administrateur Principal',
+    'Formateur': 'Formateur',
+    'Étudiant': 'Étudiant',
+  };
+  return labels[role] || role;
+};
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -98,32 +111,36 @@ serve(async (req) => {
       );
     }
 
-    // Check if user already exists in auth
-    const { data: existingAuthUsers } = await supabaseAdmin.auth.admin.listUsers();
-    const existingAuthUser = existingAuthUsers?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
+    // Check if user already exists in our users table
+    const { data: existingUser } = await supabaseAdmin
+      .from("users")
+      .select("id, is_activated")
+      .eq("email", email.toLowerCase())
+      .maybeSingle();
 
-    if (existingAuthUser) {
-      // Check if user exists in our users table
-      const { data: existingUser } = await supabaseAdmin
-        .from("users")
-        .select("id, is_activated")
-        .eq("email", email.toLowerCase())
-        .single();
-
-      if (existingUser) {
-        return new Response(
-          JSON.stringify({ error: "Un utilisateur avec cet email existe déjà" }),
-          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+    if (existingUser) {
+      return new Response(
+        JSON.stringify({ error: "Un utilisateur avec cet email existe déjà" }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    // Use Supabase Auth native invitation
-    const baseUrl = redirect_url || `${req.headers.get("origin") || "https://nectforme.lovable.app"}`;
-    
-    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-      redirectTo: `${baseUrl}/activation`,
-      data: {
+    // Get establishment name for email
+    const { data: establishment } = await supabaseAdmin
+      .from('establishments')
+      .select('name')
+      .eq('id', establishment_id)
+      .single();
+
+    const establishmentName = establishment?.name || 'NECTFORMA';
+
+    // Create auth user first (without sending Supabase email)
+    const tempPassword = crypto.randomUUID();
+    const { data: authData, error: authCreateError } = await supabaseAdmin.auth.admin.createUser({
+      email: email.toLowerCase(),
+      password: tempPassword,
+      email_confirm: false,
+      user_metadata: {
         first_name,
         last_name,
         role,
@@ -131,11 +148,34 @@ serve(async (req) => {
       },
     });
 
-    if (inviteError) {
-      console.error("Erreur invitation Supabase Auth:", inviteError);
+    if (authCreateError) {
+      console.error("[invite-user-native] ❌ Error creating auth user:", authCreateError);
       return new Response(
-        JSON.stringify({ error: inviteError.message }),
+        JSON.stringify({ error: authCreateError.message }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Generate activation token
+    const activationToken = crypto.randomUUID() + '-' + Date.now();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    // Insert activation token
+    const { error: tokenError } = await supabaseAdmin
+      .from('user_activation_tokens')
+      .insert({
+        user_id: authData.user.id,
+        token: activationToken,
+        expires_at: expiresAt.toISOString()
+      });
+
+    if (tokenError) {
+      console.error("[invite-user-native] ❌ Token creation error:", tokenError);
+      // Rollback: delete auth user
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+      return new Response(
+        JSON.stringify({ error: "Erreur lors de la création du token d'activation" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -143,7 +183,7 @@ serve(async (req) => {
     const { error: insertError } = await supabaseAdmin
       .from("users")
       .insert({
-        id: inviteData.user.id,
+        id: authData.user.id,
         email: email.toLowerCase(),
         first_name,
         last_name,
@@ -155,28 +195,117 @@ serve(async (req) => {
       });
 
     if (insertError) {
-      console.error("Erreur création utilisateur:", insertError);
-      // Rollback: delete auth user if we couldn't create the record
-      await supabaseAdmin.auth.admin.deleteUser(inviteData.user.id);
+      console.error("[invite-user-native] ❌ Error creating user record:", insertError);
+      // Rollback: delete auth user and token
+      await supabaseAdmin.from('user_activation_tokens').delete().eq('user_id', authData.user.id);
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
       return new Response(
         JSON.stringify({ error: "Erreur lors de la création de l'utilisateur" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`✅ Invitation envoyée à ${email} via Supabase Auth natif`);
+    // Generate activation link
+    const baseUrl = redirect_url || `${req.headers.get("origin") || "https://nectforme.lovable.app"}`;
+    const activationLink = `${baseUrl}/activation?token=${activationToken}`;
+
+    // Send activation email via Resend
+    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "NECTFORMA <onboarding@resend.dev>";
+    
+    console.log(`[invite-user-native] 📧 Sending activation email to ${email} via Resend`);
+    console.log(`[invite-user-native] 🔗 Activation link: ${activationLink}`);
+    
+    const emailResponse = await resend.emails.send({
+      from: fromEmail,
+      to: [email],
+      subject: `Activez votre compte ${establishmentName} - NECTFORMA`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+            <div style="background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%); padding: 40px 30px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">NECTFORMA</h1>
+              <p style="color: rgba(255,255,255,0.9); margin-top: 8px; font-size: 14px;">Plateforme de gestion de formation</p>
+            </div>
+            
+            <div style="padding: 40px 30px;">
+              <h2 style="color: #1a1a1a; margin: 0 0 20px; font-size: 24px;">
+                Bienvenue ${first_name} ${last_name} ! 🎉
+              </h2>
+              
+              <p style="color: #4a4a4a; line-height: 1.6; font-size: 16px; margin-bottom: 20px;">
+                Un compte a été créé pour vous sur <strong style="color: #8B5CF6;">${establishmentName}</strong> 
+                en tant que <strong>${getRoleLabel(role)}</strong>.
+              </p>
+              
+              <p style="color: #4a4a4a; line-height: 1.6; font-size: 16px; margin-bottom: 30px;">
+                Pour activer votre compte et choisir votre mot de passe, cliquez sur le bouton ci-dessous :
+              </p>
+              
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${activationLink}" 
+                   style="display: inline-block; background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);">
+                  Activer mon compte
+                </a>
+              </div>
+              
+              <div style="background-color: #f8f7ff; border-radius: 12px; padding: 20px; margin-top: 30px;">
+                <p style="color: #6b7280; font-size: 14px; margin: 0;">
+                  <strong>⏳ Ce lien expire dans 7 jours.</strong><br>
+                  Si vous n'avez pas demandé la création de ce compte, vous pouvez ignorer cet email.
+                </p>
+              </div>
+              
+              <p style="color: #9ca3af; font-size: 12px; margin-top: 30px; text-align: center;">
+                Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
+                <a href="${activationLink}" style="color: #8B5CF6; word-break: break-all;">${activationLink}</a>
+              </p>
+            </div>
+            
+            <div style="background-color: #f9fafb; padding: 20px 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+                © ${new Date().getFullYear()} NECTFORMA. Tous droits réservés.
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    if (emailResponse.error) {
+      console.error("[invite-user-native] ❌ Resend API error:", emailResponse.error);
+      // Don't rollback - user is created, just email failed
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          warning: "Utilisateur créé mais erreur envoi email",
+          user_id: authData.user.id,
+          email_error: emailResponse.error.message
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`[invite-user-native] ✅ Email sent successfully via Resend`, { messageId: emailResponse.id });
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: "Invitation envoyée avec succès",
-        user_id: inviteData.user.id 
+        message: "Invitation envoyée avec succès via Resend",
+        user_id: authData.user.id,
+        email_id: emailResponse.id
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error) {
-    console.error("Erreur invite-user-native:", error);
+    console.error("[invite-user-native] ❌ Critical error:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
