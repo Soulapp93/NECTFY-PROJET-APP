@@ -61,10 +61,10 @@ serve(async (req) => {
       );
     }
 
-    // Get requesting user's role
+    // Get requesting user's role + establishment
     const { data: requestingUserData } = await supabaseAdmin
       .from("users")
-      .select("role")
+      .select("role, establishment_id")
       .eq("id", requestingUser.id)
       .single();
 
@@ -94,17 +94,20 @@ serve(async (req) => {
 
     console.log(`[resend-invitation-native] 📧 Resending invitation to: ${email}`);
 
-    // Get user data
+    // Get user data (scoped to the admin's establishment to avoid duplicates across establishments)
     const { data: userData, error: userError } = await supabaseAdmin
       .from("users")
       .select("id, first_name, last_name, role, establishment_id")
       .eq("email", email.toLowerCase())
-      .single();
+      .eq("establishment_id", requestingUserData.establishment_id)
+      .maybeSingle();
 
     if (userError || !userData) {
       console.error("[resend-invitation-native] ❌ User not found:", userError);
       return new Response(
-        JSON.stringify({ error: "Utilisateur non trouvé" }),
+        JSON.stringify({
+          error: "Utilisateur non trouvé dans cet établissement",
+        }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
