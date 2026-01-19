@@ -97,13 +97,19 @@ const EnhancedUsersList: React.FC = () => {
       await refetchFormations();
       await refetchUserTutors();
       return created;
-    } else if (selectedUser) {
+    }
+
+    if (modalMode === 'edit' && selectedUser) {
       const updated = await updateUser(selectedUser.id!, userData, formationIds, tutorData);
+      // Met à jour l'utilisateur sélectionné (utile si on ouvre ensuite la fiche détail)
+      setSelectedUser(updated);
+
       await refetch();
       await refetchFormations();
       await refetchUserTutors();
       return updated;
     }
+
     throw new Error('Mode invalide');
   };
 
