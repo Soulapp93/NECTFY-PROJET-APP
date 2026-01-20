@@ -33,7 +33,8 @@ import {
 } from '@/components/ui/sidebar';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useCurrentUser, useUserWithRelations } from '@/hooks/useCurrentUser';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useMyContext } from '@/hooks/useMyContext';
 import { useEstablishment } from '@/hooks/useEstablishment';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,7 +50,7 @@ const Sidebar = () => {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const { userRole, userId } = useCurrentUser();
-  const { userInfo, relationInfo } = useUserWithRelations();
+  const { user: myUser, relation: myRelation, establishment: myEstablishment, role: contextRole } = useMyContext();
   const { establishment } = useEstablishment();
   const { counts: unreadCounts } = useUnreadMessages();
   const location = useLocation();
@@ -65,19 +66,19 @@ const Sidebar = () => {
 
   // Obtenir les informations utilisateur pour l'affichage
   const getUserDisplayInfo = () => {
-    if (userInfo) {
+    if (myUser) {
       return {
-        name: `${userInfo.first_name} ${userInfo.last_name}`,
-        role: userRole || 'Utilisateur',
-        initials: `${userInfo.first_name?.[0] || ''}${userInfo.last_name?.[0] || ''}`.toUpperCase() || 'U',
-        profilePhotoUrl: userInfo.profile_photo_url || null,
-        relationInfo
+        name: `${myUser.first_name} ${myUser.last_name}`,
+        role: contextRole || userRole || 'Utilisateur',
+        initials: `${myUser.first_name?.[0] || ''}${myUser.last_name?.[0] || ''}`.toUpperCase() || 'U',
+        profilePhotoUrl: myUser.profile_photo_url || null,
+        relationInfo: myRelation
       };
     }
     
     return {
       name: 'Utilisateur',
-      role: userRole || 'Utilisateur',
+      role: contextRole || userRole || 'Utilisateur',
       initials: 'U',
       profilePhotoUrl: null,
       relationInfo: null
