@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useCurrentUser } from './useCurrentUser';
 
 export interface TutorFormation {
   formation_id: string;
@@ -18,110 +17,116 @@ export interface TutorFormation {
   student_email: string;
 }
 
+interface RpcFormation {
+  id: string;
+  title: string;
+  description: string | null;
+  level: string;
+  status: string;
+  start_date: string;
+  end_date: string;
+  duration: number;
+  color: string | null;
+  max_students: number;
+  modules: Array<{
+    id: string;
+    title: string;
+    description: string | null;
+    duration_hours: number;
+    order_index: number;
+  }>;
+  student: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
+}
+
+interface TutorFormationsResponse {
+  error: string | null;
+  apprentice_id: string | null;
+  formations: RpcFormation[];
+}
+
+/**
+ * Hook pour récupérer les formations de l'apprenti assigné au tuteur.
+ * Utilise une RPC SECURITY DEFINER pour contourner les problèmes RLS.
+ */
 export const useTutorFormations = () => {
-  const { userId, userRole } = useCurrentUser();
   const [formations, setFormations] = useState<TutorFormation[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [apprenticeId, setApprenticeId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTutorFormations = async () => {
-    if (!userId || userRole !== 'Tuteur') {
-      setFormations([]);
-      return;
-    }
-
+  const fetchTutorFormations = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      // 1. Récupérer les étudiants assignés au tuteur
-      const { data: studentAssignments, error: assignmentError } = await supabase
-        .from('tutor_student_assignments')
-        .select(`
-          student_id,
-          users!tutor_student_assignments_student_id_fkey(
-            id,
-            first_name,
-            last_name,
-            email
-          )
-        `)
-        .eq('tutor_id', userId)
-        .eq('is_active', true);
-      
-      if (assignmentError) throw assignmentError;
-      
-      if (!studentAssignments || studentAssignments.length === 0) {
+
+      // Vérifier si l'utilisateur est connecté
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
         setFormations([]);
+        setApprenticeId(null);
+        setLoading(false);
         return;
       }
-      
-      const studentIds = studentAssignments.map(sa => sa.student_id);
-      
-      // 2. Récupérer les formations de ces étudiants via user_formation_assignments
-      const { data: formationAssignments, error: formationError } = await supabase
-        .from('user_formation_assignments')
-        .select(`
-          user_id,
-          formation_id,
-          formations(
-            id,
-            title,
-            level,
-            description,
-            start_date,
-            end_date,
-            color,
-            duration,
-            formation_modules(id)
-          )
-        `)
-        .in('user_id', studentIds);
-      
-      if (formationError) throw formationError;
 
-      // 3. Combiner les données
-      const enrichedData: TutorFormation[] = [];
-      
-      formationAssignments?.forEach(fa => {
-        const studentAssignment = studentAssignments.find(sa => sa.student_id === fa.user_id);
-        const student = studentAssignment?.users as any;
-        const formation = fa.formations as any;
+      // Appeler la RPC SECURITY DEFINER
+      const { data, error: rpcError } = await supabase.rpc('get_tutor_apprentice_formations');
+
+      if (rpcError) {
+        console.error('Erreur get_tutor_apprentice_formations:', rpcError);
+        setError(rpcError.message);
+        setFormations([]);
+        setLoading(false);
+        return;
+      }
+
+      // Cast vers le type attendu
+      const response = data as unknown as TutorFormationsResponse;
+
+      if (response.error) {
+        console.error('Erreur RPC:', response.error);
+        setError(response.error);
+        setFormations([]);
+      } else {
+        // Transformer les données RPC vers le format TutorFormation
+        const transformedFormations: TutorFormation[] = (response.formations || []).map(f => ({
+          formation_id: f.id,
+          formation_title: f.title,
+          formation_level: f.level,
+          formation_description: f.description || undefined,
+          formation_start_date: f.start_date,
+          formation_end_date: f.end_date,
+          formation_color: f.color || undefined,
+          formation_duration: f.duration,
+          modules_count: f.modules?.length || 0,
+          student_id: f.student.id,
+          student_first_name: f.student.first_name,
+          student_last_name: f.student.last_name,
+          student_email: f.student.email
+        }));
         
-        if (student && formation) {
-          enrichedData.push({
-            formation_id: formation.id,
-            formation_title: formation.title,
-            formation_level: formation.level,
-            formation_description: formation.description,
-            formation_start_date: formation.start_date,
-            formation_end_date: formation.end_date,
-            formation_color: formation.color,
-            formation_duration: formation.duration,
-            modules_count: formation.formation_modules?.length || 0,
-            student_id: fa.user_id,
-            student_first_name: student.first_name,
-            student_last_name: student.last_name,
-            student_email: student.email
-          });
-        }
-      });
-
-      setFormations(enrichedData);
+        setFormations(transformedFormations);
+        setApprenticeId(response.apprentice_id);
+      }
     } catch (err) {
-      console.error('Erreur lors du chargement des formations tuteur:', err);
-      setError(err instanceof Error ? err.message : 'Erreur lors du chargement des formations');
+      console.error('Erreur useTutorFormations:', err);
+      setError(err instanceof Error ? err.message : 'Erreur inconnue');
+      setFormations([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchTutorFormations();
-  }, [userId, userRole]);
+  }, [fetchTutorFormations]);
 
   // Récupérer les formations uniques
-  const getUniqueFormations = () => {
+  const getUniqueFormations = useCallback(() => {
     const uniqueFormations = new Map();
     formations.forEach(formation => {
       if (!uniqueFormations.has(formation.formation_id)) {
@@ -138,10 +143,11 @@ export const useTutorFormations = () => {
       });
     });
     return Array.from(uniqueFormations.values());
-  };
+  }, [formations]);
 
   return {
     formations,
+    apprenticeId,
     loading,
     error,
     getUniqueFormations,

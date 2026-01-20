@@ -2286,6 +2286,7 @@ export type Database = {
         }[]
       }
       get_my_context: { Args: never; Returns: Json }
+      get_tutor_apprentice_formations: { Args: never; Returns: Json }
       get_tutor_students: { Args: { _tutor_id: string }; Returns: string[] }
       is_attendance_open: {
         Args: { sheet_date: string; start_time: string }
