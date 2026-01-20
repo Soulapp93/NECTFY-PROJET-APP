@@ -111,54 +111,62 @@ export const useUserWithRelations = () => {
       }
 
       try {
-        // Pour les tuteurs, on évite les SELECT directs sur tutors (RLS en erreur) et on s'appuie
-        // sur les infos de session + RPCs SECURITY DEFINER.
+        // Pour les tuteurs, récupérer les infos depuis la table tutors et les apprentis
         if (userRole === 'Tuteur') {
-          const { data: sessionData } = await supabase.auth.getSession();
-          const u = sessionData.session?.user;
+          // Récupérer les infos du tuteur depuis la table tutors
+          const { data: tutorData, error: tutorError } = await supabase
+            .from('tutors')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle();
 
           if (!mounted) return;
 
-          setUserInfo({
-            id: userId,
-            email: u?.email ?? null,
-            first_name: (u?.user_metadata as any)?.first_name ?? null,
-            last_name: (u?.user_metadata as any)?.last_name ?? null,
-            phone: (u?.user_metadata as any)?.phone ?? null,
-            profile_photo_url: (u?.user_metadata as any)?.profile_photo_url ?? null,
-            role: 'Tuteur',
-          });
+          if (tutorData) {
+            setUserInfo({
+              id: userId,
+              email: tutorData.email,
+              first_name: tutorData.first_name,
+              last_name: tutorData.last_name,
+              phone: tutorData.phone,
+              profile_photo_url: tutorData.profile_photo_url,
+              role: 'Tuteur',
+            });
+          } else {
+            // Fallback sur les infos de session
+            const { data: sessionData } = await supabase.auth.getSession();
+            const u = sessionData.session?.user;
+            setUserInfo({
+              id: userId,
+              email: u?.email ?? null,
+              first_name: (u?.user_metadata as any)?.first_name ?? null,
+              last_name: (u?.user_metadata as any)?.last_name ?? null,
+              phone: null,
+              profile_photo_url: null,
+              role: 'Tuteur',
+            });
+          }
 
-          // Chercher l'apprenti du tuteur via RPC pour éviter RLS
-          const { data: studentIds, error: studentIdsError } = await supabase.rpc('get_tutor_students', {
-            _tutor_id: userId,
-          });
+          // Chercher l'apprenti du tuteur via la vue
+          const { data: studentData, error: studentError } = await supabase
+            .from('tutor_students_view')
+            .select('student_id, student_first_name, student_last_name')
+            .eq('tutor_id', userId)
+            .eq('is_active', true)
+            .maybeSingle();
 
           if (!mounted) return;
 
-          const firstStudentId = Array.isArray(studentIds) ? studentIds[0] : null;
-
-          if (!studentIdsError && firstStudentId) {
-            const { data: studentData } = await supabase
-              .from('users')
-              .select('first_name, last_name')
-              .eq('id', firstStudentId)
-              .maybeSingle();
-
-            if (!mounted) return;
-
-            if (studentData) {
-              setRelationInfo({
-                type: 'student',
-                name: `${studentData.first_name} ${studentData.last_name}`,
-              });
-            } else {
-              setRelationInfo(null);
-            }
+          if (!studentError && studentData) {
+            setRelationInfo({
+              type: 'student',
+              name: `${studentData.student_first_name} ${studentData.student_last_name}`,
+            });
           } else {
             setRelationInfo(null);
           }
 
+          setLoading(false);
           return;
         }
 

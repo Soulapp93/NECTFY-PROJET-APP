@@ -40,7 +40,7 @@ const SimplifiedUserModal: React.FC<SimplifiedUserModalProps> = ({
     first_name: '',
     last_name: '',
     email: '',
-    role: 'Étudiant' as 'AdminPrincipal' | 'Admin' | 'Formateur' | 'Étudiant',
+    role: 'Étudiant' as 'AdminPrincipal' | 'Admin' | 'Formateur' | 'Étudiant' | 'Tuteur',
     status: 'Actif' as 'Actif' | 'Inactif' | 'En attente'
   });
 
