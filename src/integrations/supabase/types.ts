@@ -2384,8 +2384,11 @@ export type Database = {
           contract_type: string | null
           establishment_id: string | null
           formation_id: string | null
+          formation_level: string | null
           formation_title: string | null
+          is_activated: boolean | null
           is_active: boolean | null
+          position: string | null
           student_email: string | null
           student_first_name: string | null
           student_id: string | null
