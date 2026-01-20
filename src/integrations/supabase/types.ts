@@ -2374,7 +2374,12 @@ export type Database = {
     }
     Enums: {
       invitation_status: "pending" | "accepted" | "expired" | "cancelled"
-      user_role: "Admin" | "Formateur" | "Étudiant" | "AdminPrincipal"
+      user_role:
+        | "Admin"
+        | "Formateur"
+        | "Étudiant"
+        | "AdminPrincipal"
+        | "Tuteur"
       user_status: "Actif" | "Inactif" | "En attente"
     }
     CompositeTypes: {
@@ -2504,7 +2509,7 @@ export const Constants = {
   public: {
     Enums: {
       invitation_status: ["pending", "accepted", "expired", "cancelled"],
-      user_role: ["Admin", "Formateur", "Étudiant", "AdminPrincipal"],
+      user_role: ["Admin", "Formateur", "Étudiant", "AdminPrincipal", "Tuteur"],
       user_status: ["Actif", "Inactif", "En attente"],
     },
   },
