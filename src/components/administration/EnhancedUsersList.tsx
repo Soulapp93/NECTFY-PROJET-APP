@@ -23,6 +23,7 @@ import ExportUsersModal from './ExportUsersModal';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { getAppBaseUrl } from '@/lib/appBaseUrl';
 
 const EnhancedUsersList: React.FC = () => {
   const { users, loading, error, createUser, updateUser, deleteUser, bulkCreateUsers, getUserFormations: getUserFormationsFromHook, refetch } = useUsers();
@@ -296,7 +297,7 @@ const EnhancedUsersList: React.FC = () => {
       const response = await supabase.functions.invoke('reset-password-native', {
         body: { 
           email, 
-          redirect_url: window.location.origin 
+          redirect_url: getAppBaseUrl(),
         },
       });
 
