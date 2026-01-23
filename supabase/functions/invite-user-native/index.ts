@@ -41,7 +41,7 @@ const sendEmailWithBrevo = async (to: string, subject: string, htmlContent: stri
     body: JSON.stringify({
       sender: {
         name: "NECTFORMA",
-        email: "noreply@nectforma.fr",
+        email: "noreply@nectforma.com",
       },
       to: [{ email: to }],
       subject: subject,
