@@ -1,8 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.2";
-import { Resend } from "npm:resend@2.0.0";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,6 +19,39 @@ const getRoleLabel = (role: string): string => {
     'Étudiant': 'Étudiant',
   };
   return labels[role] || role;
+};
+
+const sendEmailWithBrevo = async (to: string, subject: string, htmlContent: string) => {
+  const brevoApiKey = Deno.env.get("BREVO_API_KEY");
+  if (!brevoApiKey) {
+    throw new Error("BREVO_API_KEY non configurée");
+  }
+
+  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      "accept": "application/json",
+      "api-key": brevoApiKey,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      sender: {
+        name: "NECTFORMA",
+        email: "noreply@nectforma.fr",
+      },
+      to: [{ email: to }],
+      subject: subject,
+      htmlContent: htmlContent,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.text();
+    console.error("[resend-invitation-native] ❌ Brevo API error:", errorData);
+    throw new Error(`Brevo API error: ${response.status} - ${errorData}`);
+  }
+
+  return await response.json();
 };
 
 serve(async (req) => {
@@ -152,111 +182,109 @@ serve(async (req) => {
     const baseUrl = redirect_url || `${req.headers.get("origin") || "https://nectforme.lovable.app"}`;
     const activationLink = `${baseUrl}/activation?token=${activationToken}`;
 
-    // Send activation email via Resend
-    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "NECTFORMA <onboarding@resend.dev>";
-    
-    console.log(`[resend-invitation-native] 📧 Sending email via Resend to ${email}`);
+    console.log(`[resend-invitation-native] 📧 Sending email via Brevo to ${email}`);
     console.log(`[resend-invitation-native] 🔗 Activation link: ${activationLink}`);
-    
-    const emailResponse = await resend.emails.send({
-      from: fromEmail,
-      to: [email],
-      subject: `Rappel: Activez votre compte ${establishmentName} - NECTFORMA`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        </head>
-        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px;">
-          <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-            <div style="background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%); padding: 40px 30px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">NECTFORMA</h1>
-              <p style="color: rgba(255,255,255,0.9); margin-top: 8px; font-size: 14px;">Plateforme de gestion de formation</p>
-            </div>
-            
-            <div style="padding: 40px 30px;">
-              <h2 style="color: #1a1a1a; margin: 0 0 20px; font-size: 24px;">
-                Rappel d'activation 📬
-              </h2>
-              
-              <p style="color: #4a4a4a; line-height: 1.6; font-size: 16px; margin-bottom: 20px;">
-                Bonjour ${userData.first_name} ${userData.last_name},
-              </p>
-              
-              <p style="color: #4a4a4a; line-height: 1.6; font-size: 16px; margin-bottom: 20px;">
-                Votre compte sur <strong style="color: #8B5CF6;">${establishmentName}</strong> 
-                en tant que <strong>${getRoleLabel(userData.role)}</strong> n'a pas encore été activé.
-              </p>
-              
-              <p style="color: #4a4a4a; line-height: 1.6; font-size: 16px; margin-bottom: 30px;">
-                Pour activer votre compte et choisir votre mot de passe, cliquez sur le bouton ci-dessous :
-              </p>
-              
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${activationLink}" 
-                   style="display: inline-block; background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);">
-                  Activer mon compte
-                </a>
-              </div>
-              
-              <div style="background-color: #f8f7ff; border-radius: 12px; padding: 20px; margin-top: 30px;">
-                <p style="color: #6b7280; font-size: 14px; margin: 0;">
-                  <strong>⏳ Ce lien expire dans 7 jours.</strong><br>
-                  Si vous n'avez pas demandé la création de ce compte, vous pouvez ignorer cet email.
-                </p>
-              </div>
-              
-              <p style="color: #9ca3af; font-size: 12px; margin-top: 30px; text-align: center;">
-                Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
-                <a href="${activationLink}" style="color: #8B5CF6; word-break: break-all;">${activationLink}</a>
-              </p>
-            </div>
-            
-            <div style="background-color: #f9fafb; padding: 20px 30px; text-align: center; border-top: 1px solid #e5e7eb;">
-              <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-                © ${new Date().getFullYear()} NECTFORMA. Tous droits réservés.
-              </p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
-    });
 
-    if (emailResponse.error) {
-      console.error("[resend-invitation-native] ❌ Resend API error:", emailResponse.error);
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+          <div style="background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%); padding: 40px 30px; text-align: center;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">NECTFORMA</h1>
+            <p style="color: rgba(255,255,255,0.9); margin-top: 8px; font-size: 14px;">Plateforme de gestion de formation</p>
+          </div>
+          
+          <div style="padding: 40px 30px;">
+            <h2 style="color: #1a1a1a; margin: 0 0 20px; font-size: 24px;">
+              Rappel d'activation 📬
+            </h2>
+            
+            <p style="color: #4a4a4a; line-height: 1.6; font-size: 16px; margin-bottom: 20px;">
+              Bonjour ${userData.first_name} ${userData.last_name},
+            </p>
+            
+            <p style="color: #4a4a4a; line-height: 1.6; font-size: 16px; margin-bottom: 20px;">
+              Votre compte sur <strong style="color: #8B5CF6;">${establishmentName}</strong> 
+              en tant que <strong>${getRoleLabel(userData.role)}</strong> n'a pas encore été activé.
+            </p>
+            
+            <p style="color: #4a4a4a; line-height: 1.6; font-size: 16px; margin-bottom: 30px;">
+              Pour activer votre compte et choisir votre mot de passe, cliquez sur le bouton ci-dessous :
+            </p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${activationLink}" 
+                 style="display: inline-block; background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);">
+                Activer mon compte
+              </a>
+            </div>
+            
+            <div style="background-color: #f8f7ff; border-radius: 12px; padding: 20px; margin-top: 30px;">
+              <p style="color: #6b7280; font-size: 14px; margin: 0;">
+                <strong>⏳ Ce lien expire dans 7 jours.</strong><br>
+                Si vous n'avez pas demandé la création de ce compte, vous pouvez ignorer cet email.
+              </p>
+            </div>
+            
+            <p style="color: #9ca3af; font-size: 12px; margin-top: 30px; text-align: center;">
+              Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
+              <a href="${activationLink}" style="color: #8B5CF6; word-break: break-all;">${activationLink}</a>
+            </p>
+          </div>
+          
+          <div style="background-color: #f9fafb; padding: 20px 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+            <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+              © ${new Date().getFullYear()} NECTFORMA. Tous droits réservés.
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    try {
+      const emailResult = await sendEmailWithBrevo(
+        email,
+        `Rappel: Activez votre compte ${establishmentName} - NECTFORMA`,
+        htmlContent
+      );
+
+      // Update invitation_sent_at
+      await supabaseAdmin
+        .from("users")
+        .update({ invitation_sent_at: new Date().toISOString() })
+        .eq("id", userData.id);
+
+      console.log(`[resend-invitation-native] ✅ Email sent successfully via Brevo`, { messageId: emailResult.messageId });
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: "Invitation renvoyée avec succès via Brevo",
+          email_id: emailResult.messageId
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    } catch (emailError) {
+      console.error("[resend-invitation-native] ❌ Brevo email error:", emailError);
       return new Response(
         JSON.stringify({ 
           error: "Erreur lors de l'envoi de l'email",
-          details: emailResponse.error.message 
+          details: emailError instanceof Error ? emailError.message : "Erreur inconnue"
         }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Update invitation_sent_at
-    await supabaseAdmin
-      .from("users")
-      .update({ invitation_sent_at: new Date().toISOString() })
-      .eq("id", userData.id);
-
-    console.log(`[resend-invitation-native] ✅ Email sent successfully via Resend`, { messageId: emailResponse.id });
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: "Invitation renvoyée avec succès via Resend",
-        email_id: emailResponse.id
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-
   } catch (error) {
     console.error("[resend-invitation-native] ❌ Critical error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : "Erreur inconnue" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
