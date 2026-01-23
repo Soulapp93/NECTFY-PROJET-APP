@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { getAppBaseUrl } from '@/lib/appBaseUrl';
 
 export interface User {
   id: string;
@@ -74,7 +75,7 @@ async function sendNativeInvitation(
         last_name: lastName,
         role,
         establishment_id: establishmentId,
-        redirect_url: window.location.origin
+        redirect_url: getAppBaseUrl(),
       }
     });
 
