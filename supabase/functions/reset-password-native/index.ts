@@ -85,16 +85,19 @@ serve(async (req) => {
       );
     }
 
-    // Check if user exists in our users table
-    const { data: userData, error: userError } = await supabaseAdmin
+    // Check if user exists in our users table - handle potential duplicates by taking the first match
+    const { data: usersData, error: userError } = await supabaseAdmin
       .from("users")
       .select("id, email, first_name, last_name, role, is_activated, status, establishment_id")
       .eq("email", email.toLowerCase())
-      .single();
+      .order("created_at", { ascending: false })
+      .limit(1);
+    
+    const userData = usersData && usersData.length > 0 ? usersData[0] : null;
 
-    console.log(`[reset-password-native] 📋 User lookup result:`, { userData: userData ? { ...userData, id: userData.id } : null, userError: userError?.message });
+    console.log(`[reset-password-native] 📋 User lookup result:`, { userData: userData ? { ...userData, id: userData.id } : null, usersCount: usersData?.length || 0 });
 
-    if (userError || !userData) {
+    if (!userData) {
       console.log(`[reset-password-native] ⚠️ User not found in public.users table for email: ${email}`);
       // Don't reveal if user exists or not for security
       return new Response(

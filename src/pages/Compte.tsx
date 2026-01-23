@@ -2,13 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { UserCircle } from 'lucide-react';
 import ProfileSettings from '../components/compte/ProfileSettings';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { userService } from '@/services/userService';
+import { supabase } from '@/integrations/supabase/client';
 import { fileUploadService } from '@/services/fileUploadService';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/page-header';
 
+interface ProfileApiResponse {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone?: string;
+  profile_photo_url?: string;
+  role: string;
+  status: string;
+  establishment_id: string;
+  is_activated?: boolean;
+  error?: string;
+}
+
 const Compte = () => {
-  const { userId } = useCurrentUser();
+  const { userId, userRole } = useCurrentUser();
 
   // État pour les données de profil utilisateur
   const [profileData, setProfileData] = useState({
@@ -21,12 +35,35 @@ const Compte = () => {
 
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
-  // Charger les données utilisateur au montage du composant
+  // Charger les données utilisateur via la fonction RPC sécurisée
   useEffect(() => {
     const loadUserData = async () => {
-      if (userId) {
-        try {
-          const userData = await userService.getUserById(userId);
+      if (!userId) {
+        setIsLoadingProfile(false);
+        return;
+      }
+
+      try {
+        // Utiliser la fonction RPC SECURITY DEFINER pour contourner les RLS
+        const { data, error } = await supabase.rpc('get_my_profile');
+
+        if (error) {
+          console.error('Erreur get_my_profile:', error);
+          toast.error('Erreur lors du chargement du profil');
+          setIsLoadingProfile(false);
+          return;
+        }
+
+        const userData = data as unknown as ProfileApiResponse;
+
+        if (userData?.error) {
+          console.error('Erreur dans les données profil:', userData.error);
+          toast.error('Erreur lors du chargement du profil');
+          setIsLoadingProfile(false);
+          return;
+        }
+
+        if (userData) {
           setProfileData({
             firstName: userData.first_name || '',
             lastName: userData.last_name || '',
@@ -34,13 +71,11 @@ const Compte = () => {
             phone: userData.phone || '',
             profilePhotoUrl: userData.profile_photo_url
           });
-        } catch (error) {
-          console.error('Erreur lors du chargement des données utilisateur:', error);
-          toast.error('Erreur lors du chargement du profil');
-        } finally {
-          setIsLoadingProfile(false);
         }
-      } else {
+      } catch (error) {
+        console.error('Erreur lors du chargement des données utilisateur:', error);
+        toast.error('Erreur lors du chargement du profil');
+      } finally {
         setIsLoadingProfile(false);
       }
     };
@@ -59,17 +94,24 @@ const Compte = () => {
         // Mettre à jour l'état local
         setProfileData(prev => ({ ...prev, profilePhotoUrl: uploadedUrl }));
         
-        // Sauvegarder immédiatement dans la base de données
-        const currentUser = await userService.getUserById(userId);
-        await userService.updateUser(userId, {
-          first_name: currentUser.first_name,
-          last_name: currentUser.last_name,
-          email: currentUser.email,
-          phone: currentUser.phone,
-          profile_photo_url: uploadedUrl,
-          role: currentUser.role,
-          status: currentUser.status
-        });
+        // Déterminer quelle table mettre à jour
+        if (userRole === 'Tuteur') {
+          // Mise à jour pour les tuteurs
+          const { error } = await supabase
+            .from('tutors')
+            .update({ profile_photo_url: uploadedUrl })
+            .eq('id', userId);
+
+          if (error) throw error;
+        } else {
+          // Mise à jour pour les autres utilisateurs
+          const { error } = await supabase
+            .from('users')
+            .update({ profile_photo_url: uploadedUrl })
+            .eq('id', userId);
+
+          if (error) throw error;
+        }
         
         toast.success('Photo de profil sauvegardée avec succès');
       } catch (error) {
@@ -93,18 +135,36 @@ const Compte = () => {
     }
 
     try {
-      // D'abord récupérer les données actuelles de l'utilisateur pour préserver le rôle et statut
-      const currentUser = await userService.getUserById(userId);
+      if (userRole === 'Tuteur') {
+        // Mise à jour pour les tuteurs
+        const { error } = await supabase
+          .from('tutors')
+          .update({
+            first_name: profileData.firstName,
+            last_name: profileData.lastName,
+            email: profileData.email,
+            phone: profileData.phone,
+            profile_photo_url: profileData.profilePhotoUrl
+          })
+          .eq('id', userId);
+
+        if (error) throw error;
+      } else {
+        // Mise à jour pour les autres utilisateurs
+        const { error } = await supabase
+          .from('users')
+          .update({
+            first_name: profileData.firstName,
+            last_name: profileData.lastName,
+            email: profileData.email,
+            phone: profileData.phone,
+            profile_photo_url: profileData.profilePhotoUrl
+          })
+          .eq('id', userId);
+
+        if (error) throw error;
+      }
       
-      await userService.updateUser(userId, {
-        first_name: profileData.firstName,
-        last_name: profileData.lastName,
-        email: profileData.email,
-        phone: profileData.phone,
-        profile_photo_url: profileData.profilePhotoUrl,
-        role: currentUser.role,
-        status: currentUser.status
-      });
       toast.success('Profil sauvegardé avec succès');
     } catch (error) {
       console.error('Erreur lors de la sauvegarde du profil:', error);
