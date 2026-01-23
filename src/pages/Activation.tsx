@@ -169,40 +169,28 @@ export default function Activation() {
   };
 
   const handleLegacyTokenFlow = async (token: string) => {
-    // Validate token by checking user_activation_tokens table
-    const { data: tokenData, error: tokenError } = await supabase
-      .from('user_activation_tokens')
-      .select(`
-        *,
-        users!inner(
-          id,
-          email,
-          first_name,
-          last_name,
-          role,
-          establishment_id,
-          establishments!inner(name)
-        )
-      `)
-      .eq('token', token)
-      .is('used_at', null)
-      .gt('expires_at', new Date().toISOString())
-      .single();
+    // Validate token via Edge Function (bypasses RLS / works without session)
+    const { data, error } = await supabase.functions.invoke('validate-activation-token', {
+      body: { token },
+    });
 
-    if (tokenError || !tokenData) {
+    if (error) {
       setError("Token d'activation invalide ou expiré");
       return;
     }
 
-    const user = tokenData.users as any;
-    
+    if (!data?.success || !data?.user) {
+      setError(data?.error || "Token d'activation invalide ou expiré");
+      return;
+    }
+
     setUserDetails({
-      id: user.id,
-      email: user.email,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      role: user.role,
-      establishment_name: user.establishments?.name || 'NECTFORMA',
+      id: data.user.id,
+      email: data.user.email,
+      first_name: data.user.first_name,
+      last_name: data.user.last_name,
+      role: data.user.role,
+      establishment_name: data.user.establishment_name || 'NECTFORMA',
     });
   };
 
