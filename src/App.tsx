@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -11,6 +11,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import AdminPrincipalRoute from './components/AdminPrincipalRoute';
 import TutorRestrictedRoute from './components/TutorRestrictedRoute';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import Dashboard from './pages/Dashboard';
 import Administration from './pages/Administration';
 import Formations from './pages/Formations';
@@ -54,6 +55,7 @@ const queryClient = new QueryClient({
 
 const AppContent = () => {
   const location = useLocation();
+  const { userId, userRole, loading: authLoading } = useCurrentUser();
   const isAuthPage = location.pathname === '/auth';
   const isCreateEstablishmentPage = location.pathname === '/create-establishment' || location.pathname === '/creer-etablissement';
   const isAcceptInvitationPage = location.pathname === '/accept-invitation';
@@ -116,6 +118,21 @@ const AppContent = () => {
   const isPublicPage = publicPages.includes(location.pathname);
   
   if (isPublicPage) {
+    // IMPORTANT: si l'utilisateur est connecté et arrive sur une page publique,
+    // on le redirige vers l'application (sinon il reste "bloqué" sur la landing).
+    if (authLoading) {
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600" />
+        </div>
+      );
+    }
+
+    if (userId) {
+      const home = userRole === 'Admin' || userRole === 'AdminPrincipal' ? '/dashboard' : '/formations';
+      return <Navigate to={home} replace />;
+    }
+
     return (
       <Routes>
         <Route path="/" element={<Index />} />
