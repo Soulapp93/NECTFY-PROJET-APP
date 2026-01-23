@@ -70,7 +70,7 @@ serve(async (req: Request): Promise<Response> => {
     const emailPayload: Record<string, unknown> = {
       sender: {
         name: "NECTFORMA",
-        email: "noreply@nectfy.fr", // Update with your verified domain
+        email: "noreply@nectforma.fr",
       },
       to: recipients,
       subject: body.subject,
