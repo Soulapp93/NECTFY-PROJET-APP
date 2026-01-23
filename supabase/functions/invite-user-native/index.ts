@@ -219,7 +219,7 @@ serve(async (req) => {
         last_name,
         role,
         establishment_id,
-        status: "pending",
+        status: "En attente",
         is_activated: false,
         invitation_sent_at: new Date().toISOString(),
       });
