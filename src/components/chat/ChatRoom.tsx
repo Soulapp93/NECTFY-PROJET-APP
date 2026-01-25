@@ -65,7 +65,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ groupId, groupName }) => {
       const message = await chatService.sendMessage(
         groupId, 
         content,
-        replyingTo?.id || null
+        selectedFiles.length > 0 ? 'file' : 'text'
       );
       
       // Upload all attachments

@@ -141,11 +141,11 @@ export const useChatMessages = (groupId: string | null) => {
     };
   }, [groupId]);
 
-  const sendMessage = async (content: string, repliedToMessageId?: string | null) => {
+  const sendMessage = async (content: string, messageType: 'text' | 'file' | 'image' = 'text') => {
     if (!groupId || !content.trim()) return;
 
     try {
-      await chatService.sendMessage(groupId, content, repliedToMessageId);
+      await chatService.sendMessage(groupId, content, messageType);
     } catch (err) {
       console.error('Error sending message:', err);
       toast({
