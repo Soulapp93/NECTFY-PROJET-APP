@@ -179,11 +179,11 @@ const AssignmentSubmissionsModal: React.FC<AssignmentSubmissionsModalProps> = ({
                         </div>
                       </div>
 
-                      {submission.correction?.comments && (
+                      {(submission.correction?.comments || submission.correction?.feedback) && (
                         <div className="mt-3 pt-3 border-t border-border/50">
                           <div className="bg-muted/50 rounded-lg p-3">
                             <p className="text-xs font-medium text-muted-foreground mb-1">Commentaires</p>
-                            <p className="text-sm text-foreground">{submission.correction.comments}</p>
+                            <p className="text-sm text-foreground">{submission.correction.comments || submission.correction.feedback}</p>
                           </div>
                         </div>
                       )}

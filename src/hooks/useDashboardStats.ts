@@ -232,15 +232,6 @@ export const useDashboardStats = (selectedFormationId?: string, timePeriod: stri
 
       // Étudiants à risque et assidus
       const getStudentsAttendance = async () => {
-        let query = supabase
-          .from('attendance_signatures')
-          .select(`
-            present,
-            user_id,
-            users!inner(first_name, last_name),
-            attendance_sheets!inner(formation_id, formations!inner(title))
-          `);
-
         // Période basée sur timePeriod
         let periodStart = new Date();
         switch (timePeriod) {
@@ -263,22 +254,67 @@ export const useDashboardStats = (selectedFormationId?: string, timePeriod: stri
             periodStart = startOfMonth;
         }
 
-        query = query.gte('signed_at', periodStart.toISOString());
+        // Fetch signatures first
+        let signaturesQuery = supabase
+          .from('attendance_signatures')
+          .select('present, user_id, attendance_sheet_id')
+          .gte('signed_at', periodStart.toISOString());
 
-        if (selectedFormationId) {
-          query = query.eq('attendance_sheets.formation_id', selectedFormationId);
+        const { data: signatures } = await signaturesQuery;
+
+        if (!signatures || signatures.length === 0) {
+          return { riskStudents: [], excellentStudents: [] };
         }
 
-        const { data: attendanceData } = await query;
+        // Get unique user IDs and sheet IDs
+        const userIds = [...new Set(signatures.map(s => s.user_id))];
+        const sheetIds = [...new Set(signatures.map(s => s.attendance_sheet_id))];
 
-        if (!attendanceData) return { riskStudents: [], excellentStudents: [] };
+        // Fetch user info
+        const { data: users } = await supabase
+          .from('users')
+          .select('id, first_name, last_name')
+          .in('id', userIds);
+
+        // Fetch sheet info with formation
+        const { data: sheets } = await supabase
+          .from('attendance_sheets')
+          .select('id, formation_id')
+          .in('id', sheetIds);
+
+        // Fetch formation titles
+        const formationIds = [...new Set((sheets || []).map(s => s.formation_id))];
+        const { data: formations } = await supabase
+          .from('formations')
+          .select('id, title')
+          .in('id', formationIds);
+
+        // Build lookup maps
+        const userMap = new Map((users || []).map(u => [u.id, u]));
+        const sheetMap = new Map((sheets || []).map(s => [s.id, s]));
+        const formationMap = new Map((formations || []).map(f => [f.id, f]));
+
+        // Filter by formation if needed
+        let filteredSignatures = signatures;
+        if (selectedFormationId) {
+          filteredSignatures = signatures.filter(sig => {
+            const sheet = sheetMap.get(sig.attendance_sheet_id);
+            return sheet?.formation_id === selectedFormationId;
+          });
+        }
 
         // Grouper par utilisateur
-        const userAttendance = attendanceData.reduce((acc, record) => {
+        const userAttendance = filteredSignatures.reduce((acc, record) => {
+          const user = userMap.get(record.user_id);
+          const sheet = sheetMap.get(record.attendance_sheet_id);
+          const formation = sheet ? formationMap.get(sheet.formation_id) : null;
+
+          if (!user) return acc;
+
           if (!acc[record.user_id]) {
             acc[record.user_id] = {
-              name: `${record.users.first_name} ${record.users.last_name}`,
-              formationName: record.attendance_sheets.formations?.title || 'Formation inconnue',
+              name: `${user.first_name} ${user.last_name}`,
+              formationName: formation?.title || 'Formation inconnue',
               total: 0,
               present: 0,
             };

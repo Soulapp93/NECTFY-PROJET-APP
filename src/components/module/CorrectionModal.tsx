@@ -61,7 +61,7 @@ const CorrectionModal: React.FC<CorrectionModalProps> = ({
       setCorrection({
         score: submission.correction.score || 0,
         max_score: submission.correction.max_score || 100,
-        comments: submission.correction.comments || ''
+        comments: submission.correction.comments || submission.correction.feedback || ''
       });
     }
   }, [submission]);
@@ -83,10 +83,9 @@ const CorrectionModal: React.FC<CorrectionModalProps> = ({
 
     try {
       await assignmentService.correctSubmission(submission.id, {
-        score: correction.score,
-        max_score: correction.max_score,
-        comments: correction.comments,
-        corrected_by: userId
+        grade: correction.score,
+        feedback: correction.comments,
+        corrector_id: userId
       });
 
       toast.success('Correction sauvegardée avec succès');
@@ -166,11 +165,11 @@ const CorrectionModal: React.FC<CorrectionModalProps> = ({
                     <h3 className="font-semibold text-foreground">Soumission de l'étudiant</h3>
                   </div>
                   
-                  {submission.submission_text && (
+                  {(submission.submission_text || submission.content) && (
                     <div className="bg-muted/30 rounded-xl p-4 border border-border">
                       <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Réponse textuelle</p>
                       <p className="text-foreground whitespace-pre-wrap leading-relaxed">
-                        {submission.submission_text}
+                        {submission.submission_text || submission.content}
                       </p>
                     </div>
                   )}

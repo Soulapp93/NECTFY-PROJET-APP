@@ -74,22 +74,31 @@ export default function AcceptInvitation() {
 
   const validateToken = async () => {
     try {
-      const { data, error: rpcError } = await supabase
-        .rpc('validate_invitation_token', { token_param: token });
+      // Call edge function to validate token
+      const response = await supabase.functions.invoke('validate-activation-token', {
+        body: { token }
+      });
 
-      if (rpcError) throw rpcError;
+      if (response.error) throw response.error;
 
-      if (!data || data.length === 0) {
-        setError("Token d'invitation invalide");
+      const data = response.data;
+
+      if (!data || data.error) {
+        setError(data?.error || "Token d'invitation invalide");
         return;
       }
 
-      const inv = data[0] as InvitationDetails;
-      
-      if (!inv.is_valid) {
-        setError(inv.error_message || "Invitation invalide");
-        return;
-      }
+      const inv: InvitationDetails = {
+        invitation_id: data.invitation_id,
+        email: data.email,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        role: data.role,
+        establishment_id: data.establishment_id,
+        establishment_name: data.establishment_name,
+        is_valid: true,
+        error_message: null
+      };
 
       setInvitation(inv);
       setFormData(prev => ({

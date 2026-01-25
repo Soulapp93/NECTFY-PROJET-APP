@@ -73,7 +73,7 @@ const SubmitAssignmentModal: React.FC<SubmitAssignmentModalProps> = ({
       const submission = await assignmentService.submitAssignment({
         assignment_id: assignment.id,
         student_id: userId,
-        submission_text: submissionText.trim() || null
+        content: submissionText.trim() || null
       });
 
       // Uploader les fichiers si il y en a

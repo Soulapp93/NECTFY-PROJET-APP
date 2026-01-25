@@ -14,6 +14,18 @@ export interface TutorStudent {
   formation_level?: string;
 }
 
+interface TutorStudentViewRow {
+  id: string;
+  tutor_id: string;
+  student_id: string;
+  is_active: boolean;
+  assigned_at: string;
+  student_first_name: string;
+  student_last_name: string;
+  student_email: string;
+  student_photo: string | null;
+}
+
 export const useTutorStudents = () => {
   const [tutorStudents, setTutorStudents] = useState<Record<string, TutorStudent[]>>({});
   const [loading, setLoading] = useState(false);
@@ -24,40 +36,49 @@ export const useTutorStudents = () => {
       setLoading(true);
       setError(null);
       
-      const { data, error } = await supabase
-        .from('tutor_students_view')
+      // Use RPC or direct query on tutor_student_assignments + users join
+      const { data: assignments, error: assignmentError } = await supabase
+        .from('tutor_student_assignments')
         .select('*')
-        .not('student_id', 'is', null);
+        .eq('is_active', true);
 
-      if (error) throw error;
+      if (assignmentError) throw assignmentError;
+      if (!assignments) {
+        setTutorStudents({});
+        return;
+      }
 
-      // Grouper par tutor_id
-      const studentsByTutor = data?.reduce((acc, item) => {
-        if (!item.tutor_id) return acc;
-        
-        if (!acc[item.tutor_id]) {
-          acc[item.tutor_id] = [];
+      // Fetch student details for each assignment
+      const studentsByTutor: Record<string, TutorStudent[]> = {};
+
+      for (const assignment of assignments) {
+        const { data: student } = await supabase
+          .from('users')
+          .select('first_name, last_name, email')
+          .eq('id', assignment.student_id)
+          .single();
+
+        if (!student) continue;
+
+        if (!studentsByTutor[assignment.tutor_id]) {
+          studentsByTutor[assignment.tutor_id] = [];
         }
-        
-        // Éviter les doublons
-        const exists = acc[item.tutor_id].some((s: TutorStudent) => s.student_id === item.student_id);
-        if (!exists && item.student_id) {
-          acc[item.tutor_id].push({
-            student_id: item.student_id,
-            student_first_name: item.student_first_name,
-            student_last_name: item.student_last_name,
-            student_email: item.student_email,
-            contract_type: item.contract_type,
-            contract_start_date: item.contract_start_date,
-            contract_end_date: item.contract_end_date,
-            is_active: item.is_active,
-            formation_title: item.formation_title,
-            formation_level: item.formation_level,
+
+        // Avoid duplicates
+        const exists = studentsByTutor[assignment.tutor_id].some(
+          s => s.student_id === assignment.student_id
+        );
+
+        if (!exists) {
+          studentsByTutor[assignment.tutor_id].push({
+            student_id: assignment.student_id,
+            student_first_name: student.first_name,
+            student_last_name: student.last_name,
+            student_email: student.email,
+            is_active: assignment.is_active
           });
         }
-        
-        return acc;
-      }, {} as Record<string, TutorStudent[]>) || {};
+      }
 
       setTutorStudents(studentsByTutor);
     } catch (err) {

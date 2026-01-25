@@ -2,14 +2,37 @@ import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 
 export type Assignment = Database['public']['Tables']['module_assignments']['Row'];
-export type AssignmentSubmission = Database['public']['Tables']['assignment_submissions']['Row'] & {
+
+export interface AssignmentSubmission {
+  id: string;
+  assignment_id: string;
+  student_id: string;
+  submitted_at: string;
+  content: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
   student?: {
     first_name: string;
     last_name: string;
     email: string;
   };
-  correction?: Database['public']['Tables']['assignment_corrections']['Row'];
-};
+  correction?: {
+    id: string;
+    submission_id: string;
+    corrector_id: string;
+    grade: number | null;
+    feedback: string | null;
+    published_at: string | null;
+    is_corrected?: boolean;
+    score?: number | null;
+    max_score?: number | null;
+    comments?: string | null;
+    created_at: string;
+    updated_at: string;
+  };
+  submission_text?: string | null;
+}
 
 export const assignmentService = {
   async getModuleAssignments(moduleId: string) {
@@ -78,19 +101,50 @@ export const assignmentService = {
     return data;
   },
 
-  async getAssignmentSubmissions(assignmentId: string) {
-    const { data, error } = await supabase
+  async getAssignmentSubmissions(assignmentId: string): Promise<AssignmentSubmission[]> {
+    // Fetch submissions
+    const { data: submissions, error } = await supabase
       .from('assignment_submissions')
-      .select(`
-        *,
-        student:users(first_name, last_name, email),
-        correction:assignment_corrections(*)
-      `)
+      .select('*')
       .eq('assignment_id', assignmentId)
       .order('submitted_at', { ascending: false });
     
     if (error) throw error;
-    return data;
+    if (!submissions) return [];
+
+    // Fetch student info and corrections separately
+    const enrichedSubmissions: AssignmentSubmission[] = [];
+    
+    for (const submission of submissions) {
+      // Fetch student info
+      const { data: student } = await supabase
+        .from('users')
+        .select('first_name, last_name, email')
+        .eq('id', submission.student_id)
+        .single();
+
+      // Fetch correction
+      const { data: correction } = await supabase
+        .from('assignment_corrections')
+        .select('*')
+        .eq('submission_id', submission.id)
+        .maybeSingle();
+
+      enrichedSubmissions.push({
+        ...submission,
+        submission_text: submission.content,
+        student: student || undefined,
+        correction: correction ? {
+          ...correction,
+          is_corrected: !!correction.grade,
+          score: correction.grade,
+          max_score: 20, // Default max score
+          comments: correction.feedback
+        } : undefined
+      });
+    }
+
+    return enrichedSubmissions;
   },
 
   async submitAssignment(submission: Database['public']['Tables']['assignment_submissions']['Insert']) {
@@ -129,25 +183,41 @@ export const assignmentService = {
     submissionId: string,
     correction: Omit<Database['public']['Tables']['assignment_corrections']['Insert'], 'submission_id'>
   ) {
-    const { data, error } = await supabase
+    // Check if correction exists
+    const { data: existing } = await supabase
       .from('assignment_corrections')
-      .upsert(
-        {
-          ...correction,
-          submission_id: submissionId,
-          is_corrected: true,
-          corrected_at: new Date().toISOString(),
-        },
-        {
-          // IMPORTANT: la contrainte unique est sur submission_id (pas sur id)
-          onConflict: 'submission_id',
-        }
-      )
-      .select()
-      .single();
+      .select('id')
+      .eq('submission_id', submissionId)
+      .maybeSingle();
 
-    if (error) throw error;
-    return data;
+    if (existing) {
+      // Update existing correction
+      const { data, error } = await supabase
+        .from('assignment_corrections')
+        .update({
+          ...correction,
+          updated_at: new Date().toISOString()
+        })
+        .eq('submission_id', submissionId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } else {
+      // Create new correction
+      const { data, error } = await supabase
+        .from('assignment_corrections')
+        .insert({
+          ...correction,
+          submission_id: submissionId
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    }
   },
 
   async publishCorrections(assignmentId: string) {
@@ -163,8 +233,7 @@ export const assignmentService = {
     const { error } = await supabase
       .from('assignment_corrections')
       .update({ published_at: new Date().toISOString() })
-      .in('submission_id', submissions.map(s => s.id))
-      .eq('is_corrected', true);
+      .in('submission_id', submissions.map(s => s.id));
 
     if (error) throw error;
 
@@ -207,23 +276,26 @@ export const assignmentService = {
     try {
       const { notificationService } = await import('./notificationService');
       
-      // Récupérer l'assignment et les étudiants qui ont rendu
+      // Récupérer l'assignment
       const { data: assignment } = await supabase
         .from('module_assignments')
-        .select(`
-          *,
-          assignment_submissions(student_id)
-        `)
+        .select('*')
         .eq('id', assignmentId)
         .single();
 
-      if (assignment?.assignment_submissions) {
+      if (!assignment) return;
+
+      // Récupérer les soumissions
+      const { data: submissions } = await supabase
+        .from('assignment_submissions')
+        .select('student_id')
+        .eq('assignment_id', assignmentId);
+
+      if (submissions) {
         // Notifier chaque étudiant qui a rendu le devoir
-        const studentIds = assignment.assignment_submissions.map(s => s.student_id);
-        
-        for (const studentId of studentIds) {
+        for (const submission of submissions) {
           await notificationService.notifyUser(
-            studentId,
+            submission.student_id,
             'Correction publiée',
             `La correction du devoir "${assignment.title}" est disponible.`,
             'correction',

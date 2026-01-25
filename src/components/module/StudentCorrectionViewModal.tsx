@@ -101,14 +101,14 @@ const StudentCorrectionViewModal: React.FC<StudentCorrectionViewModalProps> = ({
           )}
 
           {/* Commentaires du formateur */}
-          {hasCorrection && correction?.comments && (
+          {hasCorrection && (correction?.comments || correction?.feedback) && (
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
               <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
                 <User className="h-5 w-5" />
                 Commentaires du formateur
               </h3>
               <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-                {correction.comments}
+                {correction.comments || correction.feedback}
               </p>
             </div>
           )}
@@ -133,9 +133,9 @@ const StudentCorrectionViewModal: React.FC<StudentCorrectionViewModalProps> = ({
               </h3>
             </div>
             <div className="p-5 space-y-4">
-              {submission.submission_text && (
+              {(submission.submission_text || submission.content) && (
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-700 whitespace-pre-wrap">{submission.submission_text}</p>
+                  <p className="text-gray-700 whitespace-pre-wrap">{submission.submission_text || submission.content}</p>
                 </div>
               )}
 
@@ -173,7 +173,7 @@ const StudentCorrectionViewModal: React.FC<StudentCorrectionViewModalProps> = ({
                   ))}
                 </div>
               ) : (
-                !submission.submission_text && (
+                !(submission.submission_text || submission.content) && (
                   <p className="text-gray-500 text-sm">Aucun contenu soumis.</p>
                 )
               )}

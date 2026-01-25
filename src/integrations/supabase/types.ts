@@ -14,6 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
+      assignment_corrections: {
+        Row: {
+          corrector_id: string
+          created_at: string | null
+          feedback: string | null
+          grade: number | null
+          id: string
+          published_at: string | null
+          submission_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          corrector_id: string
+          created_at?: string | null
+          feedback?: string | null
+          grade?: number | null
+          id?: string
+          published_at?: string | null
+          submission_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          corrector_id?: string
+          created_at?: string | null
+          feedback?: string | null
+          grade?: number | null
+          id?: string
+          published_at?: string | null
+          submission_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_corrections_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "assignment_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assignment_submissions: {
+        Row: {
+          assignment_id: string
+          content: string | null
+          created_at: string | null
+          id: string
+          status: string | null
+          student_id: string
+          submitted_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          assignment_id: string
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          status?: string | null
+          student_id: string
+          submitted_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          assignment_id?: string
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          status?: string | null
+          student_id?: string
+          submitted_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       attendance_sheets: {
         Row: {
           closed_at: string | null
@@ -170,6 +244,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      chat_message_attachments: {
+        Row: {
+          created_at: string | null
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          message_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          message_id: string
+        }
+        Update: {
+          created_at?: string | null
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          message_id?: string
+        }
+        Relationships: []
       }
       establishments: {
         Row: {
@@ -862,13 +966,52 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      tutor_students_view: {
+        Row: {
+          assigned_at: string | null
+          id: string | null
+          is_active: boolean | null
+          student_email: string | null
+          student_first_name: string | null
+          student_id: string | null
+          student_last_name: string | null
+          student_photo: string | null
+          tutor_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tutor_student_assignments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tutor_student_assignments_tutor_id_fkey"
+            columns: ["tutor_id"]
+            isOneToOne: false
+            referencedRelation: "tutors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       get_current_user_establishment: { Args: never; Returns: string }
       get_current_user_role: { Args: never; Returns: string }
       get_my_context: { Args: never; Returns: Json }
       get_my_profile: { Args: never; Returns: Json }
+      get_tutor_apprentice_formations: {
+        Args: never
+        Returns: {
+          formation_id: string
+          formation_level: string
+          formation_status: string
+          formation_title: string
+          student_id: string
+          student_name: string
+        }[]
+      }
       is_current_user_admin: { Args: never; Returns: boolean }
     }
     Enums: {

@@ -23,34 +23,44 @@ export const useUserTutors = () => {
       setLoading(true);
       setError(null);
       
-      const { data, error } = await supabase
-        .from('tutor_students_view')
-        .select('*');
+      // Fetch tutor-student assignments
+      const { data: assignments, error: assignmentError } = await supabase
+        .from('tutor_student_assignments')
+        .select('*')
+        .eq('is_active', true);
 
-      if (error) throw error;
+      if (assignmentError) throw assignmentError;
+      if (!assignments) {
+        setUserTutors({});
+        return;
+      }
 
-      // Grouper par student_id
-      const tutorsByStudent = data?.reduce((acc, item) => {
-        if (!item.student_id) return acc;
-        
-        if (!acc[item.student_id]) {
-          acc[item.student_id] = [];
+      // Fetch tutor details for each assignment
+      const tutorsByStudent: Record<string, UserTutor[]> = {};
+
+      for (const assignment of assignments) {
+        // Fetch tutor info
+        const { data: tutor } = await supabase
+          .from('tutors')
+          .select('first_name, last_name, email, company_name, position')
+          .eq('id', assignment.tutor_id)
+          .single();
+
+        if (!tutor) continue;
+
+        if (!tutorsByStudent[assignment.student_id]) {
+          tutorsByStudent[assignment.student_id] = [];
         }
-        
-        acc[item.student_id].push({
-          tutor_id: item.tutor_id,
-          tutor_first_name: item.tutor_first_name,
-          tutor_last_name: item.tutor_last_name,
-          tutor_email: item.tutor_email,
-          company_name: item.company_name,
-          position: item.position,
-          contract_type: item.contract_type,
-          contract_start_date: item.contract_start_date,
-          contract_end_date: item.contract_end_date,
+
+        tutorsByStudent[assignment.student_id].push({
+          tutor_id: assignment.tutor_id,
+          tutor_first_name: tutor.first_name,
+          tutor_last_name: tutor.last_name,
+          tutor_email: tutor.email,
+          company_name: tutor.company_name || '',
+          position: tutor.position || undefined
         });
-        
-        return acc;
-      }, {} as Record<string, UserTutor[]>) || {};
+      }
 
       setUserTutors(tutorsByStudent);
     } catch (err) {
