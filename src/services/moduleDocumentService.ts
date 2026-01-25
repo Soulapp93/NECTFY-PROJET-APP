@@ -10,22 +10,22 @@ export interface ModuleDocument {
   file_url: string;
   file_size?: number;
   file_type?: string;
-  title?: string;
+  title: string;
   description?: string;
-  document_type?: string;
+  document_type: string;
   created_at: string;
   updated_at: string;
 }
 
 export interface CreateModuleDocumentData {
   module_id: string;
-  file_name: string;
-  file_url: string;
-  file_size?: number;
+  file_name?: string | null;
+  file_url?: string | null;
+  file_size?: number | null;
   file_type?: string;
-  title?: string;
+  title: string;
   description?: string;
-  document_type?: string;
+  document_type: string;
 }
 
 export const moduleDocumentService = {
