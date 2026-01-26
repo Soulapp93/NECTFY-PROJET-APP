@@ -1,1 +1,43 @@
 project_id = "utjdigcdlwqztwmgoomv"
+
+[functions.accept-invitation]
+verify_jwt = false
+
+[functions.activate-user-account]
+verify_jwt = false
+
+[functions.check-expired-attendance-links]
+verify_jwt = false
+
+[functions.create-establishment]
+verify_jwt = false
+
+[functions.generate-attendance-sheets]
+verify_jwt = false
+
+[functions.invite-user-native]
+verify_jwt = false
+
+[functions.manage-attendance-timing]
+verify_jwt = false
+
+[functions.resend-invitation-native]
+verify_jwt = false
+
+[functions.reset-password-native]
+verify_jwt = false
+
+[functions.send-email-brevo]
+verify_jwt = false
+
+[functions.send-message]
+verify_jwt = false
+
+[functions.setup-demo-accounts]
+verify_jwt = false
+
+[functions.update-class-status]
+verify_jwt = false
+
+[functions.validate-activation-token]
+verify_jwt = false

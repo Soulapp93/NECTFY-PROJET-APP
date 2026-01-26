@@ -60,71 +60,86 @@ export interface CreateMessageData {
 }
 
 export const messageService = {
+  /**
+   * Send a message via the backend Edge Function to bypass RLS issues.
+   */
   async createMessage(messageData: CreateMessageData): Promise<Message> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Non authentifié');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Non authentifié');
 
-      // Create the message
-      const { data: message, error: messageError } = await db
-        .from('messages')
-        .insert({
-          sender_id: user.id,
-          subject: messageData.subject,
-          content: messageData.content,
-          scheduled_for: messageData.scheduledFor,
-          is_draft: messageData.is_draft || false,
-          attachment_count: messageData.attachments?.length || 0
-        })
-        .select()
-        .single();
-
-      if (messageError) throw messageError;
-
-      // Create recipients
-      const recipients: Array<{
-        message_id: string;
-        recipient_id?: string;
-        recipient_type: 'user' | 'formation' | 'all_instructors';
+      // Upload files first and collect URLs
+      let attachmentPayloads: Array<{
+        file_name: string;
+        file_url: string;
+        file_size?: number;
+        content_type?: string;
       }> = [];
 
-      if (messageData.recipients.type === 'all_instructors') {
-        recipients.push({
-          message_id: message.id,
-          recipient_type: 'all_instructors'
-        });
-      } else if (messageData.recipients.ids) {
-        recipients.push(...messageData.recipients.ids.map(id => ({
-          message_id: message.id,
-          recipient_id: id,
-          recipient_type: messageData.recipients.type
-        })));
-      }
-
-      if (recipients.length > 0) {
-        const { error: recipientsError } = await db
-          .from('message_recipients')
-          .insert(recipients);
-
-        if (recipientsError) throw recipientsError;
-      }
-
-      // Handle attachments if any
       if (messageData.attachments && messageData.attachments.length > 0) {
         const firstAttachment = messageData.attachments[0];
         if (firstAttachment instanceof File) {
-          await this.uploadAttachments(message.id, messageData.attachments as File[]);
+          // Upload to storage and build payload
+          const files = messageData.attachments as File[];
+          for (const file of files) {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `messages/${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+
+            const { error: uploadError } = await supabase.storage
+              .from('module-files')
+              .upload(fileName, file);
+
+            if (uploadError) {
+              console.error('File upload error:', uploadError);
+              throw uploadError;
+            }
+
+            const { data: { publicUrl } } = supabase.storage.from('module-files').getPublicUrl(fileName);
+
+            attachmentPayloads.push({
+              file_name: file.name,
+              file_url: publicUrl,
+              file_size: file.size,
+              content_type: file.type,
+            });
+          }
         } else {
-          await this.saveUploadedAttachments(message.id, messageData.attachments as UploadedAttachment[]);
+          // Already uploaded attachments
+          attachmentPayloads = (messageData.attachments as UploadedAttachment[]).map(att => ({
+            file_name: att.file_name,
+            file_url: att.file_url,
+            file_size: att.file_size,
+          }));
         }
       }
 
-      // Notifier les destinataires du nouveau message
-      if (!messageData.is_draft) {
-        await this.notifyMessageRecipients(message, messageData.recipients);
+      // Call backend edge function
+      const { data, error } = await supabase.functions.invoke('send-message', {
+        body: {
+          subject: messageData.subject,
+          content: messageData.content,
+          is_draft: messageData.is_draft || false,
+          scheduled_for: messageData.scheduledFor || null,
+          recipients: messageData.recipients,
+          attachments: attachmentPayloads,
+        },
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Erreur lors de l\'envoi du message');
       }
 
-      return message as Message;
+      if (!data?.success) {
+        throw new Error(data?.error || 'Erreur inconnue');
+      }
+
+      // Notify recipients (fire and forget)
+      if (!messageData.is_draft) {
+        this.notifyMessageRecipients(data.message, messageData.recipients).catch(console.error);
+      }
+
+      return data.message as Message;
     } catch (error) {
       console.error('Erreur lors de la création du message:', error);
       throw error;
