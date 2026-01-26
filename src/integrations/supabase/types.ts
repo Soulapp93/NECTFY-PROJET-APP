@@ -311,6 +311,7 @@ export type Database = {
           created_by: string | null
           description: string | null
           establishment_id: string
+          group_type: string | null
           id: string
           is_private: boolean | null
           name: string
@@ -322,6 +323,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           establishment_id: string
+          group_type?: string | null
           id?: string
           is_private?: boolean | null
           name: string
@@ -333,6 +335,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           establishment_id?: string
+          group_type?: string | null
           id?: string
           is_private?: boolean | null
           name?: string
@@ -1270,6 +1273,10 @@ export type Database = {
       generate_signature_token: { Args: { sheet_id: string }; Returns: string }
       get_current_user_establishment: { Args: never; Returns: string }
       get_current_user_role: { Args: never; Returns: string }
+      get_establishment_group_id: {
+        Args: { _establishment_id: string }
+        Returns: string
+      }
       get_my_context: { Args: never; Returns: Json }
       get_my_profile: { Args: never; Returns: Json }
       get_tutor_apprentice_formations: {
@@ -1284,6 +1291,14 @@ export type Database = {
         }[]
       }
       is_current_user_admin: { Args: never; Returns: boolean }
+      is_group_admin: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_member_of_group: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
       validate_signature_token: {
         Args: { token_param: string }
         Returns: {

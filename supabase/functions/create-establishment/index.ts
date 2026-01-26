@@ -261,7 +261,8 @@ serve(async (req) => {
         description: `Groupe de discussion général de l'établissement ${establishment.name.trim()}`,
         establishment_id: establishmentId,
         created_by: authUserId,
-        is_private: false
+        is_private: false,
+        group_type: 'establishment'
       })
       .select()
       .single();
