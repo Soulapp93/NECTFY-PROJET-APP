@@ -379,9 +379,16 @@ export const chatService = {
             .eq('id', payload.new.sender_id)
             .single();
           
+          // Fetch attachments
+          const { data: attachments } = await db
+            .from('chat_message_attachments')
+            .select('*')
+            .eq('message_id', payload.new.id);
+          
           callback({
             ...payload.new,
-            sender: senderData
+            sender: senderData,
+            attachments: attachments || []
           } as ChatMessage);
         }
       )
