@@ -33,6 +33,14 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ groupId, groupName }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
 
+  const resetComposer = () => {
+    setMessageText('');
+    setSelectedFiles([]);
+    setReplyingTo(null);
+    // Important on mobile: reset the underlying input so it doesn't keep the previous selection
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
@@ -49,42 +57,56 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ groupId, groupName }) => {
 
   const handleSend = async () => {
     if (!messageText.trim() && selectedFiles.length === 0) return;
+
+    // Snapshot current state (so we can restore if the send fails early)
+    const prevText = messageText;
+    const prevFiles = selectedFiles;
+    let createdMessageId: string | null = null;
     
     try {
       setUploading(true);
       
       // Determine message content
-      let content = messageText.trim();
+      let content = prevText.trim();
       if (!content && selectedFiles.length > 0) {
         // If only files, create a descriptive message
-        const fileNames = selectedFiles.map(f => f.name).join(', ');
+        const fileNames = prevFiles.map(f => f.name).join(', ');
         content = `📎 ${fileNames}`;
       }
+
+      // WhatsApp-like behavior: clear the composer immediately once the user hits send
+      resetComposer();
       
       // Send the message
       const message = await chatService.sendMessage(
         groupId, 
         content,
-        selectedFiles.length > 0 ? 'file' : 'text'
+        prevFiles.length > 0 ? 'file' : 'text'
       );
+
+      createdMessageId = message.id;
       
       // Upload all attachments
-      if (selectedFiles.length > 0) {
+      if (prevFiles.length > 0) {
         await Promise.all(
-          selectedFiles.map(file => chatService.uploadAttachment(message.id, file))
+          prevFiles.map(file => chatService.uploadAttachment(message.id, file))
         );
       }
       
-      setMessageText('');
-      setSelectedFiles([]);
-      setReplyingTo(null);
-      
       toast({
         title: "Message envoyé",
-        description: selectedFiles.length > 0 ? `${selectedFiles.length} fichier(s) joint(s)` : undefined,
+        description: prevFiles.length > 0 ? `${prevFiles.length} fichier(s) joint(s)` : undefined,
       });
     } catch (error) {
       console.error('Error sending message:', error);
+
+      // If it failed before creating the message, restore the composer state
+      // (If the message was created but attachment upload failed, we keep the composer cleared.)
+      if (!createdMessageId) {
+        setMessageText(prevText);
+        setSelectedFiles(prevFiles);
+      }
+
       toast({
         title: "Erreur",
         description: error instanceof Error ? error.message : "Impossible d'envoyer le message",
@@ -109,6 +131,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ groupId, groupName }) => {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     setSelectedFiles(prev => [...prev, ...files]);
+    // Allow selecting the same file again
+    e.target.value = '';
   };
 
   const removeFile = (index: number) => {
@@ -310,7 +334,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ groupId, groupName }) => {
                       {message.attachments && message.attachments.length > 0 && (
                         <div className="flex flex-col gap-2 mt-2">
                           {message.attachments.map((attachment) => {
-                            const contentType = attachment.content_type || '';
+                            const contentType = attachment.file_type || attachment.content_type || '';
                             
                             // Image preview
                             if (isImage(contentType)) {
