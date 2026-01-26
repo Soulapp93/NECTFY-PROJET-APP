@@ -224,7 +224,11 @@ export function DateTimePicker({
             <SelectTrigger className="flex-1 h-11">
               <SelectValue placeholder="Heure" />
             </SelectTrigger>
-            <SelectContent className="max-h-[240px]">
+            <SelectContent 
+              className="max-h-[280px] overflow-y-auto"
+              position="popper"
+              sideOffset={4}
+            >
               {hoursOptions.map((hour) => (
                 <SelectItem key={hour.value} value={hour.value}>
                   {hour.label}
@@ -243,7 +247,11 @@ export function DateTimePicker({
             <SelectTrigger className="flex-1 h-11">
               <SelectValue placeholder="Min" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent 
+              className="max-h-[280px] overflow-y-auto"
+              position="popper"
+              sideOffset={4}
+            >
               {minutesOptions.map((minute) => (
                 <SelectItem key={minute.value} value={minute.value}>
                   {minute.label}
