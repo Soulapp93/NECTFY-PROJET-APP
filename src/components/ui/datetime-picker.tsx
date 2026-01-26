@@ -39,42 +39,50 @@ const hoursOptions = Array.from({ length: 24 }, (_, i) => ({
 }))
 
 // Generate minutes options (every 5 minutes)
-const minutesOptions = Array.from({ length: 12 }, (_, i) => ({
-  value: (i * 5).toString().padStart(2, '0'),
-  label: (i * 5).toString().padStart(2, '0')
+const minutesOptions = Array.from({ length: 60 }, (_, i) => ({
+  value: i.toString().padStart(2, "0"),
+  label: i.toString().padStart(2, "0"),
 }))
 
-// Get the timezone offset string for Europe/Paris
-const getTimezoneOffset = (): string => {
-  const now = new Date()
-  const formatter = new Intl.DateTimeFormat('fr-FR', {
+// Get the timezone offset string for Europe/Paris (e.g., UTC+1 / UTC+2)
+const getTimezoneOffsetLabel = (date: Date): string => {
+  const formatter = new Intl.DateTimeFormat("fr-FR", {
     timeZone: TIMEZONE,
-    timeZoneName: 'shortOffset'
+    timeZoneName: "shortOffset",
   })
-  const parts = formatter.formatToParts(now)
-  const offsetPart = parts.find(p => p.type === 'timeZoneName')
-  return offsetPart?.value || 'UTC+1'
+  const parts = formatter.formatToParts(date)
+  const offsetPart = parts.find((p) => p.type === "timeZoneName")
+  return offsetPart?.value || "UTC+1"
 }
 
-// Get Paris timezone offset in minutes for a given date
-const getParisOffsetMinutes = (date: Date): number => {
-  const utcDate = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }))
-  const parisDate = new Date(date.toLocaleString('en-US', { timeZone: TIMEZONE }))
-  return (parisDate.getTime() - utcDate.getTime()) / (1000 * 60)
+// Parse offset label like "UTC+1", "UTC+01:00", "UTC+2" to minutes
+const parseUtcOffsetToMinutes = (offsetLabel: string): number => {
+  // Expected: "UTC+1", "UTC+01:00", "UTC-05:00", etc.
+  const m = offsetLabel.match(/UTC([+-])(\d{1,2})(?::?(\d{2}))?/) // minutes optional
+  if (!m) return 60 // safe fallback for France winter time
+  const sign = m[1] === "-" ? -1 : 1
+  const hours = Number(m[2] || 0)
+  const minutes = Number(m[3] || 0)
+  return sign * (hours * 60 + minutes)
 }
 
-// Convert local date/time selection to ISO string with proper timezone
+// Convert Europe/Paris date+time selection to an UTC ISO string.
+// IMPORTANT: Do NOT rely on the browser's local timezone.
 const toISOWithTimezone = (date: Date, hour: string, minute: string): string => {
   const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  
-  const localDateStr = `${year}-${month}-${day}T${hour}:${minute}:00`
-  const parisDate = new Date(localDateStr)
-  const parisOffset = getParisOffsetMinutes(parisDate)
-  const utcDate = new Date(parisDate.getTime() - parisOffset * 60 * 1000)
-  
-  return utcDate.toISOString()
+  const monthIndex = date.getMonth() // 0-based
+  const day = date.getDate()
+
+  // We start from the selected wall-clock time as if it was UTC…
+  const naiveUtcMs = Date.UTC(year, monthIndex, day, Number(hour), Number(minute), 0)
+  const naiveUtcDate = new Date(naiveUtcMs)
+
+  // …then we retrieve the Paris offset for that instant and subtract it.
+  // This yields the real UTC instant corresponding to the Paris wall-clock time.
+  const offsetLabel = getTimezoneOffsetLabel(naiveUtcDate)
+  const offsetMinutes = parseUtcOffsetToMinutes(offsetLabel)
+  const realUtcMs = naiveUtcMs - offsetMinutes * 60 * 1000
+  return new Date(realUtcMs).toISOString()
 }
 
 // Parse ISO date and extract Paris local time
@@ -102,14 +110,10 @@ const parseToParisTime = (isoString: string): { date: Date; hour: string; minute
     const hour = getPart('hour').padStart(2, '0')
     const minute = getPart('minute').padStart(2, '0')
     
-    // Round to nearest 5 minutes for display
-    const minuteNum = parseInt(minute)
-    const roundedMinute = (Math.round(minuteNum / 5) * 5).toString().padStart(2, '0')
-    
     return {
       date: new Date(year, month, day),
       hour,
-      minute: roundedMinute === '60' ? '55' : roundedMinute
+      minute,
     }
   } catch {
     return null
@@ -131,7 +135,7 @@ export function DateTimePicker({
   const [selectedHour, setSelectedHour] = React.useState<string>('09')
   const [selectedMinute, setSelectedMinute] = React.useState<string>('00')
 
-  const timezoneOffset = React.useMemo(() => getTimezoneOffset(), [])
+  const timezoneOffset = React.useMemo(() => getTimezoneOffsetLabel(new Date()), [])
 
   React.useEffect(() => {
     if (value) {
