@@ -57,7 +57,9 @@ serve(async (req) => {
     const userId = claimsData.claims.sub as string;
     console.log("Authenticated user:", userId);
 
-    // Service role client (bypasses RLS)
+    // Service role client for privileged writes (bypasses RLS).
+    // The DB trigger function is configured to allow service_role inserts as long
+    // as sender_id is explicitly provided.
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
