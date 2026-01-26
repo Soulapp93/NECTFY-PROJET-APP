@@ -636,6 +636,136 @@ export type Database = {
           },
         ]
       }
+      message_attachments: {
+        Row: {
+          content_type: string | null
+          created_at: string
+          file_name: string
+          file_size: number | null
+          file_url: string
+          id: string
+          message_id: string
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          message_id: string
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          message_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_recipients: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          id: string
+          is_archived: boolean
+          is_deleted: boolean
+          is_favorite: boolean
+          is_read: boolean
+          message_id: string
+          read_at: string | null
+          recipient_id: string | null
+          recipient_type: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_archived?: boolean
+          is_deleted?: boolean
+          is_favorite?: boolean
+          is_read?: boolean
+          message_id: string
+          read_at?: string | null
+          recipient_id?: string | null
+          recipient_type?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_archived?: boolean
+          is_deleted?: boolean
+          is_favorite?: boolean
+          is_read?: boolean
+          message_id?: string
+          read_at?: string | null
+          recipient_id?: string | null
+          recipient_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_recipients_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          attachment_count: number
+          content: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          is_deleted: boolean | null
+          is_draft: boolean
+          scheduled_for: string | null
+          sender_id: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          attachment_count?: number
+          content: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_deleted?: boolean | null
+          is_draft?: boolean
+          scheduled_for?: string | null
+          sender_id: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          attachment_count?: number
+          content?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_deleted?: boolean | null
+          is_draft?: boolean
+          scheduled_for?: string | null
+          sender_id?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       module_assignments: {
         Row: {
           assignment_type: string | null
