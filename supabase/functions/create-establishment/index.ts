@@ -252,6 +252,42 @@ serve(async (req) => {
     });
 
     console.log('✓ User profile configured');
+
+    // Step 4: Create default chat group for establishment
+    const { data: chatGroupData, error: chatGroupError } = await supabaseAdmin
+      .from('chat_groups')
+      .insert({
+        name: `${establishment.name.trim()} - Général`,
+        description: `Groupe de discussion général de l'établissement ${establishment.name.trim()}`,
+        establishment_id: establishmentId,
+        created_by: authUserId,
+        is_private: false
+      })
+      .select()
+      .single();
+
+    if (chatGroupError) {
+      console.error('Chat group creation error:', chatGroupError);
+      // Non-fatal error, continue
+    } else {
+      console.log('✓ Default chat group created:', chatGroupData.id);
+
+      // Add admin as first member of the group
+      const { error: memberError } = await supabaseAdmin
+        .from('chat_group_members')
+        .insert({
+          group_id: chatGroupData.id,
+          user_id: authUserId,
+          role: 'admin'
+        });
+
+      if (memberError) {
+        console.error('Chat group member error:', memberError);
+      } else {
+        console.log('✓ Admin added to chat group');
+      }
+    }
+
     console.log('=== Establishment creation completed successfully ===');
 
     return new Response(
