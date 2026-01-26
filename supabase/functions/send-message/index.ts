@@ -101,6 +101,31 @@ serve(async (req) => {
 
     console.log("Message created:", message.id);
 
+    // Resolve sender establishment to ensure group sends stay tenant-isolated.
+    const resolveSenderEstablishmentId = async (): Promise<string | null> => {
+      // Primary path: users table
+      const { data: u, error: uErr } = await supabaseAdmin
+        .from("users")
+        .select("establishment_id")
+        .eq("id", userId)
+        .maybeSingle();
+      if (uErr) {
+        console.error("Resolve sender establishment (users) error:", uErr);
+      }
+      if (u?.establishment_id) return u.establishment_id as string;
+
+      // Fallback path: tutors table
+      const { data: t, error: tErr } = await supabaseAdmin
+        .from("tutors")
+        .select("establishment_id")
+        .eq("id", userId)
+        .maybeSingle();
+      if (tErr) {
+        console.error("Resolve sender establishment (tutors) error:", tErr);
+      }
+      return (t?.establishment_id as string) ?? null;
+    };
+
     // 2) Build recipients list
     const recipientRows: Array<{ message_id: string; recipient_id?: string; recipient_type: string; is_read?: boolean; read_at?: string | null }> = [];
 
@@ -114,19 +139,57 @@ serve(async (req) => {
       read_at: new Date().toISOString(),
     });
 
+    const addUserRecipients = (userIds: string[]) => {
+      const unique = Array.from(new Set(userIds)).filter((id) => id && id !== userId);
+      for (const rid of unique) {
+        recipientRows.push({
+          message_id: message.id,
+          recipient_id: rid,
+          recipient_type: "user",
+          is_read: false,
+          read_at: null,
+        });
+      }
+    };
+
     if (recipients.type === "all_instructors") {
-      recipientRows.push({ message_id: message.id, recipient_type: "all_instructors", is_read: false, read_at: null });
+      const establishmentId = await resolveSenderEstablishmentId();
+
+      if (!establishmentId) {
+        console.error("Could not resolve establishment for sender; cannot target instructors safely");
+        return new Response(
+          JSON.stringify({ error: "Impossible de résoudre l'établissement de l'expéditeur" }),
+          { status: 500, headers: jsonHeaders }
+        );
+      }
+
+      const { data: instructors, error: instructorsErr } = await supabaseAdmin
+        .from("users")
+        .select("id")
+        .eq("establishment_id", establishmentId)
+        .eq("role", "Formateur");
+
+      if (instructorsErr) {
+        console.error("Select instructors error:", instructorsErr);
+        return new Response(JSON.stringify({ error: instructorsErr.message }), { status: 500, headers: jsonHeaders });
+      }
+
+      addUserRecipients((instructors || []).map((i: any) => i.id as string));
     } else if (recipients.type === "formation" && recipients.ids?.length) {
-      for (const formationId of recipients.ids) {
-        recipientRows.push({ message_id: message.id, recipient_id: formationId, recipient_type: "formation", is_read: false, read_at: null });
+      // Expand formation -> assigned users
+      const { data: assignments, error: assignErr } = await supabaseAdmin
+        .from("user_formation_assignments")
+        .select("user_id")
+        .in("formation_id", recipients.ids);
+
+      if (assignErr) {
+        console.error("Select formation assignments error:", assignErr);
+        return new Response(JSON.stringify({ error: assignErr.message }), { status: 500, headers: jsonHeaders });
       }
+
+      addUserRecipients((assignments || []).map((a: any) => a.user_id as string));
     } else if (recipients.type === "user" && recipients.ids?.length) {
-      for (const recipientId of recipients.ids) {
-        // Avoid duplicate if the sender sends to themselves
-        if (recipientId !== userId) {
-          recipientRows.push({ message_id: message.id, recipient_id: recipientId, recipient_type: "user", is_read: false, read_at: null });
-        }
-      }
+      addUserRecipients(recipients.ids);
     }
 
     if (recipientRows.length > 0) {
