@@ -102,7 +102,17 @@ serve(async (req) => {
     console.log("Message created:", message.id);
 
     // 2) Build recipients list
-    const recipientRows: Array<{ message_id: string; recipient_id?: string; recipient_type: string }> = [];
+    const recipientRows: Array<{ message_id: string; recipient_id?: string; recipient_type: string; is_read?: boolean; read_at?: string | null }> = [];
+
+    // Always add a "sender copy" so the sender can reliably see the message in "Envoyés"
+    // even if their access relies on recipient-based logic.
+    recipientRows.push({
+      message_id: message.id,
+      recipient_id: userId,
+      recipient_type: "user",
+      is_read: true,
+      read_at: new Date().toISOString(),
+    });
 
     if (recipients.type === "all_instructors") {
       recipientRows.push({ message_id: message.id, recipient_type: "all_instructors" });
@@ -112,7 +122,10 @@ serve(async (req) => {
       }
     } else if (recipients.type === "user" && recipients.ids?.length) {
       for (const recipientId of recipients.ids) {
-        recipientRows.push({ message_id: message.id, recipient_id: recipientId, recipient_type: "user" });
+        // Avoid duplicate if the sender sends to themselves
+        if (recipientId !== userId) {
+          recipientRows.push({ message_id: message.id, recipient_id: recipientId, recipient_type: "user" });
+        }
       }
     }
 
