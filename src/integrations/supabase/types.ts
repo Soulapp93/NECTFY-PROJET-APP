@@ -1400,6 +1400,7 @@ export type Database = {
       }
     }
     Functions: {
+      can_access_message: { Args: { _message_id: string }; Returns: boolean }
       generate_signature_token: { Args: { sheet_id: string }; Returns: string }
       get_current_user_establishment: { Args: never; Returns: string }
       get_current_user_role: { Args: never; Returns: string }
@@ -1429,6 +1430,7 @@ export type Database = {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
       }
+      is_message_sender: { Args: { _message_id: string }; Returns: boolean }
       validate_signature_token: {
         Args: { token_param: string }
         Returns: {
