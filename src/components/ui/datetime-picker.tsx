@@ -1,7 +1,7 @@
 import * as React from "react"
 import { format, isValid } from "date-fns"
 import { fr } from "date-fns/locale"
-import { CalendarIcon, Clock, Globe } from "lucide-react"
+import { CalendarIcon, Clock, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select"
 
 interface DateTimePickerProps {
-  value?: string // Format: ISO 8601 with timezone
+  value?: string
   onChange?: (value: string) => void
   placeholder?: string
   className?: string
@@ -29,70 +29,54 @@ interface DateTimePickerProps {
   showTimezone?: boolean
 }
 
-// Timezone used for scheduling (France)
-const TIMEZONE = 'Europe/Paris'
-
-// Generate hours options
-const hoursOptions = Array.from({ length: 24 }, (_, i) => ({
-  value: i.toString().padStart(2, '0'),
-  label: i.toString().padStart(2, '0') + 'h'
-}))
-
-// Generate minutes options (every 5 minutes)
-const minutesOptions = Array.from({ length: 60 }, (_, i) => ({
-  value: i.toString().padStart(2, "0"),
-  label: i.toString().padStart(2, "0"),
-}))
-
-// Get the timezone offset string for Europe/Paris (e.g., UTC+1 / UTC+2)
-const getTimezoneOffsetLabel = (date: Date): string => {
-  const formatter = new Intl.DateTimeFormat("fr-FR", {
-    timeZone: TIMEZONE,
-    timeZoneName: "shortOffset",
+// Simple and reliable: Build UTC ISO from Paris wall-clock time
+const buildUtcIso = (year: number, month: number, day: number, hour: number, minute: number): string => {
+  // Create a date string that we interpret as Paris time
+  // Then convert to UTC by calculating the offset
+  const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`
+  
+  // Get the Paris offset for this date
+  const tempDate = new Date(dateStr + 'Z') // Parse as UTC first
+  const parisFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Paris',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
   })
-  const parts = formatter.formatToParts(date)
-  const offsetPart = parts.find((p) => p.type === "timeZoneName")
-  return offsetPart?.value || "UTC+1"
-}
-
-// Parse offset label like "UTC+1", "UTC+01:00", "UTC+2" to minutes
-const parseUtcOffsetToMinutes = (offsetLabel: string): number => {
-  // Expected: "UTC+1", "UTC+01:00", "UTC-05:00", etc.
-  const m = offsetLabel.match(/UTC([+-])(\d{1,2})(?::?(\d{2}))?/) // minutes optional
-  if (!m) return 60 // safe fallback for France winter time
-  const sign = m[1] === "-" ? -1 : 1
-  const hours = Number(m[2] || 0)
-  const minutes = Number(m[3] || 0)
-  return sign * (hours * 60 + minutes)
-}
-
-// Convert Europe/Paris date+time selection to an UTC ISO string.
-// IMPORTANT: Do NOT rely on the browser's local timezone.
-const toISOWithTimezone = (date: Date, hour: string, minute: string): string => {
-  const year = date.getFullYear()
-  const monthIndex = date.getMonth() // 0-based
-  const day = date.getDate()
-
-  // We start from the selected wall-clock time as if it was UTC…
-  const naiveUtcMs = Date.UTC(year, monthIndex, day, Number(hour), Number(minute), 0)
-  const naiveUtcDate = new Date(naiveUtcMs)
-
-  // …then we retrieve the Paris offset for that instant and subtract it.
-  // This yields the real UTC instant corresponding to the Paris wall-clock time.
-  const offsetLabel = getTimezoneOffsetLabel(naiveUtcDate)
-  const offsetMinutes = parseUtcOffsetToMinutes(offsetLabel)
-  const realUtcMs = naiveUtcMs - offsetMinutes * 60 * 1000
+  
+  // Find offset by comparing UTC and Paris representation
+  const utcMs = Date.UTC(year, month - 1, day, hour, minute, 0)
+  const testDate = new Date(utcMs)
+  
+  // Get Paris time for this UTC moment
+  const parisParts = parisFormatter.formatToParts(testDate)
+  const getP = (t: string) => parisParts.find(p => p.type === t)?.value || '0'
+  const parisHour = parseInt(getP('hour'))
+  const parisMinute = parseInt(getP('minute'))
+  const parisDay = parseInt(getP('day'))
+  
+  // Calculate offset in minutes (Paris - UTC)
+  let offsetMinutes = (parisHour - hour) * 60 + (parisMinute - minute)
+  if (parisDay !== day) {
+    offsetMinutes += parisDay > day ? 24 * 60 : -24 * 60
+  }
+  
+  // The real UTC time is: selected Paris time - offset
+  const realUtcMs = utcMs - offsetMinutes * 60 * 1000
   return new Date(realUtcMs).toISOString()
 }
 
-// Parse ISO date and extract Paris local time
-const parseToParisTime = (isoString: string): { date: Date; hour: string; minute: string } | null => {
+// Parse UTC ISO to Paris wall-clock components
+const parseUtcToParisComponents = (isoString: string): { year: number; month: number; day: number; hour: number; minute: number } | null => {
   try {
     const utcDate = new Date(isoString)
     if (!isValid(utcDate)) return null
     
-    const parisFormatter = new Intl.DateTimeFormat('fr-FR', {
-      timeZone: TIMEZONE,
+    const formatter = new Intl.DateTimeFormat('fr-FR', {
+      timeZone: 'Europe/Paris',
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -101,19 +85,15 @@ const parseToParisTime = (isoString: string): { date: Date; hour: string; minute
       hour12: false
     })
     
-    const parts = parisFormatter.formatToParts(utcDate)
-    const getPart = (type: string) => parts.find(p => p.type === type)?.value || ''
-    
-    const year = parseInt(getPart('year'))
-    const month = parseInt(getPart('month')) - 1
-    const day = parseInt(getPart('day'))
-    const hour = getPart('hour').padStart(2, '0')
-    const minute = getPart('minute').padStart(2, '0')
+    const parts = formatter.formatToParts(utcDate)
+    const get = (type: string) => parts.find(p => p.type === type)?.value || '0'
     
     return {
-      date: new Date(year, month, day),
-      hour,
-      minute,
+      year: parseInt(get('year')),
+      month: parseInt(get('month')),
+      day: parseInt(get('day')),
+      hour: parseInt(get('hour')),
+      minute: parseInt(get('minute'))
     }
   } catch {
     return null
@@ -123,7 +103,7 @@ const parseToParisTime = (isoString: string): { date: Date; hour: string; minute
 export function DateTimePicker({
   value,
   onChange,
-  placeholder = "Sélectionner une date",
+  placeholder = "Sélectionner date et heure",
   className,
   disabled,
   id,
@@ -135,149 +115,164 @@ export function DateTimePicker({
   const [selectedHour, setSelectedHour] = React.useState<string>('09')
   const [selectedMinute, setSelectedMinute] = React.useState<string>('00')
 
-  const timezoneOffset = React.useMemo(() => getTimezoneOffsetLabel(new Date()), [])
-
+  // Parse incoming value
   React.useEffect(() => {
     if (value) {
-      const parsed = parseToParisTime(value)
+      const parsed = parseUtcToParisComponents(value)
       if (parsed) {
-        setSelectedDate(parsed.date)
-        setSelectedHour(parsed.hour)
-        setSelectedMinute(parsed.minute)
+        setSelectedDate(new Date(parsed.year, parsed.month - 1, parsed.day))
+        setSelectedHour(String(parsed.hour).padStart(2, '0'))
+        setSelectedMinute(String(parsed.minute).padStart(2, '0'))
       }
+    } else {
+      setSelectedDate(undefined)
+      setSelectedHour('09')
+      setSelectedMinute('00')
     }
   }, [value])
 
-  const updateValue = (date: Date | undefined, hour: string, minute: string) => {
-    if (date) {
-      const isoValue = toISOWithTimezone(date, hour, minute)
-      onChange?.(isoValue)
+  const emitChange = React.useCallback((date: Date | undefined, hour: string, minute: string) => {
+    if (date && onChange) {
+      const iso = buildUtcIso(
+        date.getFullYear(),
+        date.getMonth() + 1,
+        date.getDate(),
+        parseInt(hour),
+        parseInt(minute)
+      )
+      onChange(iso)
     }
-  }
+  }, [onChange])
 
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date)
     if (date) {
-      updateValue(date, selectedHour, selectedMinute)
+      emitChange(date, selectedHour, selectedMinute)
       setCalendarOpen(false)
     }
   }
 
   const handleHourChange = (hour: string) => {
     setSelectedHour(hour)
-    updateValue(selectedDate, hour, selectedMinute)
+    emitChange(selectedDate, hour, selectedMinute)
   }
 
   const handleMinuteChange = (minute: string) => {
     setSelectedMinute(minute)
-    updateValue(selectedDate, selectedHour, minute)
+    emitChange(selectedDate, selectedHour, minute)
   }
 
-  const displayDate = selectedDate && isValid(selectedDate)
-    ? format(selectedDate, "d MMMM yyyy", { locale: fr })
-    : undefined
+  const handleClear = () => {
+    setSelectedDate(undefined)
+    setSelectedHour('09')
+    setSelectedMinute('00')
+    onChange?.('')
+  }
+
+  const displayText = selectedDate && isValid(selectedDate)
+    ? `${format(selectedDate, "d MMM yyyy", { locale: fr })} à ${selectedHour}:${selectedMinute}`
+    : null
 
   return (
-    <div className={cn("space-y-3", className)}>
-      {/* Date Picker */}
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
-          <CalendarIcon className="h-4 w-4 text-primary" />
-          Date d'envoi
-        </label>
-        <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              id={id}
-              variant="outline"
-              disabled={disabled}
-              className={cn(
-                "w-full justify-start text-left font-normal h-11",
-                !displayDate && "text-muted-foreground"
-              )}
-            >
-              {displayDate || <span>{placeholder}</span>}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={4}>
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={handleDateSelect}
-              disabled={(date) => minDate ? date < minDate : false}
-              initialFocus
-              locale={fr}
-              className="p-3 pointer-events-auto"
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
-
-      {/* Time Picker - Simplified with dropdowns */}
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
-          <Clock className="h-4 w-4 text-primary" />
-          Heure d'envoi
-        </label>
+    <div className={cn("space-y-4", className)}>
+      {/* Combined Date + Time Selector */}
+      <div className="flex flex-col gap-3">
+        {/* Date Selection */}
         <div className="flex items-center gap-2">
-          <Select
-            value={selectedHour}
-            onValueChange={handleHourChange}
-            disabled={disabled}
-          >
-            <SelectTrigger className="flex-1 h-11">
-              <SelectValue placeholder="Heure" />
-            </SelectTrigger>
-            <SelectContent 
-              className="max-h-[280px] overflow-y-auto"
-              position="popper"
-              sideOffset={4}
-            >
-              {hoursOptions.map((hour) => (
-                <SelectItem key={hour.value} value={hour.value}>
-                  {hour.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                id={id}
+                variant="outline"
+                disabled={disabled}
+                className={cn(
+                  "flex-1 justify-start text-left font-normal h-11",
+                  !selectedDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {selectedDate ? format(selectedDate, "EEEE d MMMM yyyy", { locale: fr }) : placeholder}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={4}>
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={handleDateSelect}
+                disabled={(date) => minDate ? date < minDate : false}
+                initialFocus
+                locale={fr}
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
           
-          <span className="text-lg font-semibold text-muted-foreground">:</span>
-          
-          <Select
-            value={selectedMinute}
-            onValueChange={handleMinuteChange}
-            disabled={disabled}
-          >
-            <SelectTrigger className="flex-1 h-11">
-              <SelectValue placeholder="Min" />
-            </SelectTrigger>
-            <SelectContent 
-              className="max-h-[280px] overflow-y-auto"
-              position="popper"
-              sideOffset={4}
+          {selectedDate && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleClear}
+              className="h-11 w-11 shrink-0"
+              title="Effacer"
             >
-              {minutesOptions.map((minute) => (
-                <SelectItem key={minute.value} value={minute.value}>
-                  {minute.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
+
+        {/* Time Selection - Only show when date is selected */}
+        {selectedDate && (
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Select value={selectedHour} onValueChange={handleHourChange} disabled={disabled}>
+              <SelectTrigger className="w-24 h-11">
+                <SelectValue placeholder="HH" />
+              </SelectTrigger>
+              <SelectContent position="popper" className="max-h-[280px] overflow-y-auto">
+                {Array.from({ length: 24 }, (_, i) => {
+                  const val = String(i).padStart(2, '0')
+                  return (
+                    <SelectItem key={val} value={val}>
+                      {val}h
+                    </SelectItem>
+                  )
+                })}
+              </SelectContent>
+            </Select>
+            
+            <span className="text-lg font-bold text-muted-foreground">:</span>
+            
+            <Select value={selectedMinute} onValueChange={handleMinuteChange} disabled={disabled}>
+              <SelectTrigger className="w-20 h-11">
+                <SelectValue placeholder="MM" />
+              </SelectTrigger>
+              <SelectContent position="popper" className="max-h-[280px] overflow-y-auto">
+                {Array.from({ length: 60 }, (_, i) => {
+                  const val = String(i).padStart(2, '0')
+                  return (
+                    <SelectItem key={val} value={val}>
+                      {val}
+                    </SelectItem>
+                  )
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
-      {/* Timezone indicator */}
-      {showTimezone && (
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
-          <Globe className="h-3.5 w-3.5" />
-          <span>Fuseau horaire : <strong className="text-foreground">{TIMEZONE}</strong> ({timezoneOffset})</span>
-        </div>
-      )}
-
-      {/* Summary */}
-      {selectedDate && isValid(selectedDate) && (
-        <div className="text-sm text-center py-2 px-3 bg-primary/10 rounded-md text-primary font-medium">
-          Envoi prévu le {displayDate} à {selectedHour}:{selectedMinute}
+      {/* Summary with timezone */}
+      {displayText && showTimezone && (
+        <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg border border-primary/20">
+          <div className="flex items-center gap-2">
+            <CalendarIcon className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium text-primary">
+              Envoi prévu : {displayText}
+            </span>
+          </div>
+          <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+            Europe/Paris
+          </span>
         </div>
       )}
     </div>
