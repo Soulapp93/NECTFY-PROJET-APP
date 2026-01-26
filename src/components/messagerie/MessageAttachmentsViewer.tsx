@@ -20,22 +20,22 @@ const getFileIcon = (fileName: string, contentType?: string) => {
   const ext = fileName.split('.').pop()?.toLowerCase();
   
   if (contentType?.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '')) {
-    return <Image className="h-4 w-4 text-green-500" />;
+    return <Image className="h-4 w-4 text-primary" />;
   }
   if (contentType?.startsWith('video/') || ['mp4', 'webm', 'avi', 'mov'].includes(ext || '')) {
-    return <Film className="h-4 w-4 text-purple-500" />;
+    return <Film className="h-4 w-4 text-primary" />;
   }
   if (contentType?.startsWith('audio/') || ['mp3', 'wav', 'ogg', 'm4a'].includes(ext || '')) {
-    return <Music className="h-4 w-4 text-pink-500" />;
+    return <Music className="h-4 w-4 text-primary" />;
   }
   if (['pdf'].includes(ext || '')) {
-    return <FileText className="h-4 w-4 text-red-500" />;
+    return <FileText className="h-4 w-4 text-destructive" />;
   }
   if (['xls', 'xlsx', 'csv'].includes(ext || '')) {
-    return <FileSpreadsheet className="h-4 w-4 text-green-600" />;
+    return <FileSpreadsheet className="h-4 w-4 text-primary" />;
   }
   if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext || '')) {
-    return <Archive className="h-4 w-4 text-amber-500" />;
+    return <Archive className="h-4 w-4 text-muted-foreground" />;
   }
   
   return <File className="h-4 w-4 text-muted-foreground" />;
@@ -55,10 +55,30 @@ const MessageAttachmentsViewer: React.FC<MessageAttachmentsViewerProps> = ({ mes
   const [selectedFile, setSelectedFile] = useState<Attachment | null>(null);
 
   useEffect(() => {
-    // Message attachments table doesn't exist in current schema
-    // This component will be used when the chat_message_attachments table is available
-    setAttachments([]);
-    setLoading(false);
+    let cancelled = false;
+    const load = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await (supabase as any)
+          .from('message_attachments')
+          .select('id, file_name, file_url, file_size, content_type')
+          .eq('message_id', messageId)
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+        if (!cancelled) setAttachments((data || []) as Attachment[]);
+      } catch (e) {
+        console.error('Erreur chargement pièces jointes:', e);
+        if (!cancelled) setAttachments([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    if (messageId) load();
+    return () => {
+      cancelled = true;
+    };
   }, [messageId]);
 
   const handleView = (attachment: Attachment) => {

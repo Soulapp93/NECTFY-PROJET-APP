@@ -6,6 +6,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const jsonHeaders = {
+  ...corsHeaders,
+  "Content-Type": "application/json; charset=utf-8",
+};
+
 interface RecipientPayload {
   type: "user" | "formation" | "all_instructors";
   ids?: string[];
@@ -36,7 +41,7 @@ serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: jsonHeaders });
     }
 
     // User client (to verify JWT and get user info)
@@ -51,7 +56,7 @@ serve(async (req) => {
     );
     if (claimsError || !claimsData?.claims) {
       console.error("Claims error:", claimsError);
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: jsonHeaders });
     }
 
     const userId = claimsData.claims.sub as string;
@@ -71,7 +76,7 @@ serve(async (req) => {
     if (!subject || !content) {
       return new Response(
         JSON.stringify({ error: "subject and content are required" }),
-        { status: 400, headers: corsHeaders }
+        { status: 400, headers: jsonHeaders }
       );
     }
 
@@ -91,7 +96,7 @@ serve(async (req) => {
 
     if (messageError) {
       console.error("Insert message error:", messageError);
-      return new Response(JSON.stringify({ error: messageError.message }), { status: 500, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: messageError.message }), { status: 500, headers: jsonHeaders });
     }
 
     console.log("Message created:", message.id);
@@ -117,7 +122,7 @@ serve(async (req) => {
         console.error("Insert recipients error:", recipientError);
         // Rollback: delete the message
         await supabaseAdmin.from("messages").delete().eq("id", message.id);
-        return new Response(JSON.stringify({ error: recipientError.message }), { status: 500, headers: corsHeaders });
+        return new Response(JSON.stringify({ error: recipientError.message }), { status: 500, headers: jsonHeaders });
       }
       console.log("Recipients created:", recipientRows.length);
     }
@@ -138,14 +143,14 @@ serve(async (req) => {
         // Rollback
         await supabaseAdmin.from("message_recipients").delete().eq("message_id", message.id);
         await supabaseAdmin.from("messages").delete().eq("id", message.id);
-        return new Response(JSON.stringify({ error: attachError.message }), { status: 500, headers: corsHeaders });
+        return new Response(JSON.stringify({ error: attachError.message }), { status: 500, headers: jsonHeaders });
       }
       console.log("Attachments created:", attachmentRows.length);
     }
 
-    return new Response(JSON.stringify({ success: true, message }), { status: 200, headers: corsHeaders });
+    return new Response(JSON.stringify({ success: true, message }), { status: 200, headers: jsonHeaders });
   } catch (err) {
     console.error("Unexpected error:", err);
-    return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: jsonHeaders });
   }
 });
