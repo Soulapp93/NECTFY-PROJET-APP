@@ -93,41 +93,45 @@ export const useChatMessages = (groupId: string | null) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  const fetchMessages = async () => {
+    if (!groupId) {
+      setMessages([]);
+      return;
+    }
+    try {
+      setLoading(true);
+      const data = await chatService.getGroupMessages(groupId);
+      setMessages(data);
+      // Mark as read
+      await chatService.updateLastRead(groupId);
+    } catch (err) {
+      console.error('Error loading messages:', err);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les messages",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!groupId) {
       setMessages([]);
       return;
     }
 
-    const fetchMessages = async () => {
-      try {
-        setLoading(true);
-        const data = await chatService.getGroupMessages(groupId);
-        setMessages(data);
-        // Mark as read
-        await chatService.updateLastRead(groupId);
-      } catch (err) {
-        console.error('Error loading messages:', err);
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger les messages",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchMessages();
 
-    // Subscribe to new messages
+    // Subscribe to new messages (the callback now receives message with attachments)
     const channel = chatService.subscribeToMessages(groupId, (newMessage) => {
       setMessages(prev => {
         // Check if message already exists
         const exists = prev.some(msg => msg.id === newMessage.id);
         if (exists) {
-          // Update existing message (for deletions)
-          return prev.map(msg => msg.id === newMessage.id ? newMessage : msg);
+          // Update existing message with attachments
+          return prev.map(msg => msg.id === newMessage.id ? { ...msg, ...newMessage } : msg);
         }
         // Add new message
         return [...prev, newMessage];
@@ -161,6 +165,8 @@ export const useChatMessages = (groupId: string | null) => {
     
     try {
       await chatService.deleteMessage(messageId);
+      // Remove from local state immediately
+      setMessages(prev => prev.filter(msg => msg.id !== messageId));
       toast({
         title: "Succès",
         description: "Message supprimé",
@@ -175,10 +181,21 @@ export const useChatMessages = (groupId: string | null) => {
     }
   };
 
+  // Update a message with new attachments in local state
+  const updateMessageAttachments = (messageId: string, attachments: any[]) => {
+    setMessages(prev => prev.map(msg => 
+      msg.id === messageId 
+        ? { ...msg, attachments } 
+        : msg
+    ));
+  };
+
   return {
     messages,
     loading,
     sendMessage,
     deleteMessage,
+    updateMessageAttachments,
+    refetch: fetchMessages,
   };
 };

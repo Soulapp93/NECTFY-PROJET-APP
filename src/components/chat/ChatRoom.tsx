@@ -26,7 +26,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ groupId, groupName }) => {
   const [uploading, setUploading] = useState(false);
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [viewerFile, setViewerFile] = useState<{ url: string; name: string } | null>(null);
-  const { messages, loading, sendMessage, deleteMessage } = useChatMessages(groupId);
+  const { messages, loading, sendMessage, deleteMessage, updateMessageAttachments, refetch } = useChatMessages(groupId);
   const { userId } = useCurrentUser();
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -60,7 +60,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ groupId, groupName }) => {
 
     // Snapshot current state (so we can restore if the send fails early)
     const prevText = messageText;
-    const prevFiles = selectedFiles;
+    const prevFiles = [...selectedFiles]; // Create a copy of the files array
     let createdMessageId: string | null = null;
     
     try {
@@ -68,7 +68,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ groupId, groupName }) => {
       
       // Determine message content
       let content = prevText.trim();
-      if (!content && selectedFiles.length > 0) {
+      if (!content && prevFiles.length > 0) {
         // If only files, create a descriptive message
         const fileNames = prevFiles.map(f => f.name).join(', ');
         content = `📎 ${fileNames}`;
@@ -86,11 +86,34 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ groupId, groupName }) => {
 
       createdMessageId = message.id;
       
-      // Upload all attachments
+      // Upload all attachments sequentially to avoid race conditions
       if (prevFiles.length > 0) {
-        await Promise.all(
-          prevFiles.map(file => chatService.uploadAttachment(message.id, file))
-        );
+        console.log('📎 Uploading', prevFiles.length, 'files for message', createdMessageId);
+        const uploadedAttachments = [];
+        
+        for (const file of prevFiles) {
+          try {
+            console.log('📎 Uploading file:', file.name, 'size:', file.size);
+            const attachment = await chatService.uploadAttachment(message.id, file);
+            console.log('✅ File uploaded:', attachment);
+            uploadedAttachments.push(attachment);
+          } catch (uploadError) {
+            console.error('❌ Failed to upload file:', file.name, uploadError);
+            toast({
+              title: "Erreur d'upload",
+              description: `Impossible d'uploader ${file.name}`,
+              variant: "destructive",
+            });
+          }
+        }
+        
+        // Update the message in local state with uploaded attachments
+        if (uploadedAttachments.length > 0) {
+          updateMessageAttachments(message.id, uploadedAttachments);
+        }
+        
+        // Also refresh messages to ensure sync
+        setTimeout(() => refetch(), 500);
       }
       
       toast({
@@ -101,7 +124,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ groupId, groupName }) => {
       console.error('Error sending message:', error);
 
       // If it failed before creating the message, restore the composer state
-      // (If the message was created but attachment upload failed, we keep the composer cleared.)
       if (!createdMessageId) {
         setMessageText(prevText);
         setSelectedFiles(prevFiles);
