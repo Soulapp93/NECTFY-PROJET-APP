@@ -56,6 +56,7 @@ const SendSignatureLinkModal: React.FC<SendSignatureLinkModalProps> = ({
       
       // Si un token existe déjà, afficher le lien
       if (attendanceSheet.signature_link_token) {
+        // Use current origin so link works in preview AND production
         const link = `${window.location.origin}/emargement/signer/${attendanceSheet.signature_link_token}`;
         setGeneratedLink(link);
         setExpiresAt(attendanceSheet.signature_link_expires_at || null);

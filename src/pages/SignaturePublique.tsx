@@ -20,7 +20,8 @@ const SignaturePublique = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userSignature, setUserSignature] = useState<string | null>(null);
   const [hasAlreadySigned, setHasAlreadySigned] = useState(false);
-  const [showSignature, setShowSignature] = useState(false);
+  // Ouvrir directement le pad de signature dès que l'utilisateur est connecté et autorisé
+  const [showSignature, setShowSignature] = useState(true);
   const [signing, setSigning] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);

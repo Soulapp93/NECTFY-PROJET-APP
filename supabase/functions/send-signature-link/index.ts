@@ -10,6 +10,7 @@ interface SendSignatureLinkRequest {
   studentIds: string[];
   mode?: 'default' | 'fallback';
   retryFailedOnly?: boolean;
+  baseUrl?: string; // Allow client to pass current origin for preview environments
 }
 
 function sleep(ms: number) {
@@ -70,6 +71,7 @@ Deno.serve(async (req) => {
       studentIds,
       mode = 'default',
       retryFailedOnly = false,
+      baseUrl: clientBaseUrl,
     }: SendSignatureLinkRequest = await req.json();
 
     if (!attendanceSheetId || !studentIds || studentIds.length === 0) {
@@ -117,7 +119,8 @@ Deno.serve(async (req) => {
       .single();
 
     const senderName = sender ? `${sender.first_name} ${sender.last_name}` : 'Administration';
-    const baseUrl = Deno.env.get('APP_BASE_URL') || 'https://nectforma.com';
+    // Use client-provided baseUrl (preview origin) or fallback to env/production
+    const baseUrl = clientBaseUrl || Deno.env.get('APP_BASE_URL') || 'https://nectforma.com';
 
     // Fallback: si pas de token (ou si retry), on génère/garantit un token côté backend
     let signatureToken = sheet.signature_link_token as string | null;
