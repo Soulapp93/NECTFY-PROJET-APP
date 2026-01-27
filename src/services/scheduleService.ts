@@ -149,6 +149,32 @@ export const scheduleService = {
       .single();
 
     if (error) throw error;
+
+    // Get formation_id for notification
+    const { data: schedule } = await supabase
+      .from('schedules')
+      .select('formation_id')
+      .eq('id', slot.schedule_id)
+      .single();
+
+    // Send notification (fire and forget)
+    if (schedule?.formation_id && data) {
+      import('./notificationService').then(({ notificationService }) => {
+        const moduleName = (data as any).formation_modules?.title || 'Cours';
+        const instructorName = (data as any).users 
+          ? `${(data as any).users.first_name} ${(data as any).users.last_name}`
+          : undefined;
+        notificationService.notifyScheduleSlotCreated(
+          schedule.formation_id,
+          moduleName,
+          slot.date,
+          slot.start_time,
+          slot.end_time,
+          instructorName
+        ).catch(console.error);
+      });
+    }
+
     return data;
   },
 
@@ -170,13 +196,21 @@ export const scheduleService = {
   },
 
   // Delete schedule slot
-  async deleteScheduleSlot(id: string): Promise<void> {
+  async deleteScheduleSlot(id: string, formationId?: string, moduleName?: string, date?: string, startTime?: string): Promise<void> {
     const { error } = await supabase
       .from('schedule_slots')
       .delete()
       .eq('id', id);
 
     if (error) throw error;
+
+    // Send cancellation notification if info provided
+    if (formationId && moduleName && date && startTime) {
+      import('./notificationService').then(({ notificationService }) => {
+        notificationService.notifyScheduleSlotCancelled(formationId, moduleName, date, startTime)
+          .catch(console.error);
+      });
+    }
   },
 
   // Get published schedules for student by formation IDs
