@@ -4,7 +4,7 @@ import { attendanceService } from '@/services/attendanceService';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Clock, CheckCircle2, AlertCircle, User, LogIn, PenTool } from 'lucide-react';
+import { Calendar, Clock, CheckCircle2, AlertCircle, User, LogIn, PenTool, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -15,7 +15,8 @@ const SignaturePublique = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [attendanceSheet, setAttendanceSheet] = useState<any>(null);
-  const [tokenValid, setTokenValid] = useState<any>(null);
+  const [tokenValid, setTokenValid] = useState<boolean | null>(null);
+  const [tokenError, setTokenError] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userSignature, setUserSignature] = useState<string | null>(null);
   const [hasAlreadySigned, setHasAlreadySigned] = useState(false);
@@ -25,7 +26,9 @@ const SignaturePublique = () => {
   const [isEnrolled, setIsEnrolled] = useState(false);
 
   useEffect(() => {
-    checkAuthAndLoadData();
+    if (token) {
+      checkAuthAndLoadData();
+    }
   }, [token]);
 
   const checkAuthAndLoadData = async () => {
@@ -62,16 +65,14 @@ const SignaturePublique = () => {
       const validationData = await attendanceService.validateSignatureToken(token!);
       
       if (!validationData || !validationData.is_valid) {
-        setTokenValid({ 
-          valid: false, 
-          expired: !!validationData?.error_message?.includes('expiré'),
-          expires_at: undefined
-        });
+        setTokenValid(false);
+        setTokenError(validationData?.error_message || 'Token invalide');
         setLoading(false);
         return;
       }
 
-      setTokenValid({ valid: true, expired: false });
+      setTokenValid(true);
+      setTokenError(null);
 
       // 4. Charger la feuille d'émargement
       const sheet = await attendanceService.getAttendanceSheetByToken(token!);
@@ -84,7 +85,7 @@ const SignaturePublique = () => {
           .select('id')
           .eq('user_id', user.id)
           .eq('formation_id', sheet.formation_id)
-          .single();
+          .maybeSingle();
 
         if (!enrollment) {
           setIsEnrolled(false);
@@ -164,7 +165,7 @@ const SignaturePublique = () => {
         signatureData
       );
 
-      // Optionnellement sauvegarder la signature dans le profil
+      // Sauvegarder la signature dans le profil si l'utilisateur n'en a pas
       if (!userSignature) {
         await supabase
           .from('user_signatures')
@@ -218,7 +219,7 @@ const SignaturePublique = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-muted-foreground">
-              Vous devez être connecté à votre compte NECTFY pour signer cette feuille d'émargement.
+              Vous devez être connecté à votre compte NECTFORMA pour signer cette feuille d'émargement.
             </p>
             <Button onClick={handleLogin} className="w-full">
               <LogIn className="h-4 w-4 mr-2" />
@@ -231,7 +232,7 @@ const SignaturePublique = () => {
   }
 
   // Token invalide ou expiré
-  if (!tokenValid || !tokenValid.is_valid) {
+  if (!tokenValid) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="max-w-md w-full">
@@ -243,15 +244,10 @@ const SignaturePublique = () => {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              {tokenValid?.expired 
+              {tokenError?.includes('expiré') 
                 ? 'Ce lien d\'émargement a expiré. Veuillez contacter l\'administration.'
                 : 'Ce lien d\'émargement n\'est pas valide.'}
             </p>
-            {tokenValid?.expires_at && (
-              <p className="text-sm text-muted-foreground">
-                Date d'expiration : {format(new Date(tokenValid.expires_at), 'PPP à HH:mm', { locale: fr })}
-              </p>
-            )}
             <Button onClick={() => navigate('/dashboard')} className="mt-4 w-full" variant="outline">
               Retour à l'accueil
             </Button>
@@ -285,6 +281,34 @@ const SignaturePublique = () => {
     );
   }
 
+  // Pas de feuille d'émargement trouvée
+  if (!attendanceSheet) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-5 w-5" />
+              Session introuvable
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground mb-4">
+              La session d'émargement demandée n'a pas été trouvée.
+            </p>
+            <Button onClick={() => navigate('/dashboard')} className="w-full" variant="outline">
+              Retour à l'accueil
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const formationTitle = attendanceSheet.formations?.title || 'Formation';
+  const sessionDate = format(new Date(attendanceSheet.date), 'EEEE d MMMM yyyy', { locale: fr });
+  const sessionTime = `${attendanceSheet.start_time?.substring(0, 5)} - ${attendanceSheet.end_time?.substring(0, 5)}`;
+
   // Affichage du pad de signature
   if (showSignature) {
     return (
@@ -296,9 +320,9 @@ const SignaturePublique = () => {
           <CardContent className="space-y-4">
             <div className="bg-muted p-4 rounded-lg">
               <p className="text-sm font-medium mb-2">Session</p>
-              <p className="text-lg">{tokenValid.formation_title}</p>
+              <p className="text-lg">{formationTitle}</p>
               <p className="text-sm text-muted-foreground">
-                {format(new Date(tokenValid.date), 'PPP', { locale: fr })} • {tokenValid.start_time.substring(0, 5)} - {tokenValid.end_time.substring(0, 5)}
+                {sessionDate} • {sessionTime}
               </p>
             </div>
 
@@ -338,19 +362,25 @@ const SignaturePublique = () => {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Informations de la session */}
-          <div className="bg-muted p-4 rounded-lg space-y-2">
-            <h3 className="font-semibold text-lg">{tokenValid.formation_title}</h3>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
-              <span className="flex items-center gap-1">
+          <div className="bg-muted p-4 rounded-lg space-y-3">
+            <h3 className="font-semibold text-lg">{formationTitle}</h3>
+            <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+              <span className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                {format(new Date(tokenValid.date), 'PPP', { locale: fr })}
+                {sessionDate}
               </span>
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-2">
                 <Clock className="h-4 w-4" />
-                {tokenValid.start_time.substring(0, 5)} - {tokenValid.end_time.substring(0, 5)}
+                {sessionTime}
               </span>
+              {attendanceSheet.room && (
+                <span className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  {attendanceSheet.room}
+                </span>
+              )}
             </div>
-            {tokenValid.session_type === 'autonomie' && (
+            {attendanceSheet.session_type === 'autonomie' && (
               <div className="mt-2 inline-flex items-center gap-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full text-sm">
                 Session en autonomie
               </div>
@@ -378,6 +408,13 @@ const SignaturePublique = () => {
               <p className="text-sm text-muted-foreground mt-1">
                 Vous avez déjà signé cette feuille d'émargement
               </p>
+              <Button 
+                onClick={() => navigate('/suivi-emargement')} 
+                variant="outline" 
+                className="mt-4"
+              >
+                Voir mon historique
+              </Button>
             </div>
           ) : (
             <div className="space-y-4">
