@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { X, FileText, CheckCircle, Download, Eye, Calendar, User } from 'lucide-react';
+import { FileText, CheckCircle, Download, Eye, Calendar, User, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { assignmentService, AssignmentSubmission } from '@/services/assignmentService';
 import ProductionFileViewer from '@/components/ui/viewers/ProductionFileViewer';
 import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface StudentCorrectionViewModalProps {
   submission: AssignmentSubmission;
@@ -56,138 +64,148 @@ const StudentCorrectionViewModal: React.FC<StudentCorrectionViewModalProps> = ({
   const hasCorrection = correction?.is_corrected && correction?.published_at;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col shadow-xl">
-        {/* En-tête */}
-        <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">
-              {assignmentTitle || 'Correction du devoir'}
-            </h2>
-            <p className="text-sm text-gray-600 mt-1">
-              Soumis le {new Date(submission.submitted_at).toLocaleDateString('fr-FR')}
-            </p>
-          </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-2 hover:bg-white/50 rounded-lg transition-colors">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        {/* Contenu */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Section Note - Mise en avant */}
-          {hasCorrection && correction && (
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <CheckCircle className="h-6 w-6 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Votre note</h3>
-                    <p className="text-sm text-gray-600">Correction publiée</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-4xl font-bold text-green-700">
-                    {correction.score}<span className="text-xl text-gray-500">/{correction.max_score}</span>
-                  </p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {((correction.score || 0) / (correction.max_score || 100) * 100).toFixed(0)}%
-                  </p>
-                </div>
+    <>
+      <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
+          {/* En-tête */}
+          <DialogHeader className="px-6 py-5 border-b bg-gradient-to-r from-primary/5 to-primary/10 flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Award className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-semibold">
+                  {assignmentTitle || 'Correction du devoir'}
+                </DialogTitle>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  Soumis le {new Date(submission.submitted_at).toLocaleDateString('fr-FR')}
+                </p>
               </div>
             </div>
-          )}
+          </DialogHeader>
 
-          {/* Commentaires du formateur */}
-          {hasCorrection && (correction?.comments || correction?.feedback) && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
-              <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Commentaires du formateur
-              </h3>
-              <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-                {correction.comments || correction.feedback}
-              </p>
-            </div>
-          )}
-
-          {/* Pas encore de correction */}
-          {!hasCorrection && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center">
-              <Calendar className="h-12 w-12 text-amber-500 mx-auto mb-3" />
-              <h3 className="font-semibold text-amber-900 mb-2">Correction en attente</h3>
-              <p className="text-amber-700 text-sm">
-                Votre devoir a été reçu et sera corrigé prochainement par le formateur.
-              </p>
-            </div>
-          )}
-
-          {/* Votre soumission */}
-          <div className="border border-gray-200 rounded-xl overflow-hidden">
-            <div className="bg-gray-50 px-5 py-3 border-b">
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                <FileText className="h-5 w-5 text-gray-600" />
-                Votre soumission
-              </h3>
-            </div>
-            <div className="p-5 space-y-4">
-              {(submission.submission_text || submission.content) && (
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-700 whitespace-pre-wrap">{submission.submission_text || submission.content}</p>
-                </div>
-              )}
-
-              {loading ? (
-                <p className="text-gray-500 text-sm">Chargement des fichiers...</p>
-              ) : submissionFiles.length > 0 ? (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-700">Fichiers joints :</p>
-                  {submissionFiles.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                        <span className="text-sm text-gray-900 truncate">{file.file_name}</span>
-                        <span className="text-xs text-gray-500">
-                          ({(file.file_size / 1024).toFixed(1)} KB)
-                        </span>
+          {/* Contenu scrollable */}
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+            {/* Section Note - Mise en avant */}
+            {hasCorrection && correction && (
+              <Card className="border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <CheckCircle className="h-6 w-6 text-green-600" />
                       </div>
-                      <div className="flex gap-2 flex-shrink-0">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setViewerFile({ url: file.file_url, name: file.file_name })}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => downloadFile(file.file_url, file.file_name)}
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
+                      <div>
+                        <h3 className="font-semibold text-foreground">Votre note</h3>
+                        <p className="text-sm text-muted-foreground">Correction publiée</p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                !(submission.submission_text || submission.content) && (
-                  <p className="text-gray-500 text-sm">Aucun contenu soumis.</p>
-                )
-              )}
-            </div>
-          </div>
-        </div>
+                    <div className="text-right">
+                      <p className="text-4xl font-bold text-green-700">
+                        {correction.score}<span className="text-xl text-muted-foreground">/{correction.max_score}</span>
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {((correction.score || 0) / (correction.max_score || 100) * 100).toFixed(0)}%
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-        {/* Footer */}
-        <div className="border-t p-4 bg-gray-50">
-          <Button onClick={onClose} className="w-full sm:w-auto">
-            Fermer
-          </Button>
-        </div>
-      </div>
+            {/* Commentaires du formateur */}
+            {hasCorrection && (correction?.comments || correction?.feedback) && (
+              <Card className="border-primary/20 bg-primary/5">
+                <CardContent className="p-5">
+                  <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <User className="h-5 w-5 text-primary" />
+                    Commentaires du formateur
+                  </h3>
+                  <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                    {correction.comments || correction.feedback}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Pas encore de correction */}
+            {!hasCorrection && (
+              <Card className="border-amber-200 bg-amber-50">
+                <CardContent className="p-6 text-center">
+                  <Calendar className="h-12 w-12 text-amber-500 mx-auto mb-3" />
+                  <h3 className="font-semibold text-amber-900 mb-2">Correction en attente</h3>
+                  <p className="text-amber-700 text-sm">
+                    Votre devoir a été reçu et sera corrigé prochainement par le formateur.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Votre soumission */}
+            <Card>
+              <div className="bg-muted/30 px-5 py-3 border-b">
+                <h3 className="font-semibold text-foreground flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-muted-foreground" />
+                  Votre soumission
+                </h3>
+              </div>
+              <CardContent className="p-5 space-y-4">
+                {(submission.submission_text || submission.content) && (
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <p className="text-foreground whitespace-pre-wrap">{submission.submission_text || submission.content}</p>
+                  </div>
+                )}
+
+                {loading ? (
+                  <p className="text-muted-foreground text-sm">Chargement des fichiers...</p>
+                ) : submissionFiles.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-foreground">Fichiers joints :</p>
+                    {submissionFiles.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between bg-muted/50 p-3 rounded-lg">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+                          <span className="text-sm text-foreground truncate">{file.file_name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            ({(file.file_size / 1024).toFixed(1)} KB)
+                          </span>
+                        </div>
+                        <div className="flex gap-1 flex-shrink-0">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setViewerFile({ url: file.file_url, name: file.file_name })}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => downloadFile(file.file_url, file.file_name)}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  !(submission.submission_text || submission.content) && (
+                    <p className="text-muted-foreground text-sm">Aucun contenu soumis.</p>
+                  )
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Footer fixe */}
+          <DialogFooter className="flex-shrink-0 px-6 py-4 border-t bg-muted/30">
+            <Button onClick={onClose} className="w-full sm:w-auto">
+              Fermer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Document Viewer */}
       {viewerFile && (
@@ -198,7 +216,7 @@ const StudentCorrectionViewModal: React.FC<StudentCorrectionViewModalProps> = ({
           onClose={() => setViewerFile(null)}
         />
       )}
-    </div>
+    </>
   );
 };
 
