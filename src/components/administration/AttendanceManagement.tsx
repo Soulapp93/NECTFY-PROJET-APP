@@ -44,7 +44,32 @@ const AttendanceManagement = () => {
     if (userId) {
       loadAdminSignature();
     }
-  }, [userId]);
+
+    // Abonnement realtime pour les nouvelles signatures
+    const channel = supabase
+      .channel('attendance-signatures-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'attendance_signatures'
+        },
+        (payload) => {
+          console.log('Nouvelle signature détectée:', payload);
+          // Rafraîchir les données
+          fetchData();
+          if (selectedFormationId) {
+            fetchFormationSheets(selectedFormationId);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, selectedFormationId]);
 
   const loadAdminSignature = async () => {
     if (!userId) {

@@ -135,10 +135,7 @@ export const attendanceService = {
           *,
           formations!formation_id(title, level),
           users:instructor_id(first_name, last_name),
-          attendance_signatures(
-            *,
-            users(first_name, last_name, email)
-          )
+          attendance_signatures(*)
         `)
         .order('date', { ascending: false });
 
@@ -163,10 +160,7 @@ export const attendanceService = {
             module_id,
             formation_modules(title, description)
           ),
-          attendance_signatures(
-            *,
-            users(first_name, last_name, email)
-          )
+          attendance_signatures(*)
         `)
         .eq('formation_id', formationId)
         .order('date', { ascending: false });
@@ -190,16 +184,7 @@ export const attendanceService = {
           *,
           formations!formation_id(title, level, color),
           users:instructor_id(first_name, last_name),
-          attendance_signatures(
-            id,
-            user_id,
-            user_type,
-            signature_data,
-            signed_at,
-            present,
-            absence_reason,
-            users(first_name, last_name, email)
-          )
+          attendance_signatures(*)
         `)
         .eq('date', today);
 
@@ -243,16 +228,7 @@ export const attendanceService = {
           *,
           formations!formation_id(title, level, color),
           users:instructor_id(first_name, last_name),
-          attendance_signatures(
-            id,
-            user_id,
-            user_type,
-            signature_data,
-            signed_at,
-            present,
-            absence_reason,
-            users(first_name, last_name, email)
-          )
+          attendance_signatures(*)
         `)
         .lt('date', today); // Seulement les dates passées
 
@@ -499,10 +475,7 @@ export const attendanceService = {
           *,
           formations!formation_id(title, level),
           users:instructor_id(first_name, last_name),
-          attendance_signatures(
-            *,
-            users(first_name, last_name, email)
-          )
+          attendance_signatures(*)
         `)
         .eq('status', 'En attente de validation')
         .order('date', { ascending: false });
@@ -587,10 +560,7 @@ export const attendanceService = {
           *,
           formations(title, level),
           users:instructor_id(first_name, last_name),
-          attendance_signatures(
-            *,
-            users(first_name, last_name, email)
-          )
+          attendance_signatures(*)
         `)
         .eq('signature_link_token', token)
         .single();
@@ -601,5 +571,26 @@ export const attendanceService = {
       console.error('Error fetching attendance sheet by token:', error);
       throw error;
     }
+  },
+
+  // S'abonner aux changements en temps réel des signatures
+  subscribeToSignatures(sheetId: string, callback: (payload: any) => void) {
+    const channel = supabase
+      .channel(`signatures-${sheetId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'attendance_signatures',
+          filter: `attendance_sheet_id=eq.${sheetId}`
+        },
+        callback
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }
 };
