@@ -535,10 +535,12 @@ export const attendanceService = {
 
       // Appeler la fonction backend pour envoyer le message interne + notifications
       // (le client Supabase ajoute déjà le JWT; on n'a pas besoin d'ajouter Authorization ici)
+      // Pass current origin so link works in preview/dev environments
       const { data, error } = await supabase.functions.invoke('send-signature-link', {
         body: {
           attendanceSheetId,
           studentIds,
+          baseUrl: window.location.origin,
         },
       });
 
