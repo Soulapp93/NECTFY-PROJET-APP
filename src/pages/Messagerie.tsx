@@ -32,6 +32,7 @@ import { useUsers } from '@/hooks/useUsers';
 import NewMessageModal from '@/components/messagerie/NewMessageModal';
 import MessageAttachmentsViewer from '@/components/messagerie/MessageAttachmentsViewer';
 import ForwardMessageModal from '@/components/messagerie/ForwardMessageModal';
+import { sanitizeHtml } from '@/components/ui/rich-text-editor';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -610,7 +611,24 @@ const Messagerie = () => {
                 {/* Message content */}
                 <Card className="bg-card border-border/50 shadow-sm overflow-hidden">
                   <div className="p-6">
-                    <p className="whitespace-pre-wrap text-base leading-relaxed text-foreground/90">{selectedMessage.content}</p>
+                    {(() => {
+                      const content = selectedMessage.content ?? '';
+                      // If the content contains HTML tags, render it as sanitized HTML (used by system messages like attendance links).
+                      const looksLikeHtml = /<\s*\/?\s*[a-z][\s\S]*>/i.test(content);
+
+                      if (looksLikeHtml) {
+                        return (
+                          <div
+                            className="prose prose-sm max-w-none text-foreground"
+                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
+                          />
+                        );
+                      }
+
+                      return (
+                        <p className="whitespace-pre-wrap text-base leading-relaxed text-foreground/90">{content}</p>
+                      );
+                    })()}
                   </div>
                 </Card>
                 
