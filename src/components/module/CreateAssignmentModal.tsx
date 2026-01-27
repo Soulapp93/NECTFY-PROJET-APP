@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { ClipboardList, FileText, Calendar, Award, Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { assignmentService, Assignment } from '@/services/assignmentService';
 import { fileUploadService } from '@/services/fileUploadService';
@@ -11,6 +10,14 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface CreateAssignmentModalProps {
   isOpen: boolean;
@@ -48,8 +55,18 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({
         due_date: editAssignment.due_date ? new Date(editAssignment.due_date).toISOString().slice(0, 16) : '',
         max_points: editAssignment.max_points
       });
+    } else {
+      // Reset form when opening for creation
+      setFormData({
+        title: '',
+        description: '',
+        assignment_type: 'devoir',
+        due_date: '',
+        max_points: 100
+      });
+      setSelectedFiles([]);
     }
-  }, [editAssignment]);
+  }, [editAssignment, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,13 +74,11 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({
 
     try {
       if (editAssignment) {
-        // Mode édition
         await assignmentService.updateAssignment(editAssignment.id, {
           ...formData,
           due_date: formData.due_date || undefined
         });
       } else {
-        // Mode création
         if (!userId) {
           alert('Utilisateur non authentifié');
           return;
@@ -79,10 +94,7 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({
           due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null,
           max_points: formData.max_points
         });
-        
-        console.log('Devoir créé:', assignment);
 
-        // Uploader les fichiers si il y en a
         if (selectedFiles.length > 0) {
           for (const file of selectedFiles) {
             const fileUrl = await fileUploadService.uploadFile(file);
@@ -98,14 +110,6 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({
 
       onSuccess();
       onClose();
-      setFormData({
-        title: '',
-        description: '',
-        assignment_type: 'devoir',
-        due_date: '',
-        max_points: 100
-      });
-      setSelectedFiles([]);
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
       alert(editAssignment ? 'Erreur lors de la modification du devoir' : 'Erreur lors de la création du devoir');
@@ -114,104 +118,169 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <ClipboardList className="h-5 w-5 text-primary" />
             {editAssignment ? 'Modifier le devoir' : 'Créer un devoir'}
-          </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+          </DialogTitle>
+          <DialogDescription>
+            {editAssignment 
+              ? 'Modifiez les informations du devoir existant.'
+              : 'Remplissez les informations pour créer un nouveau devoir ou évaluation.'
+            }
+          </DialogDescription>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Titre *
-            </label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Type *
-            </label>
-            <select
-              value={formData.assignment_type}
-              onChange={(e) => setFormData({ ...formData, assignment_type: e.target.value as any })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="devoir">Devoir</option>
-              <option value="evaluation">Évaluation</option>
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={4}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          {/* Scrollable form body */}
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
+            {/* Titre */}
             <div className="space-y-2">
-              <Label>Date d'échéance</Label>
-              <DateTimePicker
-                value={formData.due_date}
-                onChange={(value) => setFormData({ ...formData, due_date: value })}
-                placeholder="Sélectionner date et heure"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="max_points">Points maximum</Label>
+              <Label htmlFor="title" className="flex items-center gap-1.5">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                Titre <span className="text-destructive">*</span>
+              </Label>
               <Input
-                id="max_points"
-                type="number"
-                value={formData.max_points}
-                onChange={(e) => setFormData({ ...formData, max_points: parseInt(e.target.value) || 0 })}
-                min="1"
+                id="title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Ex: Exercice chapitre 3"
+                required
               />
             </div>
-          </div>
 
-          {!editAssignment && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Fichiers joints
-              </label>
-              <FileUpload
-                onFileSelect={setSelectedFiles}
-                multiple
-                accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
-                maxSize={10}
+            {/* Type */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                Type <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={formData.assignment_type}
+                onValueChange={(value: 'devoir' | 'evaluation') => 
+                  setFormData({ ...formData, assignment_type: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner le type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="devoir">
+                    <span className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Devoir
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="evaluation">
+                    <span className="flex items-center gap-2">
+                      <Award className="h-4 w-4" />
+                      Évaluation
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Instructions détaillées pour les étudiants..."
+                rows={3}
+                className="resize-none"
               />
             </div>
-          )}
 
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Annuler
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? (editAssignment ? 'Modification...' : 'Création...') : (editAssignment ? 'Modifier' : 'Créer le devoir')}
-            </Button>
+            {/* Date et Points */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  Date d'échéance
+                </Label>
+                <DateTimePicker
+                  value={formData.due_date}
+                  onChange={(value) => setFormData({ ...formData, due_date: value })}
+                  placeholder="Sélectionner"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="max_points" className="flex items-center gap-1.5">
+                  <Award className="h-4 w-4 text-muted-foreground" />
+                  Points maximum
+                </Label>
+                <Input
+                  id="max_points"
+                  type="number"
+                  value={formData.max_points}
+                  onChange={(e) => setFormData({ ...formData, max_points: parseInt(e.target.value) || 0 })}
+                  min="1"
+                  max="1000"
+                />
+              </div>
+            </div>
+
+            {/* Fichiers joints (uniquement en création) */}
+            {!editAssignment && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <Paperclip className="h-4 w-4 text-muted-foreground" />
+                  Fichiers joints
+                </Label>
+                <FileUpload
+                  onFileSelect={setSelectedFiles}
+                  multiple
+                  accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.ppt,.pptx,.xls,.xlsx"
+                  maxSize={10}
+                />
+                {selectedFiles.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {selectedFiles.length} fichier(s) sélectionné(s)
+                  </p>
+                )}
+              </div>
+            )}
           </div>
+
+          {/* Fixed footer with buttons */}
+          <DialogFooter className="flex-shrink-0 px-6 py-4 border-t bg-muted/30">
+            <div className="flex flex-col-reverse sm:flex-row gap-2 w-full sm:w-auto sm:justify-end">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onClose}
+                disabled={loading}
+              >
+                Annuler
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={loading || !formData.title.trim()}
+                className="gap-2"
+              >
+                {loading ? (
+                  <>
+                    <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    {editAssignment ? 'Modification...' : 'Création...'}
+                  </>
+                ) : (
+                  <>
+                    <ClipboardList className="h-4 w-4" />
+                    {editAssignment ? 'Modifier' : 'Créer le devoir'}
+                  </>
+                )}
+              </Button>
+            </div>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
