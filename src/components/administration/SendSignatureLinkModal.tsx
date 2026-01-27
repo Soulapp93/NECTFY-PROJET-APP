@@ -26,6 +26,14 @@ interface Student {
   };
 }
 
+interface DeliveryRow {
+  student_id: string;
+  status: 'pending' | 'sent' | 'failed';
+  attempts: number;
+  last_error?: string | null;
+  last_attempt_at?: string | null;
+}
+
 const SendSignatureLinkModal: React.FC<SendSignatureLinkModalProps> = ({
   isOpen,
   onClose,
@@ -38,10 +46,13 @@ const SendSignatureLinkModal: React.FC<SendSignatureLinkModalProps> = ({
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [loadingStudents, setLoadingStudents] = useState(true);
   const [linkAlreadySent, setLinkAlreadySent] = useState(false);
+  const [deliveries, setDeliveries] = useState<DeliveryRow[]>([]);
+  const [loadingDeliveries, setLoadingDeliveries] = useState(false);
 
   useEffect(() => {
     if (isOpen && attendanceSheet) {
       loadStudents();
+      loadDeliveries();
       
       // Si un token existe déjà, afficher le lien
       if (attendanceSheet.signature_link_token) {
@@ -56,6 +67,19 @@ const SendSignatureLinkModal: React.FC<SendSignatureLinkModalProps> = ({
       }
     }
   }, [isOpen, attendanceSheet]);
+
+  const loadDeliveries = async () => {
+    try {
+      setLoadingDeliveries(true);
+      const rows = await attendanceService.getAttendanceLinkDeliveries(attendanceSheet.id);
+      setDeliveries(rows as DeliveryRow[]);
+    } catch (e) {
+      // journal optionnel, ne pas bloquer l'UI
+      setDeliveries([]);
+    } finally {
+      setLoadingDeliveries(false);
+    }
+  };
 
   const loadStudents = async () => {
     try {
@@ -117,6 +141,41 @@ const SendSignatureLinkModal: React.FC<SendSignatureLinkModalProps> = ({
     }
   };
 
+  const handleFallbackSend = async (retryFailedOnly = false) => {
+    if (students.length === 0) {
+      toast.error('Aucun étudiant à notifier');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const studentIds = students.map((s) => s.users.id);
+      const res = await attendanceService.sendSignatureLinkFallback(attendanceSheet.id, studentIds, { retryFailedOnly });
+
+      if (res?.signatureLink) {
+        setGeneratedLink(res.signatureLink);
+      }
+      if (res?.expiresAt) {
+        setExpiresAt(res.expiresAt);
+      }
+
+      await loadDeliveries();
+
+      const failed = (res?.delivered || []).filter((d) => d.status === 'failed').length;
+      if (failed > 0) {
+        toast.error(`${failed} envoi(s) en échec (fallback) — voir le journal`);
+      } else {
+        toast.success('Envoi fallback terminé');
+      }
+    } catch (error: any) {
+      console.error('Error fallback sending link:', error);
+      toast.error(error.message || "Erreur lors de l'envoi (fallback)");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCopyLink = () => {
     if (generatedLink) {
       navigator.clipboard.writeText(generatedLink);
@@ -128,6 +187,11 @@ const SendSignatureLinkModal: React.FC<SendSignatureLinkModalProps> = ({
   const signedCount = attendanceSheet.signatures?.filter(
     (sig: any) => sig.user_type === 'student' && sig.present
   )?.length || 0;
+
+  const getStudentLabel = (id: string) => {
+    const s = students.find((st) => st.users.id === id);
+    return s ? `${s.users.first_name} ${s.users.last_name} (${s.users.email})` : id;
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -261,12 +325,83 @@ const SendSignatureLinkModal: React.FC<SendSignatureLinkModalProps> = ({
               </div>
             </div>
           )}
+
+          {/* Journal fallback */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium">Journal d'envoi (fallback)</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={loadDeliveries}
+                disabled={loadingDeliveries}
+              >
+                Actualiser
+              </Button>
+            </div>
+            {loadingDeliveries ? (
+              <p className="text-sm text-muted-foreground">Chargement…</p>
+            ) : deliveries.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Aucun envoi fallback enregistré pour cette session.
+              </p>
+            ) : (
+              <div className="bg-muted rounded-lg p-3 max-h-48 overflow-y-auto">
+                <ul className="space-y-2">
+                  {deliveries.map((d) => (
+                    <li key={d.student_id} className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm truncate">{getStudentLabel(d.student_id)}</p>
+                        {d.status === 'failed' && d.last_error && (
+                          <p className="text-xs text-destructive truncate">{d.last_error}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          Tentatives: {d.attempts}
+                          {d.last_attempt_at ? ` • ${format(new Date(d.last_attempt_at), 'Pp', { locale: fr })}` : ''}
+                        </p>
+                      </div>
+                      <Badge
+                        variant={d.status === 'sent' ? 'default' : d.status === 'failed' ? 'destructive' : 'secondary'}
+                      >
+                        {d.status === 'sent' ? 'Envoyé' : d.status === 'failed' ? 'Échec' : 'En cours'}
+                      </Badge>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Actions */}
         <DialogFooter className="flex-shrink-0 px-6 py-4 border-t bg-muted/30">
           <Button variant="outline" onClick={onClose}>
             Fermer
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => handleFallbackSend(false)}
+            disabled={loading || loadingStudents || students.length === 0}
+          >
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2" />
+                Fallback…
+              </>
+            ) : (
+              <>
+                <Send className="h-4 w-4 mr-2" />
+                Envoi fallback
+              </>
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => handleFallbackSend(true)}
+            disabled={loading || loadingStudents || students.length === 0}
+          >
+            <Send className="h-4 w-4 mr-2" />
+            Retry échecs
           </Button>
           {!linkAlreadySent && (
             <Button 

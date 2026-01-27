@@ -8,6 +8,24 @@ const corsHeaders = {
 interface SendSignatureLinkRequest {
   attendanceSheetId: string;
   studentIds: string[];
+  mode?: 'default' | 'fallback';
+  retryFailedOnly?: boolean;
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function bytesToHex(bytes: Uint8Array) {
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+function generateTokenHex(byteLen = 32) {
+  const bytes = new Uint8Array(byteLen);
+  crypto.getRandomValues(bytes);
+  return bytesToHex(bytes);
 }
 
 Deno.serve(async (req) => {
@@ -47,7 +65,12 @@ Deno.serve(async (req) => {
     console.log('[send-signature-link] Authenticated sender:', senderId);
 
     // Parser le body
-    const { attendanceSheetId, studentIds }: SendSignatureLinkRequest = await req.json();
+    const {
+      attendanceSheetId,
+      studentIds,
+      mode = 'default',
+      retryFailedOnly = false,
+    }: SendSignatureLinkRequest = await req.json();
 
     if (!attendanceSheetId || !studentIds || studentIds.length === 0) {
       return new Response(
@@ -56,7 +79,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`[send-signature-link] Sending to ${studentIds.length} students for sheet ${attendanceSheetId}`);
+    console.log(
+      `[send-signature-link] mode=${mode} retryFailedOnly=${retryFailedOnly} sending to ${studentIds.length} students for sheet ${attendanceSheetId}`,
+    );
 
     // Récupérer les infos de la feuille d'émargement
     const { data: sheet, error: sheetError } = await supabase
@@ -93,7 +118,38 @@ Deno.serve(async (req) => {
 
     const senderName = sender ? `${sender.first_name} ${sender.last_name}` : 'Administration';
     const baseUrl = Deno.env.get('APP_BASE_URL') || 'https://nectforma.com';
-    const signatureLink = `${baseUrl}/emargement/signer/${sheet.signature_link_token}`;
+
+    // Fallback: si pas de token (ou si retry), on génère/garantit un token côté backend
+    let signatureToken = sheet.signature_link_token as string | null;
+    let signatureExpiresAt: string | null = (sheet as any).signature_link_expires_at ?? null;
+    const isExpired = signatureExpiresAt ? new Date(signatureExpiresAt).getTime() < Date.now() : false;
+
+    if (mode === 'fallback' && (!signatureToken || isExpired)) {
+      signatureToken = generateTokenHex(32);
+      const expiresAtIso = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+      const { error: tokenUpdateError } = await supabase
+        .from('attendance_sheets')
+        .update({
+          signature_link_token: signatureToken,
+          signature_link_sent_at: new Date().toISOString(),
+          signature_link_expires_at: expiresAtIso,
+        })
+        .eq('id', attendanceSheetId);
+
+      if (tokenUpdateError) {
+        console.error('[send-signature-link] Failed to set token in fallback:', tokenUpdateError);
+        return new Response(
+          JSON.stringify({ error: 'Impossible de générer le lien (fallback)' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        );
+      }
+
+      signatureExpiresAt = expiresAtIso;
+      console.log('[send-signature-link] Fallback token generated and saved');
+    }
+
+    const signatureLink = `${baseUrl}/emargement/signer/${signatureToken}`;
     
     const formationTitle = (sheet.formations as any)?.title || 'Formation';
     const sessionDate = new Date(sheet.date).toLocaleDateString('fr-FR', { 
@@ -140,6 +196,30 @@ Deno.serve(async (req) => {
 </div>
     `.trim();
 
+    // En mode fallback+retryFailedOnly, on envoie seulement aux étudiants en échec dans le journal
+    let finalStudentIds = [...studentIds];
+    if (mode === 'fallback' && retryFailedOnly) {
+      const { data: failedRows, error: failedErr } = await supabase
+        .from('attendance_link_deliveries')
+        .select('student_id')
+        .eq('attendance_sheet_id', attendanceSheetId)
+        .eq('status', 'failed');
+
+      if (failedErr) {
+        console.error('[send-signature-link] Failed to load failed deliveries:', failedErr);
+      } else {
+        const failedIds = (failedRows || []).map((r: any) => r.student_id as string);
+        finalStudentIds = finalStudentIds.filter((id) => failedIds.includes(id));
+      }
+    }
+
+    if (finalStudentIds.length === 0) {
+      return new Response(
+        JSON.stringify({ success: true, message: 'Aucun destinataire à relancer', delivered: [] }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+
     // Créer le message
     const { data: message, error: msgError } = await supabase
       .from('messages')
@@ -161,7 +241,7 @@ Deno.serve(async (req) => {
     console.log(`[send-signature-link] Message created: ${message.id}`);
 
     // Créer les entrées pour chaque destinataire
-    const recipients = studentIds.map(studentId => ({
+    const recipients = finalStudentIds.map(studentId => ({
       message_id: message.id,
       recipient_id: studentId,
       recipient_type: 'user',
@@ -187,24 +267,92 @@ Deno.serve(async (req) => {
 
     console.log(`[send-signature-link] Recipients created: ${recipients.length}`);
 
-    // Créer des notifications in-app pour chaque étudiant
-    for (const studentId of studentIds) {
-      await supabase
-        .from('notifications')
-        .insert({
-          user_id: studentId,
-          title: '📋 Émargement à valider',
-          message: `Vous avez un émargement à valider pour ${formationTitle} - ${sessionDate}`,
-          type: 'attendance_request',
-          metadata: {
-            attendance_sheet_id: attendanceSheetId,
-            signature_link: signatureLink,
-            action_url: signatureLink
-          }
-        });
+    // Journal (fallback): upsert des lignes "pending"
+    if (mode === 'fallback') {
+      const upserts = finalStudentIds.map((studentId) => ({
+        attendance_sheet_id: attendanceSheetId,
+        student_id: studentId,
+        status: 'pending',
+        message_id: message.id,
+        last_error: null,
+        last_attempt_at: new Date().toISOString(),
+      }));
+
+      const { error: journalErr } = await supabase
+        .from('attendance_link_deliveries')
+        .upsert(upserts, { onConflict: 'attendance_sheet_id,student_id' });
+
+      if (journalErr) {
+        console.error('[send-signature-link] Journal upsert failed:', journalErr);
+      }
     }
 
-    console.log(`[send-signature-link] Notifications created for ${studentIds.length} students`);
+    // Créer des notifications in-app pour chaque étudiant (+ retry)
+    const deliveryResults: Array<{ studentId: string; status: 'sent' | 'failed'; error?: string }> = [];
+
+    for (const studentId of finalStudentIds) {
+      let ok = false;
+      let lastErr: string | undefined;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        const { error: notifError } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: studentId,
+            title: '📋 Émargement à valider',
+            message: `Vous avez un émargement à valider pour ${formationTitle} - ${sessionDate}`,
+            type: 'attendance_request',
+            metadata: {
+              attendance_sheet_id: attendanceSheetId,
+              signature_link: signatureLink,
+              action_url: signatureLink,
+            },
+          });
+
+        if (!notifError) {
+          ok = true;
+          break;
+        }
+
+        lastErr = notifError.message;
+        console.warn(`[send-signature-link] Notification failed for ${studentId} attempt ${attempt}:`, notifError);
+        await sleep(attempt === 1 ? 200 : attempt === 2 ? 500 : 1000);
+      }
+
+      deliveryResults.push({ studentId, status: ok ? 'sent' : 'failed', error: ok ? undefined : lastErr });
+
+      if (mode === 'fallback') {
+        // Incrément attempts proprement (read -> update)
+        const { data: currentRow, error: currentErr } = await supabase
+          .from('attendance_link_deliveries')
+          .select('attempts')
+          .eq('attendance_sheet_id', attendanceSheetId)
+          .eq('student_id', studentId)
+          .single();
+
+        const nextAttempts = (currentRow?.attempts ?? 0) + 1;
+
+        const { error: updErr } = await supabase
+          .from('attendance_link_deliveries')
+          .update({
+            status: ok ? 'sent' : 'failed',
+            attempts: nextAttempts,
+            last_error: ok ? null : (lastErr || 'Erreur inconnue'),
+            last_attempt_at: new Date().toISOString(),
+            message_id: message.id,
+          })
+          .eq('attendance_sheet_id', attendanceSheetId)
+          .eq('student_id', studentId);
+
+        if (currentErr) {
+          console.error('[send-signature-link] Failed to read delivery row attempts:', currentErr);
+        }
+        if (updErr) {
+          console.error('[send-signature-link] Failed to update delivery row:', updErr);
+        }
+      }
+    }
+
+    console.log(`[send-signature-link] Notifications processed for ${finalStudentIds.length} students`);
 
     // Ouvrir la feuille pour signature
     await supabase
@@ -221,8 +369,11 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Lien envoyé à ${studentIds.length} étudiants`,
-        messageId: message.id
+        message: `Traitement terminé pour ${finalStudentIds.length} étudiants`,
+        messageId: message.id,
+        delivered: deliveryResults,
+        signatureLink,
+        expiresAt: signatureExpiresAt,
       }),
       { 
         status: 200, 

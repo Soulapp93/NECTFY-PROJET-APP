@@ -115,6 +115,60 @@ export type Database = {
         }
         Relationships: []
       }
+      attendance_link_deliveries: {
+        Row: {
+          attempts: number
+          attendance_sheet_id: string
+          created_at: string
+          id: string
+          last_attempt_at: string | null
+          last_error: string | null
+          message_id: string | null
+          status: Database["public"]["Enums"]["attendance_link_delivery_status"]
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          attendance_sheet_id: string
+          created_at?: string
+          id?: string
+          last_attempt_at?: string | null
+          last_error?: string | null
+          message_id?: string | null
+          status?: Database["public"]["Enums"]["attendance_link_delivery_status"]
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          attendance_sheet_id?: string
+          created_at?: string
+          id?: string
+          last_attempt_at?: string | null
+          last_error?: string | null
+          message_id?: string | null
+          status?: Database["public"]["Enums"]["attendance_link_delivery_status"]
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_link_deliveries_attendance_sheet_id_fkey"
+            columns: ["attendance_sheet_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_sheets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_link_deliveries_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance_sheets: {
         Row: {
           closed_at: string | null
@@ -1546,6 +1600,7 @@ export type Database = {
       }
     }
     Enums: {
+      attendance_link_delivery_status: "pending" | "sent" | "failed"
       invitation_status: "pending" | "accepted" | "expired" | "cancelled"
       user_role: "AdminPrincipal" | "Admin" | "Formateur" | "Étudiant"
     }
@@ -1675,6 +1730,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      attendance_link_delivery_status: ["pending", "sent", "failed"],
       invitation_status: ["pending", "accepted", "expired", "cancelled"],
       user_role: ["AdminPrincipal", "Admin", "Formateur", "Étudiant"],
     },

@@ -586,6 +586,41 @@ export const attendanceService = {
     }
   },
 
+  // Fallback: envoi interne + journal/retry (ne dépend pas de generate_signature_token)
+  async sendSignatureLinkFallback(
+    attendanceSheetId: string,
+    studentIds: string[],
+    opts?: { retryFailedOnly?: boolean },
+  ): Promise<{ delivered: Array<{ studentId: string; status: 'sent' | 'failed'; error?: string }>; signatureLink?: string; expiresAt?: string }>
+  {
+    const { data, error } = await supabase.functions.invoke('send-signature-link', {
+      body: {
+        attendanceSheetId,
+        studentIds,
+        mode: 'fallback',
+        retryFailedOnly: !!opts?.retryFailedOnly,
+      },
+    });
+
+    if (error) {
+      console.error('[attendanceService.sendSignatureLinkFallback] Edge function error:', error);
+      throw new Error(error.message || "Erreur lors de l'envoi (fallback)");
+    }
+
+    return (data as any) || { delivered: [] };
+  },
+
+  async getAttendanceLinkDeliveries(attendanceSheetId: string) {
+    const { data, error } = await supabase
+      .from('attendance_link_deliveries')
+      .select('student_id,status,attempts,last_error,last_attempt_at,message_id,updated_at,created_at')
+      .eq('attendance_sheet_id', attendanceSheetId)
+      .order('updated_at', { ascending: false });
+
+    if (error) throw error;
+    return (data as any[]) || [];
+  },
+
   // Ouvrir l'émargement et notifier les étudiants (app + email)
   async openAttendanceForSigning(attendanceSheetId: string): Promise<void> {
     try {
