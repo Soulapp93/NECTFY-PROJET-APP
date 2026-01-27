@@ -169,23 +169,24 @@ export const pdfExportService = {
         }
       }
 
-      // Load all signatures from the database
-      let signatures: any[] = [];
-      try {
-        const { data: signaturesData, error: signaturesError } = await supabase
-          .from('attendance_signatures')
-          .select(`*, users(first_name, last_name, email)`)
-          .eq('attendance_sheet_id', attendanceSheet.id);
+       // Load all signatures from the database
+       // IMPORTANT: do NOT join users here (no FK + can trigger PGRST errors/RLS issues).
+       // We only need signature_data/present/user_type/user_id.
+       let signatures: any[] = [];
+       try {
+         const { data: signaturesData, error: signaturesError } = await supabase
+           .from('attendance_signatures')
+           .select('*')
+           .eq('attendance_sheet_id', attendanceSheet.id);
 
-        if (!signaturesError && signaturesData) {
-          signatures = (signaturesData as any[]).map(sig => ({
-            ...sig,
-            user: (sig as any).users
-          }));
-        }
-      } catch (e) {
-        console.error('Unexpected error loading signatures for PDF export:', e);
-      }
+         if (!signaturesError && signaturesData) {
+           signatures = signaturesData as any[];
+         } else if (signaturesError) {
+           console.error('Error loading signatures for PDF export:', signaturesError);
+         }
+       } catch (e) {
+         console.error('Unexpected error loading signatures for PDF export:', e);
+       }
 
       // Create a map of signatures by user_id
       const signatureMap = new Map<string, any>();
