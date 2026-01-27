@@ -5,9 +5,6 @@ export interface Schedule {
   formation_id: string;
   title: string;
   description?: string;
-  academic_year?: string;
-  status?: string;
-  created_by?: string;
   created_at: string;
   updated_at: string;
   formations?: {

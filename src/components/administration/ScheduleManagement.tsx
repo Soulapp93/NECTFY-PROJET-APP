@@ -152,16 +152,6 @@ const ScheduleManagement = () => {
     return date.toISOString().split('T')[0];
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Publié':
-        return 'bg-success-muted text-success border-success/20';
-      case 'Brouillon':
-        return 'bg-warning-muted text-warning border-warning/20';
-      default:
-        return 'bg-muted text-muted-foreground border-border';
-    }
-  };
 
 
   // Calculer les valeurs memoized
@@ -371,11 +361,9 @@ const ScheduleManagement = () => {
     console.log('Bouton "Publier" cliqué', { selectedSchedule: selectedSchedule.id });
     
     try {
-      await scheduleService.updateSchedule(selectedSchedule.id, { status: 'Publié' });
+      await scheduleService.updateSchedule(selectedSchedule.id, { updated_at: new Date().toISOString() });
       toast.success("Emploi du temps publié avec succès");
       refetch();
-      // Update local state
-      setSelectedSchedule({ ...selectedSchedule, status: 'Publié' });
     } catch (error) {
       console.error('Erreur publication:', error);
       toast.error("Erreur lors de la publication");
@@ -1284,7 +1272,7 @@ const ScheduleManagement = () => {
                     <span className="hidden sm:inline">Ajouter un créneau</span>
                   </Button>
                   
-                  {selectedSchedule?.status === 'Brouillon' && (
+                  {selectedSchedule && (
                     <Button 
                       onClick={handlePublishSchedule}
                       disabled={slots.length === 0}
@@ -1544,12 +1532,6 @@ const ScheduleManagement = () => {
                         <Badge variant="secondary" className="text-[10px] sm:text-xs bg-primary/10 text-primary border-primary/20 truncate max-w-[120px] sm:max-w-none">
                           {schedule.formations?.title || 'Formation'}
                         </Badge>
-                        <Badge 
-                          variant="secondary" 
-                          className={`text-[10px] sm:text-xs ${getStatusColor(schedule.status)}`}
-                        >
-                          {schedule.status}
-                        </Badge>
                       </div>
                     </div>
                   </div>
@@ -1557,10 +1539,6 @@ const ScheduleManagement = () => {
 
                 <CardContent className="space-y-3 p-3 sm:p-6 pt-0">
                   <div className="space-y-1">
-                    <div className="flex items-center text-[10px] sm:text-xs text-muted-foreground">
-                      <Book className="h-3 w-3 mr-1 flex-shrink-0" />
-                      <span className="truncate">{schedule.academic_year}</span>
-                    </div>
                     <div className="flex items-center text-[10px] sm:text-xs text-muted-foreground">
                       <Calendar className="h-3 w-3 mr-1 flex-shrink-0" />
                       <span>{new Date(schedule.created_at).toLocaleDateString('fr-FR')}</span>
@@ -1620,18 +1598,8 @@ const ScheduleManagement = () => {
                           <Badge variant="secondary" className="text-[10px] sm:text-xs bg-primary/10 text-primary border-primary/20 truncate max-w-[100px] sm:max-w-none">
                             {schedule.formations?.title || 'Formation'}
                           </Badge>
-                          <Badge 
-                            variant="secondary" 
-                            className={`text-[10px] sm:text-xs ${getStatusColor(schedule.status)}`}
-                          >
-                            {schedule.status}
-                          </Badge>
                         </div>
                         <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1 sm:mt-2">
-                          <div className="flex items-center text-[10px] sm:text-sm text-muted-foreground">
-                            <Book className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
-                            <span>{schedule.academic_year}</span>
-                          </div>
                           <div className="flex items-center text-[10px] sm:text-sm text-muted-foreground">
                             <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
                             <span>{new Date(schedule.created_at).toLocaleDateString('fr-FR')}</span>

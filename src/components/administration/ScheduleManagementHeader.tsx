@@ -42,7 +42,7 @@ export const ScheduleManagementHeader: React.FC<ScheduleManagementHeaderProps> =
 
   const getSubtitle = () => {
     if (selectedSchedule) {
-      return `${selectedSchedule.formations?.title || 'Formation'} • ${selectedSchedule.academic_year} • ${slotsCount} créneaux`;
+      return `${selectedSchedule.formations?.title || 'Formation'} • ${slotsCount} créneaux`;
     }
     return `Gestion et création des emplois du temps • ${schedulesCount} emplois du temps`;
   };
@@ -76,14 +76,6 @@ export const ScheduleManagementHeader: React.FC<ScheduleManagementHeaderProps> =
             
             {selectedSchedule && (
               <>
-                <Badge 
-                  variant="secondary" 
-                  className={`text-xs ${selectedSchedule.status === 'Publié' ? 'bg-success/10 text-success border-success/20' : 'bg-warning/10 text-warning border-warning/20'}`}
-                >
-                  {selectedSchedule.status}
-                </Badge>
-
-                {/* Boutons d'action pour un emploi du temps sélectionné */}
                 <Button 
                   variant="outline" 
                   size="sm"

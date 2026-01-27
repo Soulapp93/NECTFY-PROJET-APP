@@ -36,14 +36,9 @@ const CreateScheduleModal: React.FC<CreateScheduleModalProps> = ({
 
     setLoading(true);
     try {
-      const currentYear = new Date().getFullYear();
-      const academicYear = `${currentYear}-${currentYear + 1}`;
-      
       await scheduleService.createSchedule({
         title: formData.title,
-        formation_id: formData.formation_id,
-        academic_year: academicYear,
-        status: 'Brouillon'
+        formation_id: formData.formation_id
       });
       
       setFormData({
