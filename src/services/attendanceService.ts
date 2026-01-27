@@ -533,18 +533,21 @@ export const attendanceService = {
         data: { session },
       } = await supabase.auth.getSession();
 
-      // Appeler l'edge function pour envoyer les notifications
-      const { error } = await supabase.functions.invoke('send-signature-link', {
-        headers: session?.access_token
-          ? { Authorization: `Bearer ${session.access_token}` }
-          : undefined,
+      // Appeler la fonction backend pour envoyer le message interne + notifications
+      // (le client Supabase ajoute déjà le JWT; on n'a pas besoin d'ajouter Authorization ici)
+      const { data, error } = await supabase.functions.invoke('send-signature-link', {
         body: {
           attendanceSheetId,
           studentIds,
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[attendanceService.sendSignatureLink] Edge function error:', error);
+        throw new Error(error.message || "Erreur lors de l'envoi du lien");
+      }
+
+      console.log('[attendanceService.sendSignatureLink] Success:', data);
 
       // Envoyer également les emails
       const { emailNotificationService } = await import('./emailNotificationService');
