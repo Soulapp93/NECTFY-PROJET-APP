@@ -97,6 +97,8 @@ Deno.serve(async (req) => {
         room,
         session_type,
         signature_link_token,
+        signature_link_sent_at,
+        signature_link_expires_at,
         formation_id,
         formations(title, level)
       `)
@@ -122,12 +124,13 @@ Deno.serve(async (req) => {
     // Use client-provided baseUrl (preview origin) or fallback to env/production
     const baseUrl = clientBaseUrl || Deno.env.get('APP_BASE_URL') || 'https://nectforma.com';
 
-    // Fallback: si pas de token (ou si retry), on génère/garantit un token côté backend
-    let signatureToken = sheet.signature_link_token as string | null;
+    // IMPORTANT: le lien dans le message doit toujours être valide.
+    // Si le token est absent OU expiré, on en régénère un (même en mode "default").
+    let signatureToken = (sheet.signature_link_token as string | null) || null;
     let signatureExpiresAt: string | null = (sheet as any).signature_link_expires_at ?? null;
     const isExpired = signatureExpiresAt ? new Date(signatureExpiresAt).getTime() < Date.now() : false;
 
-    if (mode === 'fallback' && (!signatureToken || isExpired)) {
+    if (!signatureToken || isExpired) {
       signatureToken = generateTokenHex(32);
       const expiresAtIso = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
@@ -141,15 +144,15 @@ Deno.serve(async (req) => {
         .eq('id', attendanceSheetId);
 
       if (tokenUpdateError) {
-        console.error('[send-signature-link] Failed to set token in fallback:', tokenUpdateError);
+        console.error('[send-signature-link] Failed to (re)generate token:', tokenUpdateError);
         return new Response(
-          JSON.stringify({ error: 'Impossible de générer le lien (fallback)' }),
+          JSON.stringify({ error: 'Impossible de générer le lien de signature' }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
       }
 
       signatureExpiresAt = expiresAtIso;
-      console.log('[send-signature-link] Fallback token generated and saved');
+      console.log('[send-signature-link] Token (re)generated and saved');
     }
 
     const signatureLink = `${baseUrl}/emargement/signer/${signatureToken}`;
