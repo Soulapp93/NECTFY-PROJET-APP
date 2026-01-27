@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentUser } from './useCurrentUser';
 import { toast } from 'sonner';
@@ -22,7 +22,7 @@ export const useNotifications = () => {
   const { userId } = useCurrentUser();
 
   // Récupérer les notifications
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     if (!userId) return;
 
     try {
@@ -32,7 +32,7 @@ export const useNotifications = () => {
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(100);
 
       if (error) throw error;
 
@@ -44,10 +44,10 @@ export const useNotifications = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
 
   // Marquer une notification comme lue
-  const markAsRead = async (notificationId: string) => {
+  const markAsRead = useCallback(async (notificationId: string) => {
     try {
       const { error } = await supabase
         .from('notifications')
@@ -63,10 +63,10 @@ export const useNotifications = () => {
     } catch (error) {
       console.error('Erreur lors du marquage de la notification:', error);
     }
-  };
+  }, []);
 
   // Marquer toutes les notifications comme lues
-  const markAllAsRead = async () => {
+  const markAllAsRead = useCallback(async () => {
     if (!userId) return;
 
     try {
@@ -84,7 +84,30 @@ export const useNotifications = () => {
     } catch (error) {
       console.error('Erreur lors du marquage des notifications:', error);
     }
-  };
+  }, [userId]);
+
+  // Supprimer une notification
+  const deleteNotification = useCallback(async (notificationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', notificationId);
+
+      if (error) throw error;
+
+      setNotifications(prev => {
+        const notification = prev.find(n => n.id === notificationId);
+        if (notification && !notification.is_read) {
+          setUnreadCount(count => Math.max(0, count - 1));
+        }
+        return prev.filter(n => n.id !== notificationId);
+      });
+    } catch (error) {
+      console.error('Erreur lors de la suppression de la notification:', error);
+      throw error;
+    }
+  }, []);
 
   // S'abonner aux nouvelles notifications en temps réel
   useEffect(() => {
@@ -93,7 +116,7 @@ export const useNotifications = () => {
     fetchNotifications();
 
     const channel = supabase
-      .channel('notifications')
+      .channel(`notifications-${userId}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
@@ -103,16 +126,48 @@ export const useNotifications = () => {
         const newNotification = payload.new as Notification;
         setNotifications(prev => [newNotification, ...prev]);
         setUnreadCount(prev => prev + 1);
+        
+        // Show toast for new notification
         toast.info(newNotification.title, {
-          description: newNotification.message
+          description: newNotification.message,
+          duration: 5000,
         });
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${userId}`
+      }, (payload) => {
+        const updatedNotification = payload.new as Notification;
+        setNotifications(prev => 
+          prev.map(n => n.id === updatedNotification.id ? updatedNotification : n)
+        );
+        // Recalculate unread count
+        setNotifications(prev => {
+          const unread = prev.filter(n => !n.is_read).length;
+          setUnreadCount(unread);
+          return prev;
+        });
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${userId}`
+      }, (payload) => {
+        const deletedNotification = payload.old as Notification;
+        setNotifications(prev => prev.filter(n => n.id !== deletedNotification.id));
+        if (!deletedNotification.is_read) {
+          setUnreadCount(prev => Math.max(0, prev - 1));
+        }
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId]);
+  }, [userId, fetchNotifications]);
 
   return {
     notifications,
@@ -120,6 +175,7 @@ export const useNotifications = () => {
     loading,
     markAsRead,
     markAllAsRead,
+    deleteNotification,
     refetch: fetchNotifications
   };
 };
