@@ -39,6 +39,9 @@ verify_jwt = false
 [functions.send-notification-emails]
 verify_jwt = false
 
+[functions.send-signature-link]
+verify_jwt = false
+
 [functions.setup-demo-accounts]
 verify_jwt = false
 

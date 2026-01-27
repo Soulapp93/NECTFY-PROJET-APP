@@ -1,18 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { attendanceService, AttendanceSheet } from '@/services/attendanceService';
 import { supabase } from '@/integrations/supabase/client';
-import { Copy, Send, Clock, Users, CheckCircle2 } from 'lucide-react';
+import { Copy, Send, Clock, Users, CheckCircle2, Mail, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Badge } from '@/components/ui/badge';
 
 interface SendSignatureLinkModalProps {
   isOpen: boolean;
   onClose: () => void;
   attendanceSheet: AttendanceSheet;
   onSuccess: () => void;
+}
+
+interface Student {
+  user_id: string;
+  users: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
 }
 
 const SendSignatureLinkModal: React.FC<SendSignatureLinkModalProps> = ({
@@ -23,8 +34,10 @@ const SendSignatureLinkModal: React.FC<SendSignatureLinkModalProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
-  const [students, setStudents] = useState<any[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [loadingStudents, setLoadingStudents] = useState(true);
+  const [linkAlreadySent, setLinkAlreadySent] = useState(false);
 
   useEffect(() => {
     if (isOpen && attendanceSheet) {
@@ -35,28 +48,48 @@ const SendSignatureLinkModal: React.FC<SendSignatureLinkModalProps> = ({
         const link = `${window.location.origin}/emargement/signer/${attendanceSheet.signature_link_token}`;
         setGeneratedLink(link);
         setExpiresAt(attendanceSheet.signature_link_expires_at || null);
+        setLinkAlreadySent(!!attendanceSheet.signature_link_sent_at);
+      } else {
+        setGeneratedLink(null);
+        setExpiresAt(null);
+        setLinkAlreadySent(false);
       }
     }
   }, [isOpen, attendanceSheet]);
 
   const loadStudents = async () => {
     try {
+      setLoadingStudents(true);
       const { data, error } = await supabase
         .from('user_formation_assignments')
         .select(`
           user_id,
-          users!inner(id, first_name, last_name, email)
+          users!inner(id, first_name, last_name, email, role)
         `)
         .eq('formation_id', attendanceSheet.formation_id);
 
       if (error) throw error;
-      setStudents(data || []);
+      
+      // Filtrer uniquement les étudiants
+      const studentData = (data || []).filter(
+        (item: any) => item.users?.role === 'Étudiant'
+      ) as Student[];
+      
+      setStudents(studentData);
     } catch (error) {
       console.error('Error loading students:', error);
+      toast.error('Erreur lors du chargement des étudiants');
+    } finally {
+      setLoadingStudents(false);
     }
   };
 
   const handleGenerateAndSend = async () => {
+    if (students.length === 0) {
+      toast.error('Aucun étudiant à notifier');
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -70,14 +103,15 @@ const SendSignatureLinkModal: React.FC<SendSignatureLinkModalProps> = ({
       // Récupérer les IDs des étudiants
       const studentIds = students.map(s => s.users.id);
 
-      // Envoyer le lien aux étudiants
+      // Envoyer le lien aux étudiants via la messagerie interne
       await attendanceService.sendSignatureLink(attendanceSheet.id, studentIds);
 
-      toast.success(`Lien envoyé à ${studentIds.length} étudiants`);
+      setLinkAlreadySent(true);
+      toast.success(`Lien envoyé à ${studentIds.length} étudiants via la messagerie interne`);
       onSuccess();
     } catch (error: any) {
-      console.error('Error generating link:', error);
-      toast.error('Erreur lors de l\'envoi du lien');
+      console.error('Error generating and sending link:', error);
+      toast.error(error.message || 'Erreur lors de l\'envoi du lien');
     } finally {
       setLoading(false);
     }
@@ -90,35 +124,57 @@ const SendSignatureLinkModal: React.FC<SendSignatureLinkModalProps> = ({
     }
   };
 
+  const isExpired = expiresAt ? new Date(expiresAt) < new Date() : false;
+  const signedCount = attendanceSheet.signatures?.filter(
+    (sig: any) => sig.user_type === 'student' && sig.present
+  )?.length || 0;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Envoyer le lien d'émargement</DialogTitle>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 py-5 border-b flex-shrink-0">
+          <DialogTitle className="flex items-center gap-2">
+            <Send className="h-5 w-5 text-primary" />
+            Envoyer le lien d'émargement
+          </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
           {/* Informations de la session */}
           <div className="bg-muted p-4 rounded-lg space-y-2">
-            <h3 className="font-semibold">{attendanceSheet.formations?.title}</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold">{attendanceSheet.formations?.title}</h3>
+              {attendanceSheet.session_type === 'autonomie' && (
+                <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                  Session en autonomie
+                </Badge>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground">
-              {format(new Date(attendanceSheet.date), 'PPP', { locale: fr })} • {attendanceSheet.start_time.substring(0, 5)} - {attendanceSheet.end_time.substring(0, 5)}
+              {format(new Date(attendanceSheet.date), 'EEEE d MMMM yyyy', { locale: fr })} • {attendanceSheet.start_time.substring(0, 5)} - {attendanceSheet.end_time.substring(0, 5)}
             </p>
-            {attendanceSheet.session_type === 'autonomie' && (
-              <div className="inline-flex items-center gap-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full text-sm">
-                Session en autonomie
-              </div>
+            {attendanceSheet.room && (
+              <p className="text-sm text-muted-foreground">Salle: {attendanceSheet.room}</p>
             )}
           </div>
 
           {/* Statistiques */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="bg-card border rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Users className="h-4 w-4 text-muted-foreground" />
                 <p className="text-sm font-medium">Étudiants</p>
               </div>
-              <p className="text-2xl font-bold">{students.length}</p>
+              <p className="text-2xl font-bold">
+                {loadingStudents ? '...' : students.length}
+              </p>
+            </div>
+            <div className="bg-card border rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <p className="text-sm font-medium">Signés</p>
+              </div>
+              <p className="text-2xl font-bold text-green-600">{signedCount}</p>
             </div>
             <div className="bg-card border rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
@@ -129,6 +185,24 @@ const SendSignatureLinkModal: React.FC<SendSignatureLinkModalProps> = ({
             </div>
           </div>
 
+          {/* Liste des étudiants */}
+          {!loadingStudents && students.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Étudiants qui recevront le lien :</p>
+              <div className="bg-muted rounded-lg p-3 max-h-40 overflow-y-auto">
+                <ul className="space-y-1">
+                  {students.map((student) => (
+                    <li key={student.user_id} className="text-sm flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-primary"></span>
+                      {student.users.first_name} {student.users.last_name}
+                      <span className="text-muted-foreground">({student.users.email})</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
           {/* Lien généré */}
           {generatedLink && (
             <div className="space-y-2">
@@ -138,51 +212,100 @@ const SendSignatureLinkModal: React.FC<SendSignatureLinkModalProps> = ({
                   type="text"
                   value={generatedLink}
                   readOnly
-                  className="flex-1 px-3 py-2 border rounded-lg bg-muted text-sm"
+                  className="flex-1 px-3 py-2 border rounded-lg bg-muted text-sm font-mono"
                 />
                 <Button variant="outline" size="icon" onClick={handleCopyLink}>
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
               {expiresAt && (
-                <p className="text-xs text-muted-foreground">
-                  Expire le {format(new Date(expiresAt), 'PPP à HH:mm', { locale: fr })}
+                <p className={`text-xs ${isExpired ? 'text-destructive' : 'text-muted-foreground'}`}>
+                  {isExpired 
+                    ? `Expiré le ${format(new Date(expiresAt), 'PPP à HH:mm', { locale: fr })}`
+                    : `Expire le ${format(new Date(expiresAt), 'PPP à HH:mm', { locale: fr })}`
+                  }
                 </p>
               )}
             </div>
           )}
 
-          {/* Informations */}
-          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 text-sm">
-            <p className="text-blue-600 dark:text-blue-400">
-              <strong>Important :</strong> Le lien sera envoyé à tous les étudiants de la formation via une notification 
-              dans l'application. Ils auront 24 heures pour signer. Une fois que tous les étudiants auront signé ou 
-              que le délai sera expiré, la feuille sera automatiquement envoyée pour validation administrative.
-            </p>
-          </div>
+          {/* Statut d'envoi */}
+          {linkAlreadySent && (
+            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 text-sm flex items-start gap-3">
+              <Mail className="h-5 w-5 text-green-600 mt-0.5" />
+              <div>
+                <p className="text-green-700 dark:text-green-400 font-medium">Lien envoyé</p>
+                <p className="text-green-600 dark:text-green-500">
+                  Les étudiants ont reçu un message dans leur espace NECTFORMA avec un bouton "Valider ma présence".
+                </p>
+              </div>
+            </div>
+          )}
 
-          {/* Actions */}
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose}>
-              Fermer
-            </Button>
-            {!generatedLink && (
-              <Button onClick={handleGenerateAndSend} disabled={loading}>
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                    Envoi en cours...
-                  </>
-                ) : (
-                  <>
-                    <Send className="h-4 w-4 mr-2" />
-                    Générer et envoyer
-                  </>
-                )}
-              </Button>
-            )}
-          </div>
+          {/* Informations */}
+          {!linkAlreadySent && (
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 text-sm">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                <div>
+                  <p className="text-blue-700 dark:text-blue-400 font-medium mb-1">
+                    Comment ça fonctionne ?
+                  </p>
+                  <ul className="text-blue-600 dark:text-blue-400 space-y-1 list-disc list-inside">
+                    <li>Un message sera envoyé à chaque étudiant dans leur messagerie</li>
+                    <li>Ils auront un bouton "Valider ma présence" pour signer</li>
+                    <li>Leur signature enregistrée sera utilisée ou ils pourront signer</li>
+                    <li>Le lien est valide pendant 24 heures</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Actions */}
+        <DialogFooter className="flex-shrink-0 px-6 py-4 border-t bg-muted/30">
+          <Button variant="outline" onClick={onClose}>
+            Fermer
+          </Button>
+          {!linkAlreadySent && (
+            <Button 
+              onClick={handleGenerateAndSend} 
+              disabled={loading || loadingStudents || students.length === 0}
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  Envoi en cours...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  {generatedLink ? 'Renvoyer le lien' : 'Générer et envoyer'}
+                </>
+              )}
+            </Button>
+          )}
+          {linkAlreadySent && !isExpired && (
+            <Button 
+              onClick={handleGenerateAndSend} 
+              disabled={loading || loadingStudents}
+              variant="secondary"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2" />
+                  Envoi en cours...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Renvoyer le lien
+                </>
+              )}
+            </Button>
+          )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
