@@ -811,6 +811,106 @@ export type Database = {
         }
         Relationships: []
       }
+      module_contents: {
+        Row: {
+          content: string | null
+          content_type: string
+          created_at: string
+          description: string | null
+          file_name: string | null
+          file_url: string | null
+          id: string
+          module_id: string
+          order_index: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string | null
+          content_type: string
+          created_at?: string
+          description?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          module_id: string
+          order_index?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string | null
+          content_type?: string
+          created_at?: string
+          description?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          module_id?: string
+          order_index?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_contents_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "formation_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      module_documents: {
+        Row: {
+          created_at: string
+          description: string | null
+          document_type: string
+          file_name: string | null
+          file_size: number | null
+          file_type: string | null
+          file_url: string | null
+          id: string
+          module_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          document_type: string
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          module_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          document_type?: string
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          module_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_documents_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "formation_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
@@ -1404,6 +1504,8 @@ export type Database = {
     }
     Functions: {
       can_access_message: { Args: { _message_id: string }; Returns: boolean }
+      can_access_module: { Args: { _module_id: string }; Returns: boolean }
+      can_manage_module: { Args: { _module_id: string }; Returns: boolean }
       generate_signature_token: { Args: { sheet_id: string }; Returns: string }
       get_current_user_establishment: { Args: never; Returns: string }
       get_current_user_role: { Args: never; Returns: string }
