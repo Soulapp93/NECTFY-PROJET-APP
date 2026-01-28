@@ -1524,6 +1524,400 @@ export type Database = {
           },
         ]
       }
+      virtual_class_materials: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          uploaded_by: string | null
+          virtual_class_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          uploaded_by?: string | null
+          virtual_class_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          uploaded_by?: string | null
+          virtual_class_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "virtual_class_materials_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "virtual_class_materials_virtual_class_id_fkey"
+            columns: ["virtual_class_id"]
+            isOneToOne: false
+            referencedRelation: "virtual_classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      virtual_class_messages: {
+        Row: {
+          content: string
+          created_at: string
+          file_name: string | null
+          file_url: string | null
+          id: string
+          is_pinned: boolean | null
+          message_type: string | null
+          sender_id: string
+          virtual_class_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          message_type?: string | null
+          sender_id: string
+          virtual_class_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          message_type?: string | null
+          sender_id?: string
+          virtual_class_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "virtual_class_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "virtual_class_messages_virtual_class_id_fkey"
+            columns: ["virtual_class_id"]
+            isOneToOne: false
+            referencedRelation: "virtual_classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      virtual_class_participants: {
+        Row: {
+          created_at: string
+          id: string
+          is_hand_raised: boolean | null
+          is_muted: boolean | null
+          is_video_off: boolean | null
+          joined_at: string | null
+          left_at: string | null
+          role: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          virtual_class_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_hand_raised?: boolean | null
+          is_muted?: boolean | null
+          is_video_off?: boolean | null
+          joined_at?: string | null
+          left_at?: string | null
+          role?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          virtual_class_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_hand_raised?: boolean | null
+          is_muted?: boolean | null
+          is_video_off?: boolean | null
+          joined_at?: string | null
+          left_at?: string | null
+          role?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          virtual_class_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "virtual_class_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "virtual_class_participants_virtual_class_id_fkey"
+            columns: ["virtual_class_id"]
+            isOneToOne: false
+            referencedRelation: "virtual_classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      virtual_class_recordings: {
+        Row: {
+          created_at: string
+          duration_seconds: number | null
+          file_name: string
+          file_size: number | null
+          file_url: string
+          id: string
+          recorded_by: string | null
+          status: string | null
+          updated_at: string
+          virtual_class_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number | null
+          file_name: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          recorded_by?: string | null
+          status?: string | null
+          updated_at?: string
+          virtual_class_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number | null
+          file_name?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          recorded_by?: string | null
+          status?: string | null
+          updated_at?: string
+          virtual_class_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "virtual_class_recordings_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "virtual_class_recordings_virtual_class_id_fkey"
+            columns: ["virtual_class_id"]
+            isOneToOne: false
+            referencedRelation: "virtual_classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      virtual_classes: {
+        Row: {
+          chat_enabled: boolean | null
+          created_at: string
+          created_by: string | null
+          current_participants: number | null
+          date: string
+          description: string | null
+          end_time: string
+          ended_at: string | null
+          establishment_id: string
+          formation_id: string
+          id: string
+          instructor_id: string
+          max_participants: number | null
+          module_id: string | null
+          recording_enabled: boolean | null
+          screen_sharing_enabled: boolean | null
+          start_time: string
+          started_at: string | null
+          status: string
+          title: string
+          updated_at: string
+          whiteboard_enabled: boolean | null
+        }
+        Insert: {
+          chat_enabled?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          current_participants?: number | null
+          date: string
+          description?: string | null
+          end_time: string
+          ended_at?: string | null
+          establishment_id: string
+          formation_id: string
+          id?: string
+          instructor_id: string
+          max_participants?: number | null
+          module_id?: string | null
+          recording_enabled?: boolean | null
+          screen_sharing_enabled?: boolean | null
+          start_time: string
+          started_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          whiteboard_enabled?: boolean | null
+        }
+        Update: {
+          chat_enabled?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          current_participants?: number | null
+          date?: string
+          description?: string | null
+          end_time?: string
+          ended_at?: string | null
+          establishment_id?: string
+          formation_id?: string
+          id?: string
+          instructor_id?: string
+          max_participants?: number | null
+          module_id?: string | null
+          recording_enabled?: boolean | null
+          screen_sharing_enabled?: boolean | null
+          start_time?: string
+          started_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          whiteboard_enabled?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "virtual_classes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "virtual_classes_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "virtual_classes_formation_id_fkey"
+            columns: ["formation_id"]
+            isOneToOne: false
+            referencedRelation: "formations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "virtual_classes_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "virtual_classes_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "formation_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webrtc_signals: {
+        Row: {
+          created_at: string
+          id: string
+          receiver_id: string | null
+          sender_id: string
+          signal_data: Json
+          signal_type: string
+          virtual_class_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          receiver_id?: string | null
+          sender_id: string
+          signal_data: Json
+          signal_type: string
+          virtual_class_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          receiver_id?: string | null
+          sender_id?: string
+          signal_data?: Json
+          signal_type?: string
+          virtual_class_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webrtc_signals_virtual_class_id_fkey"
+            columns: ["virtual_class_id"]
+            isOneToOne: false
+            referencedRelation: "virtual_classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whiteboard_strokes: {
+        Row: {
+          created_at: string
+          id: string
+          stroke_data: Json
+          user_id: string
+          virtual_class_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          stroke_data: Json
+          user_id: string
+          virtual_class_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          stroke_data?: Json
+          user_id?: string
+          virtual_class_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whiteboard_strokes_virtual_class_id_fkey"
+            columns: ["virtual_class_id"]
+            isOneToOne: false
+            referencedRelation: "virtual_classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       tutor_students_view: {
@@ -1560,6 +1954,7 @@ export type Database = {
       can_access_message: { Args: { _message_id: string }; Returns: boolean }
       can_access_module: { Args: { _module_id: string }; Returns: boolean }
       can_manage_module: { Args: { _module_id: string }; Returns: boolean }
+      cleanup_old_webrtc_signals: { Args: never; Returns: undefined }
       generate_signature_token: { Args: { sheet_id: string }; Returns: string }
       get_current_user_establishment: { Args: never; Returns: string }
       get_current_user_role: { Args: never; Returns: string }
