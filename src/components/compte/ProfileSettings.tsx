@@ -24,13 +24,15 @@ interface ProfileSettingsProps {
   onProfileDataChange: (data: ProfileData) => void;
   onPhotoUpload: (files: File[]) => void;
   onSave: () => void;
+  isUploadingPhoto?: boolean;
 }
 
 const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   profileData,
   onProfileDataChange,
   onPhotoUpload,
-  onSave
+  onSave,
+  isUploadingPhoto = false
 }) => {
   const { userRole, userId } = useCurrentUser();
   const [isEditing, setIsEditing] = useState(false);
@@ -169,12 +171,18 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col sm:flex-row items-center gap-4">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0 relative">
+              {isUploadingPhoto ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-muted/80">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                </div>
+              ) : null}
               {profileData.profilePhotoUrl ? (
                 <img 
                   src={profileData.profilePhotoUrl} 
                   alt="Photo de profil" 
                   className="w-full h-full object-cover"
+                  key={profileData.profilePhotoUrl} // Force re-render on URL change
                 />
               ) : (
                 <User className="h-8 w-8 sm:h-10 sm:w-10 text-muted-foreground" />
@@ -186,6 +194,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 accept="image/*"
                 multiple={false}
                 className="w-full"
+                disabled={isUploadingPhoto}
               />
               <p className="text-xs sm:text-sm text-muted-foreground mt-1 text-center sm:text-left">
                 JPG, PNG (max 5MB)

@@ -34,6 +34,7 @@ const Compte = () => {
   });
 
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
   // Charger les données utilisateur via la fonction RPC sécurisée
   useEffect(() => {
@@ -87,12 +88,26 @@ const Compte = () => {
   const handleProfilePhotoUpload = async (files: File[]) => {
     if (files.length > 0 && userId) {
       const file = files[0];
+      
+      // Vérifier le type de fichier
+      if (!file.type.startsWith('image/')) {
+        toast.error('Veuillez sélectionner une image (JPG, PNG)');
+        return;
+      }
+      
+      // Vérifier la taille (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('La taille de l\'image ne doit pas dépasser 5MB');
+        return;
+      }
+      
+      setIsUploadingPhoto(true);
+      
       try {
         // Uploader le fichier vers Supabase Storage avec l'ID utilisateur
         const uploadedUrl = await fileUploadService.uploadFile(file, 'avatars', userId);
         
-        // Mettre à jour l'état local
-        setProfileData(prev => ({ ...prev, profilePhotoUrl: uploadedUrl }));
+        console.log('Photo uploadée avec succès:', uploadedUrl);
         
         // Déterminer quelle table mettre à jour
         if (userRole === 'Tuteur') {
@@ -113,10 +128,15 @@ const Compte = () => {
           if (error) throw error;
         }
         
-        toast.success('Photo de profil sauvegardée avec succès');
+        // Mettre à jour l'état local APRÈS la sauvegarde en base
+        setProfileData(prev => ({ ...prev, profilePhotoUrl: uploadedUrl }));
+        
+        toast.success('Photo de profil mise à jour avec succès');
       } catch (error) {
         console.error('Erreur lors du téléchargement de la photo:', error);
         toast.error('Erreur lors du téléchargement de la photo');
+      } finally {
+        setIsUploadingPhoto(false);
       }
     }
   };
@@ -186,6 +206,7 @@ const Compte = () => {
           onProfileDataChange={handleProfileDataChange}
           onPhotoUpload={handleProfilePhotoUpload}
           onSave={handleSaveProfile}
+          isUploadingPhoto={isUploadingPhoto}
         />
       </div>
     </div>

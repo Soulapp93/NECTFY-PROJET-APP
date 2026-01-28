@@ -9,6 +9,7 @@ interface FileUploadProps {
   accept?: string;
   maxSize?: number; // in MB
   className?: string;
+  disabled?: boolean;
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({
@@ -16,14 +17,15 @@ const FileUpload: React.FC<FileUploadProps> = ({
   multiple = false,
   accept = "*/*",
   maxSize = 10,
-  className
+  className,
+  disabled = false
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   const handleFileSelection = (files: FileList | null) => {
-    if (!files) return;
+    if (!files || disabled) return;
     
     const fileArray = Array.from(files);
     const validFiles = fileArray.filter(file => {
@@ -41,12 +43,16 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-    handleFileSelection(e.dataTransfer.files);
+    if (!disabled) {
+      handleFileSelection(e.dataTransfer.files);
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragOver(true);
+    if (!disabled) {
+      setIsDragOver(true);
+    }
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
@@ -55,6 +61,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
   };
 
   const removeFile = (index: number) => {
+    if (disabled) return;
     const newFiles = selectedFiles.filter((_, i) => i !== index);
     setSelectedFiles(newFiles);
     onFileSelect(newFiles);
@@ -64,19 +71,23 @@ const FileUpload: React.FC<FileUploadProps> = ({
     <div className={cn("space-y-4", className)}>
       <div
         className={cn(
-          "border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer",
-          isDragOver ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400"
+          "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
+          disabled 
+            ? "border-muted bg-muted/50 cursor-not-allowed opacity-60" 
+            : isDragOver 
+              ? "border-primary bg-primary/10 cursor-pointer" 
+              : "border-border hover:border-primary/50 cursor-pointer"
         )}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        onClick={() => fileInputRef.current?.click()}
+        onClick={() => !disabled && fileInputRef.current?.click()}
       >
-        <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-        <p className="text-sm text-gray-600">
+        <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+        <p className="text-sm text-muted-foreground">
           Glissez-déposez {multiple ? 'des fichiers' : 'un fichier'} ou cliquez pour parcourir
         </p>
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-muted-foreground/70 mt-1">
           Taille max: {maxSize}MB
         </p>
       </div>
@@ -88,23 +99,25 @@ const FileUpload: React.FC<FileUploadProps> = ({
         accept={accept}
         onChange={(e) => handleFileSelection(e.target.files)}
         className="hidden"
+        disabled={disabled}
       />
 
       {selectedFiles.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-sm font-medium">Fichiers sélectionnés:</h4>
+          <h4 className="text-sm font-medium text-foreground">Fichiers sélectionnés:</h4>
           {selectedFiles.map((file, index) => (
-            <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+            <div key={index} className="flex items-center justify-between bg-muted p-2 rounded">
               <div className="flex items-center space-x-2">
-                <File className="h-4 w-4 text-gray-500" />
-                <span className="text-sm text-gray-700">{file.name}</span>
-                <span className="text-xs text-gray-500">
+                <File className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-foreground">{file.name}</span>
+                <span className="text-xs text-muted-foreground">
                   ({(file.size / 1024 / 1024).toFixed(2)} MB)
                 </span>
               </div>
               <button
                 onClick={() => removeFile(index)}
-                className="text-red-500 hover:text-red-700"
+                className="text-destructive hover:text-destructive/80"
+                disabled={disabled}
               >
                 <X className="h-4 w-4" />
               </button>

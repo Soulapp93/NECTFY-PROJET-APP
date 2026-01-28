@@ -6,12 +6,12 @@ export const fileUploadService = {
     try {
       console.log('Uploading file:', file.name, 'to bucket:', bucket);
       
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
       let fileName: string;
       
       if (bucket === 'avatars' && userId) {
-        // Pour les avatars, utiliser la structure userId/filename
-        fileName = `${userId}/avatar.${fileExt}`;
+        // Pour les avatars, utiliser la structure userId/filename avec timestamp pour cache-busting
+        fileName = `${userId}/avatar_${Date.now()}.${fileExt}`;
       } else {
         fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       }
@@ -19,8 +19,8 @@ export const fileUploadService = {
       const { data, error } = await supabase.storage
         .from(bucket)
         .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: bucket === 'avatars', // Permettre l'écrasement pour les avatars
+          cacheControl: '0', // Pas de cache pour les avatars
+          upsert: true,
           contentType: file.type
         });
 
@@ -33,10 +33,13 @@ export const fileUploadService = {
       
       const { data: { publicUrl } } = supabase.storage
         .from(bucket)
-        .getPublicUrl(fileName);
+        .getPublicUrl(data.path);
       
-      console.log('Public URL:', publicUrl);
-      return publicUrl;
+      // Ajouter un timestamp pour éviter le cache du navigateur
+      const urlWithCacheBust = `${publicUrl}?t=${Date.now()}`;
+      
+      console.log('Public URL:', urlWithCacheBust);
+      return urlWithCacheBust;
     } catch (error) {
       console.error('File upload service error:', error);
       throw error;
@@ -62,7 +65,9 @@ export const fileUploadService = {
 
   getFileName(url: string): string {
     if (!url) return 'fichier';
-    const parts = url.split('/');
+    // Supprimer les query params avant d'extraire le nom
+    const urlWithoutParams = url.split('?')[0];
+    const parts = urlWithoutParams.split('/');
     return parts[parts.length - 1] || 'fichier';
   }
 };
