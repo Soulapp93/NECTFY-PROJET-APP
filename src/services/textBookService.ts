@@ -134,8 +134,14 @@ export const textBookService = {
       throw new Error(`Erreur lors de la récupération des entrées: ${error.message}`);
     }
 
-    console.log('Entrées récupérées:', data);
-    return data;
+    // Fetch files for each entry
+    const entriesWithFiles = await Promise.all((data || []).map(async (entry) => {
+      const files = await this.getEntryFiles(entry.id);
+      return { ...entry, files };
+    }));
+
+    console.log('Entrées récupérées avec fichiers:', entriesWithFiles);
+    return entriesWithFiles;
   },
 
   async createTextBookEntry(data: { 
@@ -210,25 +216,35 @@ export const textBookService = {
   },
 
   async uploadEntryFiles(entryId: string, files: File[]): Promise<TextBookEntryFile[]> {
-    console.log('Upload de fichiers pour l\'entrée:', entryId);
+    console.log('Upload de fichiers pour l\'entrée:', entryId, 'Nombre de fichiers:', files.length);
     const uploadedFiles: TextBookEntryFile[] = [];
 
     for (const file of files) {
-      const fileName = `${Date.now()}_${file.name}`;
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}-${file.name}`;
       const filePath = `text-book-entries/${entryId}/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('documents')
-        .upload(filePath, file);
+      console.log('Upload du fichier:', file.name, 'vers:', filePath);
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('module-files')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+          contentType: file.type
+        });
 
       if (uploadError) {
         console.error('Erreur upload fichier:', uploadError);
         continue;
       }
 
+      console.log('Fichier uploadé avec succès:', uploadData);
+
       const { data: { publicUrl } } = supabase.storage
-        .from('documents')
+        .from('module-files')
         .getPublicUrl(filePath);
+
+      console.log('URL publique:', publicUrl);
 
       const { data: fileData, error: insertError } = await (supabase
         .from('text_book_entry_files') as any)
@@ -241,11 +257,15 @@ export const textBookService = {
         .select()
         .single();
 
-      if (!insertError && fileData) {
+      if (insertError) {
+        console.error('Erreur insertion fichier en BDD:', insertError);
+      } else if (fileData) {
+        console.log('Fichier enregistré en BDD:', fileData);
         uploadedFiles.push(fileData);
       }
     }
 
+    console.log('Total fichiers uploadés:', uploadedFiles.length);
     return uploadedFiles;
   },
 
