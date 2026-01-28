@@ -113,15 +113,92 @@ export const virtualClassService = {
     return data as VirtualClass;
   },
 
-  async createVirtualClass(classData: CreateVirtualClassData): Promise<VirtualClass> {
+  async createVirtualClass(classData: CreateVirtualClassData & { module_id?: string; establishment_id?: string }): Promise<VirtualClass> {
+    // Get establishment_id from the current user if not provided
+    let establishmentId = classData.establishment_id;
+    if (!establishmentId) {
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData.user) {
+        const { data: userProfile } = await supabase
+          .from('users')
+          .select('establishment_id')
+          .eq('id', userData.user.id)
+          .maybeSingle();
+        establishmentId = userProfile?.establishment_id;
+      }
+    }
+
+    // Create the virtual class
     const { data, error } = await db
       .from('virtual_classes')
-      .insert(classData)
+      .insert({
+        ...classData,
+        establishment_id: establishmentId
+      })
       .select()
       .single();
 
     if (error) throw error;
+
+    // Also create a schedule slot for this virtual class
+    try {
+      await this.createScheduleSlotForVirtualClass(data as VirtualClass, classData.module_id);
+    } catch (scheduleError) {
+      console.error('Error creating schedule slot for virtual class:', scheduleError);
+      // Don't fail the entire operation if schedule slot creation fails
+    }
+
     return data as VirtualClass;
+  },
+
+  async createScheduleSlotForVirtualClass(virtualClass: VirtualClass, moduleId?: string): Promise<void> {
+    // Find or create a schedule for this formation
+    const { data: existingSchedule } = await supabase
+      .from('schedules')
+      .select('id')
+      .eq('formation_id', virtualClass.formation_id)
+      .maybeSingle();
+
+    let scheduleId = existingSchedule?.id;
+
+    // If no schedule exists for this formation, create one
+    if (!scheduleId) {
+      const { data: formation } = await supabase
+        .from('formations')
+        .select('title')
+        .eq('id', virtualClass.formation_id)
+        .single();
+
+      const { data: newSchedule, error: scheduleError } = await supabase
+        .from('schedules')
+        .insert({
+          formation_id: virtualClass.formation_id,
+          title: `Emploi du temps - ${formation?.title || 'Formation'}`,
+        })
+        .select('id')
+        .single();
+
+      if (scheduleError) throw scheduleError;
+      scheduleId = newSchedule.id;
+    }
+
+    // Create the schedule slot for the virtual class
+    const { error: slotError } = await supabase
+      .from('schedule_slots')
+      .insert({
+        schedule_id: scheduleId,
+        module_id: moduleId || virtualClass.module_id || null,
+        instructor_id: virtualClass.instructor_id,
+        date: virtualClass.date,
+        start_time: virtualClass.start_time,
+        end_time: virtualClass.end_time,
+        room: 'Classe virtuelle',
+        color: '#8B5CF6', // Purple for virtual classes
+        notes: `Classe virtuelle: ${virtualClass.title}`,
+        session_type: 'encadree'
+      });
+
+    if (slotError) throw slotError;
   },
 
   async updateVirtualClass(id: string, updates: Partial<CreateVirtualClassData>): Promise<VirtualClass> {
