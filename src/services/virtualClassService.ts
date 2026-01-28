@@ -261,7 +261,7 @@ export const virtualClassService = {
         room: 'Classe virtuelle',
         color: '#8B5CF6', // Purple for virtual classes
         notes: `Classe virtuelle: ${virtualClass.title}`,
-        session_type: 'encadree'
+        session_type: 'distanciel' // Virtual classes use distanciel type
       });
 
     if (slotError) throw slotError;
