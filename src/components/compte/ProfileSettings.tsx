@@ -213,6 +213,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 multiple={false}
                 className="w-full"
                 disabled={isUploadingPhoto || isDeletingPhoto}
+                clearAfterSelect={true}
               />
               <p className="text-xs sm:text-sm text-muted-foreground mt-1 text-center sm:text-left">
                 JPG, PNG (max 5MB)

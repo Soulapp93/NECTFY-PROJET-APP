@@ -10,6 +10,7 @@ interface FileUploadProps {
   maxSize?: number; // in MB
   className?: string;
   disabled?: boolean;
+  clearAfterSelect?: boolean; // Clear the file list immediately after selection
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({
@@ -18,7 +19,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
   accept = "*/*",
   maxSize = 10,
   className,
-  disabled = false
+  disabled = false,
+  clearAfterSelect = false
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -36,8 +38,16 @@ const FileUpload: React.FC<FileUploadProps> = ({
       return true;
     });
 
-    setSelectedFiles(validFiles);
+    // Si clearAfterSelect, on n'affiche pas les fichiers sélectionnés (pour les uploads immédiats comme les photos de profil)
+    if (!clearAfterSelect) {
+      setSelectedFiles(validFiles);
+    }
     onFileSelect(validFiles);
+    
+    // Reset l'input pour permettre de re-sélectionner le même fichier
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
