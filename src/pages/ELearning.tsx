@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Video, Plus, Calendar, Clock, Play } from 'lucide-react';
+import { Video, Plus, Calendar, Clock, Play, Users, Sparkles, GraduationCap } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -83,25 +83,32 @@ const ELearning = () => {
   ) || [];
   
   const upcomingClasses = virtualClasses?.filter(vc => 
-    new Date(vc.date) >= new Date() && vc.status === 'scheduled'
+    new Date(vc.date) >= new Date() && vc.status === 'Programmé'
   ) || [];
   
   const liveClasses = virtualClasses?.filter(vc => vc.status === 'En cours') || [];
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-xl border-b border-border">
-        <div className="container mx-auto px-4 sm:px-6 py-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
+      {/* Enhanced Header */}
+      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
+        <div className="container mx-auto px-4 sm:px-6 py-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-r from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/25">
-                <Video className="h-6 w-6 text-primary-foreground" />
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 flex items-center justify-center shadow-xl shadow-violet-500/30">
+                  <GraduationCap className="h-7 w-7 text-white" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full flex items-center justify-center shadow-lg">
+                  <Sparkles className="h-3 w-3 text-white" />
+                </div>
               </div>
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-foreground">E-Learning</h1>
-                <p className="text-muted-foreground text-sm">
-                  Classes virtuelles et sessions en direct
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-foreground via-foreground to-muted-foreground bg-clip-text">
+                  E-Learning
+                </h1>
+                <p className="text-muted-foreground text-sm mt-0.5">
+                  Classes virtuelles interactives en temps réel
                 </p>
               </div>
             </div>
@@ -109,9 +116,10 @@ const ELearning = () => {
             {isAdmin && (
               <Button 
                 onClick={() => setIsCreateModalOpen(true)}
-                className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                size="lg"
+                className="bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all duration-300"
               >
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="h-5 w-5 mr-2" />
                 Créer une session
               </Button>
             )}
@@ -119,64 +127,90 @@ const ELearning = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 py-6">
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-200/50">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                <Play className="h-6 w-6 text-emerald-600" />
+      <div className="container mx-auto px-4 sm:px-6 py-6 space-y-6">
+        {/* Enhanced Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-teal-500/10 hover:from-emerald-500/15 hover:to-teal-500/15 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardContent className="p-5 flex items-center gap-4 relative">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/30 group-hover:scale-105 transition-transform">
+                <Play className="h-6 w-6 text-white" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{liveClasses.length}</p>
-                <p className="text-sm text-muted-foreground">En cours</p>
+                <p className="text-3xl font-bold text-foreground">{liveClasses.length}</p>
+                <p className="text-sm text-muted-foreground font-medium">Sessions en direct</p>
+              </div>
+              {liveClasses.length > 0 && (
+                <div className="absolute top-3 right-3">
+                  <span className="relative flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                  </span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-cyan-500/10 hover:from-blue-500/15 hover:to-cyan-500/15 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardContent className="p-5 flex items-center gap-4 relative">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform">
+                <Calendar className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-foreground">{todayClasses.length}</p>
+                <p className="text-sm text-muted-foreground font-medium">Aujourd'hui</p>
               </div>
             </CardContent>
           </Card>
           
-          <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-200/50">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                <Calendar className="h-6 w-6 text-blue-600" />
+          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-indigo-500/10 hover:from-violet-500/15 hover:to-indigo-500/15 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardContent className="p-5 flex items-center gap-4 relative">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/30 group-hover:scale-105 transition-transform">
+                <Clock className="h-6 w-6 text-white" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{todayClasses.length}</p>
-                <p className="text-sm text-muted-foreground">Aujourd'hui</p>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-200/50">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                <Clock className="h-6 w-6 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{upcomingClasses.length}</p>
-                <p className="text-sm text-muted-foreground">À venir</p>
+                <p className="text-3xl font-bold text-foreground">{upcomingClasses.length}</p>
+                <p className="text-sm text-muted-foreground font-medium">À venir</p>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Main Content with Tabs - Only 2 tabs now */}
+        {/* Enhanced Tabs */}
         <Tabs defaultValue="classes" className="space-y-6">
-          <TabsList className="bg-muted/50 p-1">
-            <TabsTrigger value="classes" className="data-[state=active]:bg-background">
-              <Video className="h-4 w-4 mr-2" />
-              Classes virtuelles
-            </TabsTrigger>
-            <TabsTrigger value="history" className="data-[state=active]:bg-background">
-              <Calendar className="h-4 w-4 mr-2" />
-              Historique
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex items-center justify-between">
+            <TabsList className="bg-muted/50 backdrop-blur-sm p-1.5 rounded-xl border border-border/50">
+              <TabsTrigger 
+                value="classes" 
+                className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg px-4 py-2.5 transition-all"
+              >
+                <Video className="h-4 w-4 mr-2" />
+                Classes virtuelles
+              </TabsTrigger>
+              <TabsTrigger 
+                value="history" 
+                className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg px-4 py-2.5 transition-all"
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                Historique
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="classes">
+            {virtualClasses.length > 0 && (
+              <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
+                <Users className="h-4 w-4" />
+                <span>{virtualClasses.length} session{virtualClasses.length > 1 ? 's' : ''} disponible{virtualClasses.length > 1 ? 's' : ''}</span>
+              </div>
+            )}
+          </div>
+
+          <TabsContent value="classes" className="mt-0">
             <VirtualClasses onJoinClass={handleJoinClass} />
           </TabsContent>
 
-          <TabsContent value="history">
+          <TabsContent value="history" className="mt-0">
             <ClassHistory />
           </TabsContent>
         </Tabs>
