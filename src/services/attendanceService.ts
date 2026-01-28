@@ -106,6 +106,7 @@ export const attendanceService = {
         end_time: slot.end_time,
         instructor_id: slot.instructor_id,
         room: slot.room,
+        session_type: slot.session_type || 'presentiel', // Copy session type from slot
         status: 'En attente'
       }));
 

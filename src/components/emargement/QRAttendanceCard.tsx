@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { QrCode, Hash, Calendar, Clock, MapPin, Users, CheckCircle2, AlertCircle } from 'lucide-react';
+import { QrCode, Hash, Calendar, Clock, MapPin, Users, CheckCircle2, AlertCircle, Video } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -84,12 +84,19 @@ const QRAttendanceCard: React.FC<QRAttendanceCardProps> = ({
               <Clock className="w-4 h-4 text-muted-foreground" />
               <span>{attendanceSheet.start_time.substring(0, 5)} - {attendanceSheet.end_time.substring(0, 5)}</span>
             </div>
-            {attendanceSheet.room && (
+            {attendanceSheet.session_type === 'distanciel' || attendanceSheet.room === 'Classe virtuelle' ? (
+              <div className="flex items-center gap-2 col-span-2">
+                <Video className="w-4 h-4 text-purple-600" />
+                <Badge className="bg-purple-100 text-purple-700 border-purple-200">
+                  Classe virtuelle
+                </Badge>
+              </div>
+            ) : attendanceSheet.room ? (
               <div className="flex items-center gap-2 col-span-2">
                 <MapPin className="w-4 h-4 text-muted-foreground" />
                 <span>Salle {attendanceSheet.room}</span>
               </div>
-            )}
+            ) : null}
           </div>
 
           {/* Statut d'émargement */}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, Users, CheckCircle2, XCircle, Edit3, FileText, Eye, ArrowLeft, ChevronRight, PenTool, Download, Send, Link } from 'lucide-react';
+import { Calendar, Clock, Users, CheckCircle2, XCircle, Edit3, FileText, Eye, ArrowLeft, ChevronRight, PenTool, Download, Send, Link, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -523,10 +523,21 @@ const AttendanceManagement = () => {
                           {sheet.start_time.substring(0, 5)} - {sheet.end_time.substring(0, 5)}
                         </TableCell>
                         <TableCell>
-                          {(sheet as any).schedule_slots?.formation_modules?.title || 'Module non défini'}
+                          <div className="flex items-center gap-2">
+                            {(sheet as any).schedule_slots?.formation_modules?.title || 'Module non défini'}
+                          </div>
                         </TableCell>
                         <TableCell>
-                          {sheet.room || '-'}
+                          <div className="flex items-center gap-2">
+                            {sheet.session_type === 'distanciel' || sheet.room === 'Classe virtuelle' ? (
+                              <Badge className="bg-purple-100 text-purple-700 border-purple-200 flex items-center gap-1">
+                                <Video className="h-3 w-3" />
+                                Distanciel
+                              </Badge>
+                            ) : (
+                              sheet.room || '-'
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Badge className={getStatusColor(sheet.status)}>
