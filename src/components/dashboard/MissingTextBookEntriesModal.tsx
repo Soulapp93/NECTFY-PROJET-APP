@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { notificationService } from '@/services/notificationService';
-
+import { messageService } from '@/services/messageService';
 interface MissingEntry {
   id: string;
   date: string;
@@ -126,11 +126,18 @@ const MissingTextBookEntriesModal: React.FC<MissingTextBookEntriesModalProps> = 
 
     setSendingReminder(entry.id);
     try {
+      const formattedDate = new Date(entry.date).toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
       const message = `Bonjour,
 
 Vous n'avez pas encore saisi l'entrée dans le cahier de texte pour le cours suivant :
 
-📅 Date: ${new Date(entry.date).toLocaleDateString('fr-FR')}
+📅 Date: ${formattedDate}
 🕐 Horaires: ${entry.start_time.substring(0, 5)} - ${entry.end_time.substring(0, 5)}
 📚 Module: ${entry.module_name}
 🎓 Formation: ${entry.formation_title}
@@ -140,6 +147,7 @@ Merci de compléter cette entrée dès que possible.
 Cordialement,
 L'administration`;
 
+      // 1. Créer une notification dans l'application
       await notificationService.notifyUser(
         entry.instructor_id,
         'Rappel: Cahier de texte manquant',
@@ -152,7 +160,61 @@ L'administration`;
         }
       );
 
-      toast.success(`Rappel envoyé à ${entry.instructor_name}`);
+      // 2. Envoyer un message interne au formateur
+      try {
+        await messageService.createMessage({
+          subject: 'Rappel: Cahier de texte manquant',
+          content: message,
+          recipients: {
+            type: 'user',
+            ids: [entry.instructor_id]
+          }
+        });
+      } catch (msgError) {
+        console.error('Erreur lors de l\'envoi du message interne:', msgError);
+        // Continue même si le message interne échoue
+      }
+
+      // 3. Envoyer une notification par email
+      try {
+        // Récupérer l'email du formateur
+        const { data: instructorData } = await supabase
+          .from('users')
+          .select('email, first_name, last_name')
+          .eq('id', entry.instructor_id)
+          .single();
+
+        if (instructorData?.email) {
+          const emailHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #8B5CF6;">📚 Rappel: Cahier de texte manquant</h2>
+              <p>Bonjour ${instructorData.first_name || 'Formateur'},</p>
+              <p>Vous n'avez pas encore saisi l'entrée dans le cahier de texte pour le cours suivant :</p>
+              <div style="background-color: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
+                <p style="margin: 8px 0;"><strong>📅 Date:</strong> ${formattedDate}</p>
+                <p style="margin: 8px 0;"><strong>🕐 Horaires:</strong> ${entry.start_time.substring(0, 5)} - ${entry.end_time.substring(0, 5)}</p>
+                <p style="margin: 8px 0;"><strong>📚 Module:</strong> ${entry.module_name}</p>
+                <p style="margin: 8px 0;"><strong>🎓 Formation:</strong> ${entry.formation_title}</p>
+              </div>
+              <p>Merci de compléter cette entrée dès que possible.</p>
+              <p style="margin-top: 24px;">Cordialement,<br/>L'administration NECTFORMA</p>
+            </div>
+          `;
+
+          await supabase.functions.invoke('send-email-brevo', {
+            body: {
+              to: instructorData.email,
+              subject: 'Rappel: Cahier de texte manquant - NECTFORMA',
+              htmlContent: emailHtml
+            }
+          });
+        }
+      } catch (emailError) {
+        console.error('Erreur lors de l\'envoi de l\'email:', emailError);
+        // Continue même si l'email échoue
+      }
+
+      toast.success(`Rappel envoyé à ${entry.instructor_name} (notification, message et email)`);
     } catch (error) {
       console.error('Erreur lors de l\'envoi du rappel:', error);
       toast.error('Erreur lors de l\'envoi du rappel');
