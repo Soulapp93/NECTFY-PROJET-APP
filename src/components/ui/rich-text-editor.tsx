@@ -37,19 +37,35 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [isPreview, setIsPreview] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [currentColor, setCurrentColor] = useState('#000000');
+  const isInitialized = useRef(false);
+  const lastValueRef = useRef(value);
 
-  const execCommand = (command: string, value?: string) => {
+  // Initialize content only once when component mounts or when value changes externally
+  React.useEffect(() => {
+    if (editorRef.current) {
+      // Only update if the value changed externally (not from user input)
+      if (!isInitialized.current || (value !== lastValueRef.current && document.activeElement !== editorRef.current)) {
+        editorRef.current.innerHTML = sanitizeHtml(value) || '';
+        isInitialized.current = true;
+        lastValueRef.current = value;
+      }
+    }
+  }, [value]);
+
+  const execCommand = (command: string, commandValue?: string) => {
     // Focus the editor first
     if (editorRef.current) {
       editorRef.current.focus();
     }
     
     // Execute the command
-    const success = document.execCommand(command, false, value);
+    const success = document.execCommand(command, false, commandValue);
     
     // Update the content
     if (editorRef.current && success) {
-      onChange(editorRef.current.innerHTML);
+      const newContent = editorRef.current.innerHTML;
+      lastValueRef.current = newContent;
+      onChange(newContent);
     }
     
     return success;
@@ -57,7 +73,9 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
   const handleInput = () => {
     if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
+      const newContent = editorRef.current.innerHTML;
+      lastValueRef.current = newContent;
+      onChange(newContent);
     }
   };
 
@@ -472,16 +490,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
             ref={editorRef}
             contentEditable
             onInput={handleInput}
-            onFocus={() => {
-              // Enable design mode for better compatibility
-              document.designMode = 'on';
-              setTimeout(() => {
-                document.designMode = 'off';
-              }, 0);
-            }}
-            className="p-3 min-h-[200px] outline-none prose prose-sm max-w-none focus:bg-muted/10"
+            onBlur={handleInput}
+            className="p-3 min-h-[200px] outline-none prose prose-sm max-w-none focus:bg-muted/10 empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground empty:before:pointer-events-none"
             style={{ minHeight: `${rows * 1.5}rem` }}
-            dangerouslySetInnerHTML={{ __html: sanitizeHtml(value) }}
+            data-placeholder={placeholder}
             suppressContentEditableWarning={true}
             onKeyDown={(e) => {
               // Handle keyboard shortcuts
