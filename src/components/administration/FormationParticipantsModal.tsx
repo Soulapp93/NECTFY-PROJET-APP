@@ -38,25 +38,42 @@ const FormationParticipantsModal: React.FC<FormationParticipantsModalProps> = ({
     }
   }, [isOpen, formationId]);
 
+  // Résoudre l'URL de la photo de profil depuis le bucket avatars
+  const getResolvedPhotoUrl = (profilePhotoUrl: string | null | undefined): string | null => {
+    if (!profilePhotoUrl) return null;
+    
+    // Si c'est déjà une URL complète, la retourner directement
+    if (profilePhotoUrl.startsWith('http://') || profilePhotoUrl.startsWith('https://')) {
+      return profilePhotoUrl;
+    }
+    
+    // Sinon, construire l'URL publique Supabase
+    const { data } = supabase.storage.from('avatars').getPublicUrl(profilePhotoUrl);
+    return data?.publicUrl || null;
+  };
+
   const fetchParticipants = async () => {
     try {
       setLoading(true);
       setError(null);
 
+      // Récupérer uniquement les étudiants (pas les formateurs)
       const { data, error } = await supabase
         .from('user_formation_assignments')
         .select(`
           id,
-          user:users(
+          user:users!inner(
             id,
             first_name,
             last_name,
             email,
             phone,
-            profile_photo_url
+            profile_photo_url,
+            role
           )
         `)
-        .eq('formation_id', formationId);
+        .eq('formation_id', formationId)
+        .eq('user.role', 'Étudiant');
 
       if (error) throw error;
 
@@ -66,7 +83,7 @@ const FormationParticipantsModal: React.FC<FormationParticipantsModalProps> = ({
         last_name: item.user.last_name,
         email: item.user.email,
         phone: item.user.phone,
-        profile_photo_url: item.user.profile_photo_url
+        profile_photo_url: getResolvedPhotoUrl(item.user.profile_photo_url)
       })) || [];
 
       setParticipants(formattedParticipants);
