@@ -57,12 +57,12 @@ const FormationParticipantsModal: React.FC<FormationParticipantsModalProps> = ({
       setLoading(true);
       setError(null);
 
-      // Récupérer uniquement les étudiants (pas les formateurs)
+      // Récupérer les utilisateurs assignés à la formation
       const { data, error } = await supabase
         .from('user_formation_assignments')
         .select(`
           id,
-          user:users!inner(
+          user:users(
             id,
             first_name,
             last_name,
@@ -72,19 +72,23 @@ const FormationParticipantsModal: React.FC<FormationParticipantsModalProps> = ({
             role
           )
         `)
-        .eq('formation_id', formationId)
-        .eq('user.role', 'Étudiant');
+        .eq('formation_id', formationId);
 
       if (error) throw error;
 
-      const formattedParticipants = data?.map(item => ({
+      // Filtrer côté client pour ne garder que les étudiants
+      const studentsOnly = (data || []).filter(
+        (item: any) => item.user && item.user.role === 'Étudiant'
+      );
+
+      const formattedParticipants = studentsOnly.map((item: any) => ({
         id: item.user.id,
         first_name: item.user.first_name,
         last_name: item.user.last_name,
         email: item.user.email,
         phone: item.user.phone,
         profile_photo_url: getResolvedPhotoUrl(item.user.profile_photo_url)
-      })) || [];
+      }));
 
       setParticipants(formattedParticipants);
     } catch (err) {
