@@ -40,6 +40,7 @@ import PolitiqueConfidentialite from './pages/PolitiqueConfidentialite';
 import ResetPassword from './pages/ResetPassword';
 import Activation from './pages/Activation';
 import Notifications from './pages/Notifications';
+import ELearning from './pages/ELearning';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -184,6 +185,7 @@ const AppContent = () => {
               <Route path="/cahier-texte/:textBookId" element={<ProtectedRoute><TextBookDetail /></ProtectedRoute>} />
               <Route path="/cahier-texte/formation/:formationId" element={<ProtectedRoute><TextBookByFormation /></ProtectedRoute>} />
               <Route path="/suivi-emargement" element={<ProtectedRoute><SuiviEmargement /></ProtectedRoute>} />
+              <Route path="/e-learning" element={<ProtectedRoute><TutorRestrictedRoute><ELearning /></TutorRestrictedRoute></ProtectedRoute>} />
               <Route path="/emploi-temps" element={<ProtectedRoute><EmploiTemps /></ProtectedRoute>} />
               <Route path="/emploi-temps/view/:scheduleId" element={<ProtectedRoute><EmploiTemps /></ProtectedRoute>} />
               <Route path="/emploi-temps/edit/:scheduleId" element={<ProtectedRoute><EmploiTemps /></ProtectedRoute>} />
