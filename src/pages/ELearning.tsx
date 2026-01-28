@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Video, Plus, Calendar, Clock, Play, Settings, Users } from 'lucide-react';
+import { Video, Plus, Calendar, Clock, Play } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,10 +7,9 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useVirtualClasses } from '@/hooks/useVirtualClasses';
 import VirtualClasses from '@/components/elearning/VirtualClasses';
 import ClassHistory from '@/components/elearning/ClassHistory';
-import Recordings from '@/components/elearning/Recordings';
-import Materials from '@/components/elearning/Materials';
 import CreateClassModal from '@/components/elearning/modals/CreateClassModal';
 import VideoRoom from '@/components/elearning/videoRoom/VideoRoom';
+import MediaPermissionDialog from '@/components/elearning/MediaPermissionDialog';
 import { VirtualClass } from '@/services/virtualClassService';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -20,11 +19,47 @@ const ELearning = () => {
   const { data: virtualClasses = [], isLoading } = useVirtualClasses();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [activeClass, setActiveClass] = useState<VirtualClass | null>(null);
+  const [pendingClass, setPendingClass] = useState<VirtualClass | null>(null);
+  const [isPermissionDialogOpen, setIsPermissionDialogOpen] = useState(false);
+  const [isRequestingPermission, setIsRequestingPermission] = useState(false);
   const isAdmin = userRole === 'Admin' || userRole === 'AdminPrincipal';
 
-  // Handle joining a class
+  // Handle joining a class - show permission dialog first
   const handleJoinClass = (classItem: VirtualClass) => {
-    setActiveClass(classItem);
+    setPendingClass(classItem);
+    setIsPermissionDialogOpen(true);
+  };
+
+  // Handle permission granted - join the class
+  const handlePermissionGranted = async () => {
+    if (!pendingClass) return;
+    
+    setIsRequestingPermission(true);
+    try {
+      // Request media permissions
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      // Stop the test stream
+      stream.getTracks().forEach(track => track.stop());
+      
+      // Permission granted, join the class
+      setActiveClass(pendingClass);
+      setPendingClass(null);
+      setIsPermissionDialogOpen(false);
+    } catch (error) {
+      console.error('Permission denied:', error);
+      // Still allow joining even if permission denied (will show error in VideoRoom)
+      setActiveClass(pendingClass);
+      setPendingClass(null);
+      setIsPermissionDialogOpen(false);
+    } finally {
+      setIsRequestingPermission(false);
+    }
+  };
+
+  // Handle permission dialog cancel
+  const handlePermissionCancel = () => {
+    setPendingClass(null);
+    setIsPermissionDialogOpen(false);
   };
 
   // Handle leaving a class
@@ -66,7 +101,7 @@ const ELearning = () => {
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-foreground">E-Learning</h1>
                 <p className="text-muted-foreground text-sm">
-                  Classes virtuelles et ressources pédagogiques
+                  Classes virtuelles et sessions en direct
                 </p>
               </div>
             </div>
@@ -124,7 +159,7 @@ const ELearning = () => {
           </Card>
         </div>
 
-        {/* Main Content with Tabs */}
+        {/* Main Content with Tabs - Only 2 tabs now */}
         <Tabs defaultValue="classes" className="space-y-6">
           <TabsList className="bg-muted/50 p-1">
             <TabsTrigger value="classes" className="data-[state=active]:bg-background">
@@ -135,14 +170,6 @@ const ELearning = () => {
               <Calendar className="h-4 w-4 mr-2" />
               Historique
             </TabsTrigger>
-            <TabsTrigger value="recordings" className="data-[state=active]:bg-background">
-              <Play className="h-4 w-4 mr-2" />
-              Enregistrements
-            </TabsTrigger>
-            <TabsTrigger value="materials" className="data-[state=active]:bg-background">
-              <Settings className="h-4 w-4 mr-2" />
-              Ressources
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="classes">
@@ -152,14 +179,6 @@ const ELearning = () => {
           <TabsContent value="history">
             <ClassHistory />
           </TabsContent>
-
-          <TabsContent value="recordings">
-            <Recordings />
-          </TabsContent>
-
-          <TabsContent value="materials">
-            <Materials />
-          </TabsContent>
         </Tabs>
       </div>
 
@@ -167,6 +186,14 @@ const ELearning = () => {
       <CreateClassModal 
         isOpen={isCreateModalOpen} 
         onClose={() => setIsCreateModalOpen(false)}
+      />
+
+      {/* Media Permission Dialog */}
+      <MediaPermissionDialog
+        isOpen={isPermissionDialogOpen}
+        onRequestPermission={handlePermissionGranted}
+        onCancel={handlePermissionCancel}
+        isLoading={isRequestingPermission}
       />
     </div>
   );

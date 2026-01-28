@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Calendar, Clock, Users, Video, Monitor, User, BookOpen } from 'lucide-react';
+import { Calendar, Clock, Video, Monitor, User, BookOpen } from 'lucide-react';
 import { VirtualClass } from '@/services/virtualClassService';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -153,23 +153,13 @@ const ClassDetailsModal: React.FC<ClassDetailsModalProps> = ({
             >
               Fermer
             </Button>
-            {virtualClass.status === 'En cours' && onJoinClass && (
+            {(virtualClass.status === 'En cours' || virtualClass.status === 'Programmé') && onJoinClass && (
               <Button
                 onClick={handleJoinClass}
-                className="flex-1"
+                className="flex-1 bg-gradient-to-r from-primary to-primary/80"
               >
                 <Video className="h-4 w-4 mr-2" />
-                Rejoindre la classe
-              </Button>
-            )}
-            {virtualClass.status === 'Programmé' && onJoinClass && (
-              <Button
-                onClick={handleJoinClass}
-                variant="outline"
-                className="flex-1"
-              >
-                <Users className="h-4 w-4 mr-2" />
-                S'inscrire
+                Participer à la session
               </Button>
             )}
           </div>

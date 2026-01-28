@@ -313,8 +313,9 @@ const VirtualClasses: React.FC<VirtualClassesProps> = ({ onJoinClass }) => {
                   disabled={joinClassMutation.isPending || classItem.status === 'Terminé' || classItem.status === 'Annulé'}
                   variant={classItem.status === 'En cours' ? 'default' : 'outline'}
                 >
+                  <Video className="h-4 w-4 mr-2" />
                   {classItem.status === 'En cours' ? 'Rejoindre' : 
-                   classItem.status === 'Programmé' ? 'S\'inscrire' :
+                   classItem.status === 'Programmé' ? 'Participer à la session' :
                    classItem.status === 'Terminé' ? 'Terminé' : 'Annulé'}
                 </Button>
                 <Button 
