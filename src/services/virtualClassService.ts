@@ -74,15 +74,80 @@ export const virtualClassService = {
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData.user?.id;
 
-    let user: { role?: string | null; establishment_id?: string | null } | null = null;
-    if (userId) {
-      const { data } = await supabase
-        .from('users')
-        .select('role, establishment_id')
-        .eq('id', userId)
-        .maybeSingle();
-      user = data ?? null;
+    if (!userId) {
+      return [];
     }
+
+    // Check if user is a tutor first
+    const { data: tutorData } = await supabase
+      .from('tutors')
+      .select('id, establishment_id')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (tutorData) {
+      // Tutors don't have access to virtual classes
+      return [];
+    }
+
+    // Get user data
+    const { data: user } = await supabase
+      .from('users')
+      .select('role, establishment_id')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (!user) {
+      return [];
+    }
+
+    const isAdmin = user.role === 'Admin' || user.role === 'AdminPrincipal';
+
+    // If admin, get all classes for the establishment
+    if (isAdmin) {
+      const { data, error } = await db
+        .from('virtual_classes')
+        .select(`
+          *,
+          instructor:users!instructor_id(id, first_name, last_name, email),
+          formation:formations!formation_id(id, title, color)
+        `)
+        .eq('establishment_id', user.establishment_id)
+        .order('date', { ascending: true })
+        .order('start_time', { ascending: true });
+
+      if (error) throw error;
+      return (data || []) as VirtualClass[];
+    }
+
+    // For instructors: Get classes they are assigned to teach
+    if (user.role === 'Formateur') {
+      const { data, error } = await db
+        .from('virtual_classes')
+        .select(`
+          *,
+          instructor:users!instructor_id(id, first_name, last_name, email),
+          formation:formations!formation_id(id, title, color)
+        `)
+        .eq('instructor_id', userId)
+        .order('date', { ascending: true })
+        .order('start_time', { ascending: true });
+
+      if (error) throw error;
+      return (data || []) as VirtualClass[];
+    }
+
+    // For students: Get classes for formations they are enrolled in
+    const { data: formationAssignments } = await supabase
+      .from('user_formation_assignments')
+      .select('formation_id')
+      .eq('user_id', userId);
+
+    if (!formationAssignments || formationAssignments.length === 0) {
+      return [];
+    }
+
+    const formationIds = formationAssignments.map(fa => fa.formation_id);
 
     const { data, error } = await db
       .from('virtual_classes')
@@ -91,6 +156,7 @@ export const virtualClassService = {
         instructor:users!instructor_id(id, first_name, last_name, email),
         formation:formations!formation_id(id, title, color)
       `)
+      .in('formation_id', formationIds)
       .order('date', { ascending: true })
       .order('start_time', { ascending: true });
 
