@@ -50,11 +50,44 @@ export const useWebRTCMesh = ({ classId, userId, audio = true, video = true }: U
   // Initialize local media
   const initializeMedia = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: audio ? { echoCancellation: true, noiseSuppression: true } : false,
-        video: video ? { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } } : false,
-      });
+      console.log('Requesting media with constraints:', { audio, video });
+      
+      // First try with both audio and video
+      let stream: MediaStream;
+      
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: audio ? { echoCancellation: true, noiseSuppression: true, autoGainControl: true } : false,
+          video: video ? { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } } : false,
+        });
+      } catch (mediaError: any) {
+        console.warn('Failed to get media with full constraints, trying fallback:', mediaError);
+        
+        // Fallback: try with just audio if video fails
+        if (video && (mediaError.name === 'NotAllowedError' || mediaError.name === 'NotFoundError')) {
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({
+              audio: audio ? { echoCancellation: true, noiseSuppression: true } : false,
+              video: false,
+            });
+            setMediaState(prev => ({ ...prev, video: false }));
+            toast({
+              title: "Caméra non disponible",
+              description: "La session continue avec audio uniquement",
+            });
+          } catch (audioError) {
+            console.error('Failed to get audio-only stream:', audioError);
+            // Continue without media - allow joining anyway
+            return null;
+          }
+        } else {
+          // Re-throw if it's not a permission/device issue
+          throw mediaError;
+        }
+      }
 
+      console.log('Got media stream:', stream.getTracks().map(t => `${t.kind}: ${t.label}`));
+      
       localStreamRef.current = stream;
       setLocalStream(stream);
 
@@ -63,13 +96,26 @@ export const useWebRTCMesh = ({ classId, userId, audio = true, video = true }: U
       }
 
       return stream;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error accessing media devices:', error);
+      
+      // Show appropriate error message
+      let message = "Impossible d'accéder à la caméra/microphone.";
+      if (error.name === 'NotAllowedError') {
+        message = "Accès refusé. Autorisez la caméra/micro dans les paramètres du navigateur.";
+      } else if (error.name === 'NotFoundError') {
+        message = "Aucun périphérique audio/vidéo trouvé.";
+      } else if (error.name === 'NotReadableError') {
+        message = "La caméra/micro est utilisée par une autre application.";
+      }
+      
       toast({
-        title: "Erreur d'accès",
-        description: "Impossible d'accéder à la caméra/microphone. Vérifiez les permissions.",
+        title: "Erreur d'accès média",
+        description: message,
         variant: "destructive",
       });
+      
+      // Return null but don't prevent joining - allow audio-only or view-only mode
       return null;
     }
   }, [audio, video, toast]);
@@ -214,44 +260,69 @@ export const useWebRTCMesh = ({ classId, userId, audio = true, video = true }: U
 
   // Join the class
   const joinClass = useCallback(async () => {
-    // Initialize media first
-    const stream = await initializeMedia();
-    if (!stream) return false;
+    console.log('joinClass called with userId:', userId);
+    
+    if (!userId) {
+      console.error('Cannot join class without userId');
+      return false;
+    }
 
-    // Join as participant
-    await webrtcSignalingService.joinClass(classId, userId);
+    try {
+      // Initialize media first (can be null if permissions denied)
+      const stream = await initializeMedia();
+      
+      if (!stream) {
+        console.warn('No media stream - joining in view-only mode');
+        // Still allow joining without media
+      }
 
-    // Subscribe to signals
-    const cleanup = webrtcSignalingService.subscribeToClass(
-      classId,
-      userId,
-      handleSignal,
-      async (updatedParticipants) => {
-        setParticipants(updatedParticipants);
-        
-        // Connect to new participants
-        for (const participant of updatedParticipants) {
+      // Join as participant
+      console.log('Joining class as participant...');
+      await webrtcSignalingService.joinClass(classId, userId);
+
+      // Subscribe to signals
+      const cleanup = webrtcSignalingService.subscribeToClass(
+        classId,
+        userId,
+        handleSignal,
+        async (updatedParticipants) => {
+          console.log('Participants updated:', updatedParticipants.length);
+          setParticipants(updatedParticipants);
+          
+          // Connect to new participants (only if we have media)
+          if (stream) {
+            for (const participant of updatedParticipants) {
+              if (participant.user_id !== userId && participant.status === 'Présent') {
+                await connectToPeer(participant.user_id);
+              }
+            }
+          }
+        }
+      );
+
+      cleanupFnRef.current = cleanup;
+
+      // Get initial participants and connect
+      const initialParticipants = await webrtcSignalingService.getParticipants(classId);
+      console.log('Initial participants:', initialParticipants.length);
+      setParticipants(initialParticipants);
+
+      // Connect to existing participants (only if we have media)
+      if (stream) {
+        for (const participant of initialParticipants) {
           if (participant.user_id !== userId && participant.status === 'Présent') {
             await connectToPeer(participant.user_id);
           }
         }
       }
-    );
 
-    cleanupFnRef.current = cleanup;
-
-    // Get initial participants and connect
-    const initialParticipants = await webrtcSignalingService.getParticipants(classId);
-    setParticipants(initialParticipants);
-
-    for (const participant of initialParticipants) {
-      if (participant.user_id !== userId && participant.status === 'Présent') {
-        await connectToPeer(participant.user_id);
-      }
+      setIsConnected(true);
+      console.log('Successfully joined class');
+      return true;
+    } catch (error) {
+      console.error('Error joining class:', error);
+      return false;
     }
-
-    setIsConnected(true);
-    return true;
   }, [classId, userId, initializeMedia, handleSignal, connectToPeer]);
 
   // Leave the class

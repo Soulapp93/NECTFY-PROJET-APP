@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Info, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ArrowLeft, Info, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useWebRTCMesh } from '@/hooks/useWebRTCMesh';
 import { useVirtualClassChat } from '@/hooks/useVirtualClassChat';
@@ -20,12 +20,13 @@ interface VideoRoomProps {
 }
 
 const VideoRoom: React.FC<VideoRoomProps> = ({ virtualClass, onLeave }) => {
-  const { userId, userRole } = useCurrentUser();
+  const { userId, userRole, loading: userLoading } = useCurrentUser();
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
   const [isWhiteboardOpen, setIsWhiteboardOpen] = useState(false);
   const [isJoining, setIsJoining] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasAttemptedJoin, setHasAttemptedJoin] = useState(false);
 
   const isHost = virtualClass.instructor_id === userId || 
     userRole === 'Admin' || 
@@ -71,35 +72,71 @@ const VideoRoom: React.FC<VideoRoomProps> = ({ virtualClass, onLeave }) => {
     userId: userId || '',
   });
 
-  // Join class on mount
-  useEffect(() => {
-    const join = async () => {
-      if (!userId) {
-        setError('Vous devez être connecté pour rejoindre la classe');
-        setIsJoining(false);
-        return;
-      }
+  // Join class when user is ready
+  const handleJoinClass = useCallback(async () => {
+    if (!userId) {
+      setError('Vous devez être connecté pour rejoindre la classe');
+      setIsJoining(false);
+      return;
+    }
 
-      try {
-        const success = await joinClass();
-        if (!success) {
-          setError('Impossible de rejoindre la classe. Vérifiez vos permissions caméra/micro.');
-        }
-      } catch (err) {
-        console.error('Error joining class:', err);
-        setError('Une erreur est survenue lors de la connexion');
-      } finally {
-        setIsJoining(false);
+    setIsJoining(true);
+    setError(null);
+    
+    try {
+      console.log('Joining class with userId:', userId);
+      const success = await joinClass();
+      if (!success) {
+        setError('Impossible de rejoindre la classe. Vérifiez vos permissions caméra/micro.');
       }
-    };
-
-    join();
+    } catch (err) {
+      console.error('Error joining class:', err);
+      setError('Une erreur est survenue lors de la connexion');
+    } finally {
+      setIsJoining(false);
+      setHasAttemptedJoin(true);
+    }
   }, [userId, joinClass]);
+
+  // Wait for user to load, then join
+  useEffect(() => {
+    // Don't join if still loading user or already attempted
+    if (userLoading) {
+      console.log('Waiting for user to load...');
+      return;
+    }
+
+    // Don't re-join if already connected
+    if (isConnected) {
+      setIsJoining(false);
+      return;
+    }
+
+    // Don't re-join if already attempted and failed
+    if (hasAttemptedJoin && error) {
+      return;
+    }
+
+    // User loaded, try to join
+    if (userId && !hasAttemptedJoin) {
+      handleJoinClass();
+    } else if (!userId && !userLoading) {
+      setError('Vous devez être connecté pour rejoindre la classe');
+      setIsJoining(false);
+    }
+  }, [userId, userLoading, isConnected, hasAttemptedJoin, error, handleJoinClass]);
 
   // Handle leave
   const handleLeave = async () => {
     await leaveClass();
     onLeave();
+  };
+
+  // Handle retry
+  const handleRetry = () => {
+    setError(null);
+    setHasAttemptedJoin(false);
+    handleJoinClass();
   };
 
   // Handle screen share toggle
@@ -111,14 +148,18 @@ const VideoRoom: React.FC<VideoRoomProps> = ({ virtualClass, onLeave }) => {
     }
   };
 
-  // Loading state
-  if (isJoining) {
+  // Loading state (user loading or joining)
+  if (userLoading || (isJoining && !error)) {
     return (
       <div className="fixed inset-0 bg-background flex items-center justify-center z-50">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
-          <h2 className="text-xl font-semibold mb-2">Connexion à la classe...</h2>
-          <p className="text-muted-foreground">Configuration de votre caméra et microphone</p>
+          <h2 className="text-xl font-semibold mb-2">
+            {userLoading ? 'Chargement de votre session...' : 'Connexion à la classe...'}
+          </h2>
+          <p className="text-muted-foreground">
+            {userLoading ? 'Vérification de votre compte' : 'Configuration de votre caméra et microphone'}
+          </p>
         </div>
       </div>
     );
@@ -134,7 +175,13 @@ const VideoRoom: React.FC<VideoRoomProps> = ({ virtualClass, onLeave }) => {
           </div>
           <h2 className="text-xl font-semibold mb-2">Impossible de rejoindre</h2>
           <p className="text-muted-foreground mb-6">{error}</p>
-          <Button onClick={onLeave}>Retour</Button>
+          <div className="flex gap-3 justify-center">
+            <Button variant="outline" onClick={onLeave}>Retour</Button>
+            <Button onClick={handleRetry} className="gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Réessayer
+            </Button>
+          </div>
         </div>
       </div>
     );
