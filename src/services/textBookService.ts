@@ -32,6 +32,11 @@ export interface TextBookEntry {
   subject_matter?: string;
   instructor_id?: string;
   files?: TextBookEntryFile[];
+  instructor?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+  };
 }
 
 export interface TextBookEntryFile {
@@ -134,14 +139,26 @@ export const textBookService = {
       throw new Error(`Erreur lors de la récupération des entrées: ${error.message}`);
     }
 
-    // Fetch files for each entry
-    const entriesWithFiles = await Promise.all((data || []).map(async (entry) => {
+    // Fetch files and instructor info for each entry
+    const entriesWithData = await Promise.all((data || []).map(async (entry) => {
       const files = await this.getEntryFiles(entry.id);
-      return { ...entry, files };
+      
+      // Fetch instructor info if instructor_id exists
+      let instructor = null;
+      if (entry.instructor_id) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('id, first_name, last_name')
+          .eq('id', entry.instructor_id)
+          .single();
+        instructor = userData;
+      }
+      
+      return { ...entry, files, instructor };
     }));
 
-    console.log('Entrées récupérées avec fichiers:', entriesWithFiles);
-    return entriesWithFiles;
+    console.log('Entrées récupérées avec fichiers et formateurs:', entriesWithData);
+    return entriesWithData;
   },
 
   async createTextBookEntry(data: { 

@@ -504,7 +504,7 @@ const TextBookDetail: React.FC = () => {
                     {entry.subject_matter}
                   </div>
                   <div className="p-3">
-                    {currentUser ? `${currentUser.first_name} ${currentUser.last_name}` : 'N/A'}
+                    {entry.instructor ? `${entry.instructor.first_name} ${entry.instructor.last_name}` : 'N/A'}
                   </div>
                 </div>
                 
