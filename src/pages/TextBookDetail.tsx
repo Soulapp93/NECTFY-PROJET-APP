@@ -10,7 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { DatePicker } from '@/components/ui/date-picker';
 import { TimePicker } from '@/components/ui/time-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Plus, Clock, Calendar, User, BookText, Upload, X, FileText, Edit2, Trash2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Plus, Clock, Calendar, User, BookText, Upload, X, FileText, Edit2, Trash2, AlertCircle, Image, File } from 'lucide-react';
+import FilePreviewList from '@/components/ui/file-preview-list';
 import { RichTextEditor, sanitizeHtml } from '@/components/ui/rich-text-editor';
 import ProductionFileViewer from '@/components/ui/viewers/ProductionFileViewer';
 import { textBookService, TextBook, TextBookEntry } from '@/services/textBookService';
@@ -697,29 +698,10 @@ const TextBookDetail: React.FC = () => {
                     </Button>
                   </div>
                 </div>
-                {uploadedFiles.length > 0 && (
-                  <div className="mt-4">
-                    <h4 className="text-sm font-medium mb-2">Fichiers sélectionnés :</h4>
-                    <div className="space-y-1">
-                      {uploadedFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between text-sm p-2 bg-muted rounded">
-                          <span className="flex items-center">
-                            <FileText className="h-4 w-4 mr-2" />
-                            {file.name}
-                          </span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setUploadedFiles(files => files.filter((_, i) => i !== index))}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <FilePreviewList
+                  files={uploadedFiles}
+                  onRemove={(index) => setUploadedFiles(files => files.filter((_, i) => i !== index))}
+                />
               </div>
             </div>
 
@@ -874,29 +856,10 @@ const TextBookDetail: React.FC = () => {
                     </Button>
                   </div>
                 </div>
-                {editUploadedFiles.length > 0 && (
-                  <div className="mt-4">
-                    <h4 className="text-sm font-medium mb-2">Nouveaux fichiers :</h4>
-                    <div className="space-y-1">
-                      {editUploadedFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between text-sm p-2 bg-green-50 rounded">
-                          <span className="flex items-center truncate">
-                            <FileText className="h-4 w-4 mr-2 flex-shrink-0" />
-                            <span className="truncate">{file.name}</span>
-                          </span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditUploadedFiles(files => files.filter((_, i) => i !== index))}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <FilePreviewList
+                  files={editUploadedFiles}
+                  onRemove={(index) => setEditUploadedFiles(files => files.filter((_, i) => i !== index))}
+                />
               </div>
             </div>
 
