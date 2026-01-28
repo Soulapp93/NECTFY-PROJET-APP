@@ -64,6 +64,20 @@ const Sidebar = () => {
     window.location.href = '/auth';
   };
 
+  // Résoudre l'URL de la photo de profil depuis le bucket avatars
+  const getResolvedPhotoUrl = (profilePhotoUrl: string | null | undefined): string | null => {
+    if (!profilePhotoUrl) return null;
+    
+    // Si c'est déjà une URL complète, la retourner directement
+    if (profilePhotoUrl.startsWith('http://') || profilePhotoUrl.startsWith('https://')) {
+      return profilePhotoUrl;
+    }
+    
+    // Sinon, construire l'URL publique Supabase
+    const { data } = supabase.storage.from('avatars').getPublicUrl(profilePhotoUrl);
+    return data?.publicUrl || null;
+  };
+
   // Obtenir les informations utilisateur pour l'affichage
   const getUserDisplayInfo = () => {
     if (myUser) {
@@ -71,7 +85,7 @@ const Sidebar = () => {
         name: `${myUser.first_name} ${myUser.last_name}`,
         role: contextRole || userRole || 'Utilisateur',
         initials: `${myUser.first_name?.[0] || ''}${myUser.last_name?.[0] || ''}`.toUpperCase() || 'U',
-        profilePhotoUrl: myUser.profile_photo_url || null,
+        profilePhotoUrl: getResolvedPhotoUrl(myUser.profile_photo_url),
         relationInfo: myRelation
       };
     }
