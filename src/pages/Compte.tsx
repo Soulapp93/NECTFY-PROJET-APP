@@ -35,6 +35,7 @@ const Compte = () => {
 
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isDeletingPhoto, setIsDeletingPhoto] = useState(false);
 
   // Charger les données utilisateur via la fonction RPC sécurisée
   useEffect(() => {
@@ -141,6 +142,41 @@ const Compte = () => {
     }
   };
 
+  const handleProfilePhotoDelete = async () => {
+    if (!userId) return;
+    
+    setIsDeletingPhoto(true);
+    
+    try {
+      // Supprimer l'URL de la photo dans la base de données
+      if (userRole === 'Tuteur') {
+        const { error } = await supabase
+          .from('tutors')
+          .update({ profile_photo_url: null })
+          .eq('id', userId);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('users')
+          .update({ profile_photo_url: null })
+          .eq('id', userId);
+
+        if (error) throw error;
+      }
+      
+      // Mettre à jour l'état local
+      setProfileData(prev => ({ ...prev, profilePhotoUrl: undefined }));
+      
+      toast.success('Photo de profil supprimée');
+    } catch (error) {
+      console.error('Erreur lors de la suppression de la photo:', error);
+      toast.error('Erreur lors de la suppression de la photo');
+    } finally {
+      setIsDeletingPhoto(false);
+    }
+  };
+
   const handleProfileDataChange = (data: { firstName: string; lastName: string; email: string; phone: string; profilePhotoUrl?: string }) => {
     setProfileData({
       ...data,
@@ -205,8 +241,10 @@ const Compte = () => {
           profileData={profileData}
           onProfileDataChange={handleProfileDataChange}
           onPhotoUpload={handleProfilePhotoUpload}
+          onPhotoDelete={handleProfilePhotoDelete}
           onSave={handleSaveProfile}
           isUploadingPhoto={isUploadingPhoto}
+          isDeletingPhoto={isDeletingPhoto}
         />
       </div>
     </div>

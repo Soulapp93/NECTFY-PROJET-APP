@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import FileUpload from '@/components/ui/file-upload';
 import SignatureManagementModal from '@/components/ui/signature-management-modal';
 import QRAttendanceScannerModal from './QRAttendanceScannerModal';
-import { User, Lock, Camera, PenTool, QrCode, ScanLine } from 'lucide-react';
+import { User, Lock, Camera, PenTool, QrCode, ScanLine, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -23,16 +23,20 @@ interface ProfileSettingsProps {
   profileData: ProfileData;
   onProfileDataChange: (data: ProfileData) => void;
   onPhotoUpload: (files: File[]) => void;
+  onPhotoDelete?: () => void;
   onSave: () => void;
   isUploadingPhoto?: boolean;
+  isDeletingPhoto?: boolean;
 }
 
 const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   profileData,
   onProfileDataChange,
   onPhotoUpload,
+  onPhotoDelete,
   onSave,
-  isUploadingPhoto = false
+  isUploadingPhoto = false,
+  isDeletingPhoto = false
 }) => {
   const { userRole, userId } = useCurrentUser();
   const [isEditing, setIsEditing] = useState(false);
@@ -171,21 +175,35 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col sm:flex-row items-center gap-4">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0 relative">
-              {isUploadingPhoto ? (
-                <div className="absolute inset-0 flex items-center justify-center bg-muted/80">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                </div>
-              ) : null}
-              {profileData.profilePhotoUrl ? (
-                <img 
-                  src={profileData.profilePhotoUrl} 
-                  alt="Photo de profil" 
-                  className="w-full h-full object-cover"
-                  key={profileData.profilePhotoUrl} // Force re-render on URL change
-                />
-              ) : (
-                <User className="h-8 w-8 sm:h-10 sm:w-10 text-muted-foreground" />
+            <div className="relative">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0 relative">
+                {(isUploadingPhoto || isDeletingPhoto) ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-muted/80">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                  </div>
+                ) : null}
+                {profileData.profilePhotoUrl ? (
+                  <img 
+                    src={profileData.profilePhotoUrl} 
+                    alt="Photo de profil" 
+                    className="w-full h-full object-cover"
+                    key={profileData.profilePhotoUrl}
+                  />
+                ) : (
+                  <User className="h-8 w-8 sm:h-10 sm:w-10 text-muted-foreground" />
+                )}
+              </div>
+              {profileData.profilePhotoUrl && onPhotoDelete && (
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full"
+                  onClick={onPhotoDelete}
+                  disabled={isDeletingPhoto || isUploadingPhoto}
+                  title="Supprimer la photo"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
               )}
             </div>
             <div className="w-full sm:flex-1">
@@ -194,7 +212,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 accept="image/*"
                 multiple={false}
                 className="w-full"
-                disabled={isUploadingPhoto}
+                disabled={isUploadingPhoto || isDeletingPhoto}
               />
               <p className="text-xs sm:text-sm text-muted-foreground mt-1 text-center sm:text-left">
                 JPG, PNG (max 5MB)
