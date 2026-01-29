@@ -44,6 +44,7 @@ const DailyVideoRoom: React.FC<DailyVideoRoomProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const callRef = useRef<DailyCall | null>(null);
+  const hasInitialized = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [participantCount, setParticipantCount] = useState(0);
@@ -52,8 +53,23 @@ const DailyVideoRoom: React.FC<DailyVideoRoomProps> = ({
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  
+  // Store onLeave in a ref to avoid dependency issues
+  const onLeaveRef = useRef(onLeave);
+  onLeaveRef.current = onLeave;
+
+  const updateParticipantCount = useCallback((callFrame: DailyCall) => {
+    const participants = callFrame.participants();
+    setParticipantCount(Object.keys(participants).length);
+  }, []);
 
   const initializeCall = useCallback(async () => {
+    // Prevent double initialization
+    if (hasInitialized.current || !containerRef.current) {
+      return;
+    }
+    hasInitialized.current = true;
+    
     try {
       setIsLoading(true);
       setError(null);
@@ -123,7 +139,7 @@ const DailyVideoRoom: React.FC<DailyVideoRoomProps> = ({
 
       callFrame.on('left-meeting', () => {
         console.log('Left meeting');
-        onLeave();
+        onLeaveRef.current();
       });
 
       callFrame.on('participant-joined', (event) => {
@@ -145,6 +161,7 @@ const DailyVideoRoom: React.FC<DailyVideoRoomProps> = ({
       callFrame.on('error', (event) => {
         console.error('Daily.co error:', event);
         setError(event?.error?.message || 'Une erreur est survenue');
+        setIsLoading(false);
         toast.error('Erreur de connexion');
       });
 
@@ -162,24 +179,37 @@ const DailyVideoRoom: React.FC<DailyVideoRoomProps> = ({
         setIsScreenSharing(false);
       });
 
-      // Join the meeting
-      await callFrame.join({
+      // Join the meeting with timeout
+      console.log('Joining meeting with URL:', url);
+      const joinPromise = callFrame.join({
         url,
         token,
         userName,
       });
 
+      // Add timeout for join operation
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout: La connexion prend trop de temps')), 30000)
+      );
+
+      await Promise.race([joinPromise, timeoutPromise]);
+      
+      // If join succeeded but event didn't fire, force loading to false
+      setTimeout(() => {
+        if (isLoading) {
+          console.log('Forcing loading state to false after successful join');
+          setIsLoading(false);
+        }
+      }, 5000);
+
     } catch (err) {
       console.error('Error initializing call:', err);
       setError(err instanceof Error ? err.message : 'Erreur de connexion');
       setIsLoading(false);
+      hasInitialized.current = false; // Allow retry
     }
-  }, [virtualClassId, userId, userName, isInstructor, chatEnabled, screenShareEnabled, recordingEnabled, onLeave]);
+  }, [virtualClassId, userId, userName, isInstructor, chatEnabled, screenShareEnabled, recordingEnabled, updateParticipantCount]);
 
-  const updateParticipantCount = (callFrame: DailyCall) => {
-    const participants = callFrame.participants();
-    setParticipantCount(Object.keys(participants).length);
-  };
 
   useEffect(() => {
     initializeCall();
