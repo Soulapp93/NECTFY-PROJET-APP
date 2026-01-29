@@ -139,6 +139,7 @@ const ScalableVideoRoom: React.FC<ScalableVideoRoomProps> = ({
           chatEnabled={true}
           screenShareEnabled={true}
           recordingEnabled={virtualClass.recording_enabled ?? false}
+          virtualClass={virtualClass}
         />
       </div>
     );

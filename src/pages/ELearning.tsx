@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Video, Plus, Calendar, Clock, Play, Users, Sparkles, GraduationCap } from 'lucide-react';
+import { Video, Plus, Calendar, Clock, Play, Users, Sparkles, GraduationCap, UsersRound } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,10 +7,13 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useVirtualClasses } from '@/hooks/useVirtualClasses';
 import VirtualClasses from '@/components/elearning/VirtualClasses';
 import ClassHistory from '@/components/elearning/ClassHistory';
+import MeetingsList from '@/components/elearning/MeetingsList';
 import CreateClassModal from '@/components/elearning/modals/CreateClassModal';
+import CreateMeetingModal from '@/components/elearning/modals/CreateMeetingModal';
 import ScalableVideoRoom from '@/components/elearning/ScalableVideoRoom';
 import MediaPermissionDialog from '@/components/elearning/MediaPermissionDialog';
 import { VirtualClass } from '@/services/virtualClassService';
+import { Meeting } from '@/services/meetingService';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -18,7 +21,9 @@ const ELearning = () => {
   const { userRole, userId } = useCurrentUser();
   const { data: virtualClasses = [], isLoading } = useVirtualClasses();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreateMeetingModalOpen, setIsCreateMeetingModalOpen] = useState(false);
   const [activeClass, setActiveClass] = useState<VirtualClass | null>(null);
+  const [activeMeeting, setActiveMeeting] = useState<Meeting | null>(null);
   const [pendingClass, setPendingClass] = useState<VirtualClass | null>(null);
   const [isPermissionDialogOpen, setIsPermissionDialogOpen] = useState(false);
   const [isRequestingPermission, setIsRequestingPermission] = useState(false);
@@ -114,14 +119,25 @@ const ELearning = () => {
             </div>
             
             {isAdmin && (
-              <Button 
-                onClick={() => setIsCreateModalOpen(true)}
-                size="lg"
-                className="bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all duration-300"
-              >
-                <Plus className="h-5 w-5 mr-2" />
-                Créer une session
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => setIsCreateMeetingModalOpen(true)}
+                  size="lg"
+                  variant="outline"
+                  className="border-violet-500/30 text-violet-600 hover:bg-violet-500/10"
+                >
+                  <UsersRound className="h-5 w-5 mr-2" />
+                  Nouvelle réunion
+                </Button>
+                <Button 
+                  onClick={() => setIsCreateModalOpen(true)}
+                  size="lg"
+                  className="bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all duration-300"
+                >
+                  <Plus className="h-5 w-5 mr-2" />
+                  Créer une session
+                </Button>
+              </div>
             )}
           </div>
         </div>
@@ -190,6 +206,13 @@ const ELearning = () => {
                 Classes virtuelles
               </TabsTrigger>
               <TabsTrigger 
+                value="meetings" 
+                className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg px-4 py-2.5 transition-all"
+              >
+                <UsersRound className="h-4 w-4 mr-2" />
+                Réunions
+              </TabsTrigger>
+              <TabsTrigger 
                 value="history" 
                 className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg px-4 py-2.5 transition-all"
               >
@@ -210,6 +233,10 @@ const ELearning = () => {
             <VirtualClasses onJoinClass={handleJoinClass} />
           </TabsContent>
 
+          <TabsContent value="meetings" className="mt-0">
+            <MeetingsList onJoinMeeting={(meeting) => console.log('Join meeting:', meeting)} />
+          </TabsContent>
+
           <TabsContent value="history" className="mt-0">
             <ClassHistory />
           </TabsContent>
@@ -220,6 +247,12 @@ const ELearning = () => {
       <CreateClassModal 
         isOpen={isCreateModalOpen} 
         onClose={() => setIsCreateModalOpen(false)}
+      />
+
+      {/* Create Meeting Modal */}
+      <CreateMeetingModal 
+        isOpen={isCreateMeetingModalOpen} 
+        onClose={() => setIsCreateMeetingModalOpen(false)}
       />
 
       {/* Media Permission Dialog */}

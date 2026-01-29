@@ -15,9 +15,12 @@ import {
   MicOff,
   MonitorUp,
   Maximize,
-  Minimize
+  Minimize,
+  ClipboardList
 } from 'lucide-react';
 import { createDailyRoom, createDailyToken, generateRoomName } from '@/services/dailyService';
+import LiveAttendanceMenu from './LiveAttendanceMenu';
+import { VirtualClass } from '@/services/virtualClassService';
 
 interface DailyVideoRoomProps {
   virtualClassId: string;
@@ -29,6 +32,7 @@ interface DailyVideoRoomProps {
   chatEnabled?: boolean;
   screenShareEnabled?: boolean;
   recordingEnabled?: boolean;
+  virtualClass?: VirtualClass; // Full virtual class object for attendance
 }
 
 const DailyVideoRoom: React.FC<DailyVideoRoomProps> = ({
@@ -41,6 +45,7 @@ const DailyVideoRoom: React.FC<DailyVideoRoomProps> = ({
   chatEnabled = true,
   screenShareEnabled = true,
   recordingEnabled = false,
+  virtualClass,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const callRef = useRef<DailyCall | null>(null);
@@ -53,6 +58,7 @@ const DailyVideoRoom: React.FC<DailyVideoRoomProps> = ({
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isAttendanceMenuOpen, setIsAttendanceMenuOpen] = useState(false);
   
   // Store onLeave in a ref to avoid dependency issues
   const onLeaveRef = useRef(onLeave);
@@ -307,6 +313,17 @@ const DailyVideoRoom: React.FC<DailyVideoRoomProps> = ({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {isInstructor && virtualClass && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsAttendanceMenuOpen(!isAttendanceMenuOpen)}
+              className="bg-violet-500/10 border-violet-500/30 text-violet-300 hover:bg-violet-500/20"
+            >
+              <ClipboardList className="w-4 h-4 mr-1.5" />
+              Émargement
+            </Button>
+          )}
           {isInstructor && (
             <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
               Formateur
@@ -326,6 +343,16 @@ const DailyVideoRoom: React.FC<DailyVideoRoomProps> = ({
             </div>
           </div>
         )}
+        
+        {/* Attendance Menu */}
+        {isAttendanceMenuOpen && virtualClass && (
+          <LiveAttendanceMenu
+            virtualClass={virtualClass}
+            isInstructor={isInstructor}
+            onClose={() => setIsAttendanceMenuOpen(false)}
+          />
+        )}
+        
         <div 
           ref={containerRef} 
           className="w-full h-full min-h-[500px]"

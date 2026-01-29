@@ -690,6 +690,127 @@ export type Database = {
           },
         ]
       }
+      meeting_participants: {
+        Row: {
+          created_at: string
+          formation_id: string | null
+          id: string
+          invitation_type: string
+          joined_at: string | null
+          left_at: string | null
+          meeting_id: string
+          participant_role: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          formation_id?: string | null
+          id?: string
+          invitation_type: string
+          joined_at?: string | null
+          left_at?: string | null
+          meeting_id: string
+          participant_role?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          formation_id?: string | null
+          id?: string
+          invitation_type?: string
+          joined_at?: string | null
+          left_at?: string | null
+          meeting_id?: string
+          participant_role?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_participants_formation_id_fkey"
+            columns: ["formation_id"]
+            isOneToOne: false
+            referencedRelation: "formations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_participants_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meetings: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          duration_minutes: number
+          establishment_id: string
+          id: string
+          max_participants: number | null
+          room_name: string | null
+          room_url: string | null
+          scheduled_at: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          duration_minutes?: number
+          establishment_id: string
+          id?: string
+          max_participants?: number | null
+          room_name?: string | null
+          room_url?: string | null
+          scheduled_at: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          duration_minutes?: number
+          establishment_id?: string
+          id?: string
+          max_participants?: number | null
+          room_name?: string | null
+          room_url?: string | null
+          scheduled_at?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meetings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meetings_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_attachments: {
         Row: {
           content_type: string | null
