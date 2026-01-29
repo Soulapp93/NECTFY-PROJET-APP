@@ -8,7 +8,7 @@ import { useVirtualClasses } from '@/hooks/useVirtualClasses';
 import VirtualClasses from '@/components/elearning/VirtualClasses';
 import ClassHistory from '@/components/elearning/ClassHistory';
 import CreateClassModal from '@/components/elearning/modals/CreateClassModal';
-import VideoRoom from '@/components/elearning/videoRoom/VideoRoom';
+import ScalableVideoRoom from '@/components/elearning/ScalableVideoRoom';
 import MediaPermissionDialog from '@/components/elearning/MediaPermissionDialog';
 import { VirtualClass } from '@/services/virtualClassService';
 import { format } from 'date-fns';
@@ -70,7 +70,7 @@ const ELearning = () => {
   // If user is in a video room, show only the video room
   if (activeClass) {
     return (
-      <VideoRoom
+      <ScalableVideoRoom
         virtualClass={activeClass}
         onLeave={handleLeaveClass}
       />

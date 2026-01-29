@@ -12,6 +12,9 @@ verify_jwt = false
 [functions.create-establishment]
 verify_jwt = false
 
+[functions.daily-room]
+verify_jwt = false
+
 [functions.generate-attendance-sheets]
 verify_jwt = false
 
