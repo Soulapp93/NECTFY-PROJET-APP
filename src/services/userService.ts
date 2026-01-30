@@ -442,7 +442,7 @@ export const userService = {
     if (error) throw error;
   },
 
-  async bulkCreateUsers(usersData: CreateUserData[]): Promise<User[]> {
+  async bulkCreateUsers(usersData: (CreateUserData & { _formationNames?: string[] })[]): Promise<User[]> {
     const establishmentId = await getCurrentUserEstablishmentId();
     const emails = usersData.map((u) => u.email.trim().toLowerCase());
 
@@ -458,12 +458,50 @@ export const userService = {
       throw new Error("Aucun utilisateur importé : tous les emails existent déjà.");
     }
 
+    // Charger toutes les formations de l'établissement pour la résolution des noms
+    const { data: allFormations } = await supabase
+      .from('formations')
+      .select('id, title')
+      .eq('establishment_id', establishmentId);
+
+    const formationMap = new Map<string, string>();
+    (allFormations || []).forEach((f) => {
+      formationMap.set(f.title.toLowerCase().trim(), f.id);
+    });
+
     const createdUsers: User[] = [];
 
     // Create users one by one using native invitation
     for (const userData of usersToCreate) {
       try {
-        const user = await this.createUser(userData, []);
+        // Résoudre les noms de formations en IDs
+        const formationNames = userData._formationNames || [];
+        const formationIds: string[] = [];
+        
+        for (const name of formationNames) {
+          const normalizedName = name.toLowerCase().trim();
+          // Recherche exacte puis partielle
+          let formationId = formationMap.get(normalizedName);
+          if (!formationId) {
+            // Recherche partielle
+            for (const [key, id] of formationMap.entries()) {
+              if (key.includes(normalizedName) || normalizedName.includes(key)) {
+                formationId = id;
+                break;
+              }
+            }
+          }
+          if (formationId) {
+            formationIds.push(formationId);
+          } else {
+            console.warn(`Formation non trouvée: "${name}"`);
+          }
+        }
+
+        // Supprimer le champ interne avant création
+        const { _formationNames, ...cleanUserData } = userData;
+        
+        const user = await this.createUser(cleanUserData, formationIds);
         createdUsers.push(user);
       } catch (error) {
         console.error(`Erreur création utilisateur ${userData.email}:`, error);
