@@ -37,25 +37,11 @@ serve(async (req) => {
     console.log("[validate-activation-token] 🔎 Validating token:", token.substring(0, 8) + "...");
 
     const nowIso = new Date().toISOString();
+    
+    // Step 1: Get the token data
     const { data: tokenData, error: tokenError } = await supabaseAdmin
       .from("user_activation_tokens")
-      .select(
-        `
-        user_id,
-        token,
-        expires_at,
-        used_at,
-        users!inner(
-          id,
-          email,
-          first_name,
-          last_name,
-          role,
-          establishment_id,
-          establishments!inner(name)
-        )
-      `,
-      )
+      .select("user_id, token, expires_at, used_at")
       .eq("token", token)
       .is("used_at", null)
       .gt("expires_at", nowIso)
@@ -69,19 +55,49 @@ serve(async (req) => {
       );
     }
 
-    const user = tokenData.users as any;
+    console.log("[validate-activation-token] ✅ Token valid, fetching user:", tokenData.user_id);
+
+    // Step 2: Get the user data separately
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from("users")
+      .select("id, email, first_name, last_name, role, establishment_id")
+      .eq("id", tokenData.user_id)
+      .single();
+
+    if (userError || !userData) {
+      console.warn("[validate-activation-token] ❌ User not found", { userError: userError?.message });
+      return new Response(
+        JSON.stringify({ error: "Utilisateur introuvable" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Step 3: Get establishment name
+    let establishmentName = "NECTFORMA";
+    if (userData.establishment_id) {
+      const { data: estData } = await supabaseAdmin
+        .from("establishments")
+        .select("name")
+        .eq("id", userData.establishment_id)
+        .single();
+      if (estData?.name) {
+        establishmentName = estData.name;
+      }
+    }
+
+    console.log("[validate-activation-token] ✅ User found:", userData.email);
 
     return new Response(
       JSON.stringify({
         success: true,
         user: {
-          id: user.id,
-          email: user.email,
-          first_name: user.first_name,
-          last_name: user.last_name,
-          role: user.role,
-          establishment_id: user.establishment_id,
-          establishment_name: user.establishments?.name || "NECTFORMA",
+          id: userData.id,
+          email: userData.email,
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+          role: userData.role,
+          establishment_id: userData.establishment_id,
+          establishment_name: establishmentName,
         },
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
