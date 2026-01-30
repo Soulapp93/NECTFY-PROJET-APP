@@ -11,6 +11,7 @@ import MeetingsList from '@/components/elearning/MeetingsList';
 import CreateClassModal from '@/components/elearning/modals/CreateClassModal';
 import CreateMeetingModal from '@/components/elearning/modals/CreateMeetingModal';
 import ScalableVideoRoom from '@/components/elearning/ScalableVideoRoom';
+import DailyVideoRoom from '@/components/elearning/DailyVideoRoom';
 import MediaPermissionDialog from '@/components/elearning/MediaPermissionDialog';
 import { VirtualClass } from '@/services/virtualClassService';
 import { Meeting } from '@/services/meetingService';
@@ -25,6 +26,7 @@ const ELearning = () => {
   const [activeClass, setActiveClass] = useState<VirtualClass | null>(null);
   const [activeMeeting, setActiveMeeting] = useState<Meeting | null>(null);
   const [pendingClass, setPendingClass] = useState<VirtualClass | null>(null);
+  const [pendingMeeting, setPendingMeeting] = useState<Meeting | null>(null);
   const [isPermissionDialogOpen, setIsPermissionDialogOpen] = useState(false);
   const [isRequestingPermission, setIsRequestingPermission] = useState(false);
   const isAdmin = userRole === 'Admin' || userRole === 'AdminPrincipal';
@@ -32,13 +34,19 @@ const ELearning = () => {
   // Handle joining a class - show permission dialog first
   const handleJoinClass = (classItem: VirtualClass) => {
     setPendingClass(classItem);
+    setPendingMeeting(null);
     setIsPermissionDialogOpen(true);
   };
 
-  // Handle permission granted - join the class
+  // Handle joining a meeting - show permission dialog first
+  const handleJoinMeeting = (meeting: Meeting) => {
+    setPendingMeeting(meeting);
+    setPendingClass(null);
+    setIsPermissionDialogOpen(true);
+  };
+
+  // Handle permission granted - join the class or meeting
   const handlePermissionGranted = async () => {
-    if (!pendingClass) return;
-    
     setIsRequestingPermission(true);
     try {
       // Request media permissions
@@ -46,15 +54,25 @@ const ELearning = () => {
       // Stop the test stream
       stream.getTracks().forEach(track => track.stop());
       
-      // Permission granted, join the class
-      setActiveClass(pendingClass);
-      setPendingClass(null);
+      // Permission granted, join the class or meeting
+      if (pendingClass) {
+        setActiveClass(pendingClass);
+        setPendingClass(null);
+      } else if (pendingMeeting) {
+        setActiveMeeting(pendingMeeting);
+        setPendingMeeting(null);
+      }
       setIsPermissionDialogOpen(false);
     } catch (error) {
       console.error('Permission denied:', error);
       // Still allow joining even if permission denied (will show error in VideoRoom)
-      setActiveClass(pendingClass);
-      setPendingClass(null);
+      if (pendingClass) {
+        setActiveClass(pendingClass);
+        setPendingClass(null);
+      } else if (pendingMeeting) {
+        setActiveMeeting(pendingMeeting);
+        setPendingMeeting(null);
+      }
       setIsPermissionDialogOpen(false);
     } finally {
       setIsRequestingPermission(false);
@@ -64,6 +82,7 @@ const ELearning = () => {
   // Handle permission dialog cancel
   const handlePermissionCancel = () => {
     setPendingClass(null);
+    setPendingMeeting(null);
     setIsPermissionDialogOpen(false);
   };
 
@@ -72,7 +91,29 @@ const ELearning = () => {
     setActiveClass(null);
   };
 
-  // If user is in a video room, show only the video room
+  // Handle leaving a meeting
+  const handleLeaveMeeting = () => {
+    setActiveMeeting(null);
+  };
+
+  // If user is in a meeting video room, show the meeting video room
+  if (activeMeeting) {
+    return (
+      <DailyVideoRoom
+        virtualClassId={activeMeeting.id}
+        virtualClassTitle={activeMeeting.title}
+        userId={userId || ''}
+        userName="Participant"
+        isInstructor={isAdmin}
+        onLeave={handleLeaveMeeting}
+        chatEnabled={true}
+        screenShareEnabled={true}
+        recordingEnabled={false}
+      />
+    );
+  }
+
+  // If user is in a class video room, show only the video room
   if (activeClass) {
     return (
       <ScalableVideoRoom
@@ -234,7 +275,7 @@ const ELearning = () => {
           </TabsContent>
 
           <TabsContent value="meetings" className="mt-0">
-            <MeetingsList onJoinMeeting={(meeting) => console.log('Join meeting:', meeting)} />
+            <MeetingsList onJoinMeeting={handleJoinMeeting} />
           </TabsContent>
 
           <TabsContent value="history" className="mt-0">
