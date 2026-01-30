@@ -231,9 +231,9 @@ const DailyVideoRoom: React.FC<DailyVideoRoomProps> = ({
         userName,
       });
 
-      // Add timeout for join operation
+      // Add shorter timeout for join operation (15s) to enable faster fallback
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout: La connexion prend trop de temps')), 30000)
+        setTimeout(() => reject(new Error('Timeout: La connexion prend trop de temps')), 15000)
       );
 
       await Promise.race([joinPromise, timeoutPromise]);

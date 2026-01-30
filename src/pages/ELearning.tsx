@@ -11,7 +11,7 @@ import MeetingsList from '@/components/elearning/MeetingsList';
 import CreateClassModal from '@/components/elearning/modals/CreateClassModal';
 import CreateMeetingModal from '@/components/elearning/modals/CreateMeetingModal';
 import ScalableVideoRoom from '@/components/elearning/ScalableVideoRoom';
-import DailyVideoRoom from '@/components/elearning/DailyVideoRoom';
+import HybridMeetingRoom from '@/components/elearning/HybridMeetingRoom';
 import MediaPermissionDialog from '@/components/elearning/MediaPermissionDialog';
 import { VirtualClass } from '@/services/virtualClassService';
 import { Meeting } from '@/services/meetingService';
@@ -96,19 +96,15 @@ const ELearning = () => {
     setActiveMeeting(null);
   };
 
-  // If user is in a meeting video room, show the meeting video room
+  // If user is in a meeting video room, show the hybrid meeting room (with auto-fallback)
   if (activeMeeting) {
     return (
-      <DailyVideoRoom
-        virtualClassId={activeMeeting.id}
-        virtualClassTitle={activeMeeting.title}
+      <HybridMeetingRoom
+        meeting={activeMeeting}
         userId={userId || ''}
         userName="Participant"
-        isInstructor={isAdmin}
+        isAdmin={isAdmin}
         onLeave={handleLeaveMeeting}
-        chatEnabled={true}
-        screenShareEnabled={true}
-        recordingEnabled={false}
       />
     );
   }

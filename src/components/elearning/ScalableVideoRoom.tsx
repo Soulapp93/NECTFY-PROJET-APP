@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,7 +7,7 @@ import { VirtualClass } from '@/services/virtualClassService';
 import DailyVideoRoom from './DailyVideoRoom';
 import VideoRoom from './videoRoom/VideoRoom';
 import MediaPermissionDialog from './MediaPermissionDialog';
-import { getDailyRoomInfo, generateRoomName } from '@/services/dailyService';
+import { toast } from 'sonner';
 
 interface ScalableVideoRoomProps {
   virtualClass: VirtualClass;
@@ -39,26 +39,19 @@ const ScalableVideoRoom: React.FC<ScalableVideoRoomProps> = ({
 
   const userName = userInfo ? `${userInfo.first_name || ''} ${userInfo.last_name || ''}`.trim() : 'Participant';
 
-  // Check Daily.co availability on mount
-  useEffect(() => {
-    const checkDaily = async () => {
-      try {
-        const roomName = generateRoomName(virtualClass.id);
-        // Try to get room info - if it fails, Daily.co might not be configured
-        await getDailyRoomInfo(roomName).catch(() => {
-          // Room doesn't exist yet - that's fine, we'll create it
-          console.log('Room does not exist yet, will be created on join');
-        });
-        setDailyAvailable(true);
-      } catch (error) {
-        console.warn('Daily.co not available, falling back to P2P:', error);
-        setDailyAvailable(false);
-        setUseDaily(false);
-      }
-    };
+  // Automatic fallback handler when Daily fails
+  const handleDailyFallback = useCallback(() => {
+    console.warn('Daily.co connection failed, switching to P2P mode');
+    toast.info('Basculement vers le mode P2P pour une meilleure connectivité');
+    setUseDaily(false);
+    setDailyAvailable(false);
+  }, []);
 
-    checkDaily();
-  }, [virtualClass.id]);
+  // Skip availability check - we'll try Daily first and fallback on error
+  useEffect(() => {
+    // Default to Daily available
+    setDailyAvailable(true);
+  }, []);
 
   // Request media permissions
   const handleRequestPermission = async () => {
@@ -125,7 +118,7 @@ const ScalableVideoRoom: React.FC<ScalableVideoRoomProps> = ({
     );
   }
 
-  // Use Daily.co for scalable video
+  // Use Daily.co for scalable video with automatic fallback
   if (useDaily && dailyAvailable) {
     return (
       <div className="fixed inset-0 bg-background z-50 flex flex-col">
@@ -136,7 +129,7 @@ const ScalableVideoRoom: React.FC<ScalableVideoRoomProps> = ({
           userName={userName}
           isInstructor={isInstructor}
           onLeave={onLeave}
-          onFallbackToP2P={() => setUseDaily(false)}
+          onFallbackToP2P={handleDailyFallback}
           chatEnabled={true}
           screenShareEnabled={true}
           recordingEnabled={virtualClass.recording_enabled ?? false}
