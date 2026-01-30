@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCurrentUser, useUserWithRelations } from '@/hooks/useCurrentUser';
 import { VirtualClass } from '@/services/virtualClassService';
-import DailyVideoRoom from './DailyVideoRoom';
+import ExternalDailyRoom from './ExternalDailyRoom';
 import VideoRoom from './videoRoom/VideoRoom';
 import MediaPermissionDialog from './MediaPermissionDialog';
 import { toast } from 'sonner';
@@ -118,11 +118,11 @@ const ScalableVideoRoom: React.FC<ScalableVideoRoomProps> = ({
     );
   }
 
-  // Use Daily.co for scalable video with automatic fallback
+  // Use Daily.co in external tab mode for better network compatibility
   if (useDaily && dailyAvailable) {
     return (
       <div className="fixed inset-0 bg-background z-50 flex flex-col">
-        <DailyVideoRoom
+        <ExternalDailyRoom
           virtualClassId={virtualClass.id}
           virtualClassTitle={virtualClass.title}
           userId={userId}
@@ -133,7 +133,6 @@ const ScalableVideoRoom: React.FC<ScalableVideoRoomProps> = ({
           chatEnabled={true}
           screenShareEnabled={true}
           recordingEnabled={virtualClass.recording_enabled ?? false}
-          virtualClass={virtualClass}
         />
       </div>
     );

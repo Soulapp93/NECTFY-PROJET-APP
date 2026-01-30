@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
-import DailyVideoRoom from './DailyVideoRoom';
+import ExternalDailyRoom from './ExternalDailyRoom';
 import VideoRoom from './videoRoom/VideoRoom';
 import { Meeting } from '@/services/meetingService';
 import { toast } from 'sonner';
@@ -14,7 +14,7 @@ interface HybridMeetingRoomProps {
 }
 
 /**
- * HybridMeetingRoom - Wrapper for meetings with automatic Daily→P2P fallback
+ * HybridMeetingRoom - Wrapper for meetings with Daily in external tab + P2P fallback
  */
 const HybridMeetingRoom: React.FC<HybridMeetingRoomProps> = ({
   meeting,
@@ -46,11 +46,11 @@ const HybridMeetingRoom: React.FC<HybridMeetingRoomProps> = ({
     );
   }
 
-  // Use Daily.co with automatic fallback
+  // Use Daily.co in external tab mode
   if (useDaily) {
     return (
       <div className="fixed inset-0 bg-background z-50 flex flex-col">
-        <DailyVideoRoom
+        <ExternalDailyRoom
           virtualClassId={meeting.id}
           virtualClassTitle={meeting.title}
           userId={userId}
