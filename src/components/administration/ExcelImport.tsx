@@ -62,13 +62,17 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onClose, preselecte
     try {
       setImporting(true);
       
-      // Préparer les données utilisateurs (on ignore la colonne Formation(s) pour l'instant)
-      const usersWithFormations = previewData.map((user: any) => {
+      // Préparer les données utilisateurs AVEC les formations
+      const usersData = previewData.map((user: any) => {
         const { formationIds, ...userData } = user;
-        return userData;
+        return {
+          ...userData,
+          // Garder les noms de formations pour résolution dans le service
+          _formationNames: formationIds ? String(formationIds).split(',').map((f: string) => f.trim()).filter(Boolean) : []
+        };
       });
       
-      await onImport(usersWithFormations as Omit<User, 'id' | 'created_at' | 'updated_at'>[]);
+      await onImport(usersData as Omit<User, 'id' | 'created_at' | 'updated_at'>[]);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de l\'import');
