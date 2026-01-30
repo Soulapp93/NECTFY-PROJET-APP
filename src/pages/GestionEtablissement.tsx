@@ -4,6 +4,7 @@ import EstablishmentSettings from '../components/compte/EstablishmentSettings';
 import { toast } from 'sonner';
 import { establishmentService, Establishment } from '@/services/establishmentService';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useEstablishment } from '@/hooks/useEstablishment';
 import { supabase } from '@/integrations/supabase/client';
 
 type EstablishmentDataState = {
@@ -20,6 +21,7 @@ type EstablishmentDataState = {
 
 const GestionEtablissement = () => {
   const { userId, userRole } = useCurrentUser();
+  const { refetch: refetchEstablishment } = useEstablishment();
   const [loading, setLoading] = useState(true);
   const [establishmentId, setEstablishmentId] = useState<string | null>(null);
   
@@ -133,7 +135,11 @@ const GestionEtablissement = () => {
         });
 
         setEstablishmentData(prev => ({ ...prev, logoUrl: publicUrl }));
-        toast.success('Logo mis à jour avec succès - Rechargez la page pour voir le logo dans la sidebar');
+        
+        // Refresh the establishment data in sidebar
+        refetchEstablishment();
+        
+        toast.success('Logo mis à jour avec succès');
       } catch (error) {
         console.error('Erreur upload logo:', error);
         toast.error('Erreur lors de l\'upload du logo');
