@@ -136,6 +136,7 @@ const ScalableVideoRoom: React.FC<ScalableVideoRoomProps> = ({
           userName={userName}
           isInstructor={isInstructor}
           onLeave={onLeave}
+          onFallbackToP2P={() => setUseDaily(false)}
           chatEnabled={true}
           screenShareEnabled={true}
           recordingEnabled={virtualClass.recording_enabled ?? false}

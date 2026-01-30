@@ -29,6 +29,7 @@ interface DailyVideoRoomProps {
   userName: string;
   isInstructor: boolean;
   onLeave: () => void;
+  onFallbackToP2P?: () => void;
   chatEnabled?: boolean;
   screenShareEnabled?: boolean;
   recordingEnabled?: boolean;
@@ -42,6 +43,7 @@ const DailyVideoRoom: React.FC<DailyVideoRoomProps> = ({
   userName,
   isInstructor,
   onLeave,
+  onFallbackToP2P,
   chatEnabled = true,
   screenShareEnabled = true,
   recordingEnabled = false,
@@ -50,6 +52,7 @@ const DailyVideoRoom: React.FC<DailyVideoRoomProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const callRef = useRef<DailyCall | null>(null);
   const hasInitialized = useRef(false);
+  const initSeqRef = useRef(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [participantCount, setParticipantCount] = useState(0);
@@ -64,6 +67,25 @@ const DailyVideoRoom: React.FC<DailyVideoRoomProps> = ({
   const onLeaveRef = useRef(onLeave);
   onLeaveRef.current = onLeave;
 
+  const onFallbackRef = useRef(onFallbackToP2P);
+  onFallbackRef.current = onFallbackToP2P;
+
+  const cleanupCallFrame = useCallback(async () => {
+    const frame = callRef.current;
+    if (!frame) return;
+    try {
+      await frame.leave();
+    } catch {
+      // ignore
+    }
+    try {
+      frame.destroy();
+    } catch {
+      // ignore
+    }
+    callRef.current = null;
+  }, []);
+
   const updateParticipantCount = useCallback((callFrame: DailyCall) => {
     const participants = callFrame.participants();
     setParticipantCount(Object.keys(participants).length);
@@ -75,10 +97,14 @@ const DailyVideoRoom: React.FC<DailyVideoRoomProps> = ({
       return;
     }
     hasInitialized.current = true;
+    const initSeq = ++initSeqRef.current;
     
     try {
       setIsLoading(true);
       setError(null);
+
+      // If a previous frame exists (retry path), destroy it first
+      await cleanupCallFrame();
 
       const roomName = generateRoomName(virtualClassId);
       console.log('Initializing Daily.co room:', roomName);
@@ -202,7 +228,8 @@ const DailyVideoRoom: React.FC<DailyVideoRoomProps> = ({
       
       // If join succeeded but event didn't fire, force loading to false
       setTimeout(() => {
-        if (isLoading) {
+        // Only if this init sequence is still the latest
+        if (initSeqRef.current === initSeq) {
           console.log('Forcing loading state to false after successful join');
           setIsLoading(false);
         }
@@ -210,29 +237,25 @@ const DailyVideoRoom: React.FC<DailyVideoRoomProps> = ({
 
     } catch (err) {
       console.error('Error initializing call:', err);
+      // Ensure we don't leave a half-initialized callFrame around
+      await cleanupCallFrame();
       setError(err instanceof Error ? err.message : 'Erreur de connexion');
       setIsLoading(false);
       hasInitialized.current = false; // Allow retry
     }
-  }, [virtualClassId, userId, userName, isInstructor, chatEnabled, screenShareEnabled, recordingEnabled, updateParticipantCount]);
+  }, [virtualClassId, userId, userName, isInstructor, chatEnabled, screenShareEnabled, recordingEnabled, updateParticipantCount, cleanupCallFrame]);
 
 
   useEffect(() => {
     initializeCall();
 
     return () => {
-      if (callRef.current) {
-        callRef.current.leave();
-        callRef.current.destroy();
-        callRef.current = null;
-      }
+      void cleanupCallFrame();
     };
-  }, [initializeCall]);
+  }, [initializeCall, cleanupCallFrame]);
 
   const handleLeave = async () => {
-    if (callRef.current) {
-      await callRef.current.leave();
-    }
+    await cleanupCallFrame();
     onLeave();
   };
 
@@ -271,6 +294,7 @@ const DailyVideoRoom: React.FC<DailyVideoRoomProps> = ({
   };
 
   if (error) {
+    const canFallback = typeof onFallbackRef.current === 'function';
     return (
       <div className="flex items-center justify-center min-h-[600px] bg-background">
         <Card className="max-w-md">
@@ -282,6 +306,16 @@ const DailyVideoRoom: React.FC<DailyVideoRoomProps> = ({
               <Button onClick={initializeCall}>
                 Réessayer
               </Button>
+              {canFallback && (
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    onFallbackRef.current?.();
+                  }}
+                >
+                  Basculer en mode P2P
+                </Button>
+              )}
               <Button variant="outline" onClick={onLeave}>
                 Retour
               </Button>
