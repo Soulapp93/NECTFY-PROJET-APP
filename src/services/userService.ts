@@ -97,6 +97,63 @@ async function sendNativeInvitation(
   }
 }
 
+// NEW: Native Supabase invitation for tutors via invite-tutor-native edge function
+async function inviteTutorNative(
+  email: string,
+  firstName: string,
+  lastName: string,
+  phone: string | undefined,
+  companyName: string,
+  companyAddress: string | undefined,
+  position: string | undefined,
+  establishmentId: string,
+  studentId?: string
+): Promise<{ success: boolean; tutor_id?: string; error?: string }> {
+  try {
+    console.log(`Envoi invitation tuteur native à ${email}...`);
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.access_token) {
+      throw new Error('Session non trouvée');
+    }
+    
+    const { data, error } = await supabase.functions.invoke('invite-tutor-native', {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: {
+        email,
+        first_name: firstName,
+        last_name: lastName,
+        phone,
+        company_name: companyName,
+        company_address: companyAddress,
+        position,
+        establishment_id: establishmentId,
+        student_id: studentId,
+        redirect_url: getAppBaseUrl(),
+      }
+    });
+
+    if (error) {
+      console.error('Erreur invitation tuteur native:', error);
+      return { success: false, error: error.message };
+    }
+    
+    if (data?.error) {
+      console.error('Erreur API invitation tuteur:', data.error);
+      return { success: false, error: data.error };
+    }
+
+    console.log('✅ Invitation tuteur native envoyée:', data);
+    return { success: true, tutor_id: data.tutor_id };
+  } catch (error: any) {
+    console.error('Erreur lors de l\'invitation tuteur native:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 // Legacy: send activation email (fallback for existing users)
 async function sendLegacyActivationEmail(user: User, establishmentId: string): Promise<void> {
   try {
@@ -246,41 +303,23 @@ export const userService = {
       if (assignmentError) throw assignmentError;
     }
 
-    // Handle tutor data for students
+    // Handle tutor data for students - Use invite-tutor-native Edge Function
     if (tutorData && userData.role === 'Étudiant') {
       try {
-        const tutorCreateData = {
-          first_name: tutorData.first_name,
-          last_name: tutorData.last_name,
-          email: tutorData.email,
-          phone: tutorData.phone,
-          company_name: tutorData.company_name,
-          company_address: tutorData.company_address,
-          position: tutorData.position,
-          establishment_id: establishmentId
-        };
-
-        const { data: tutor, error: tutorError } = await supabase
-          .from('tutors')
-          .insert([tutorCreateData])
-          .select()
-          .single();
-
-        if (tutorError) throw tutorError;
-
-        const assignmentData = {
-          tutor_id: tutor.id,
-          student_id: newUser.id,
-          contract_type: tutorData.contract_type,
-          contract_start_date: tutorData.contract_start_date,
-          contract_end_date: tutorData.contract_end_date
-        };
-
-        await supabase
-          .from('tutor_student_assignments')
-          .insert([assignmentData]);
+        await inviteTutorNative(
+          tutorData.email,
+          tutorData.first_name,
+          tutorData.last_name,
+          tutorData.phone,
+          tutorData.company_name,
+          tutorData.company_address,
+          tutorData.position,
+          establishmentId,
+          newUser.id // student_id pour l'assignation automatique
+        );
+        console.log('✅ Tuteur invité et assigné à l\'étudiant');
       } catch (tutorError) {
-        console.error('Erreur lors de la création du tuteur:', tutorError);
+        console.error('Erreur lors de l\'invitation du tuteur:', tutorError);
       }
     }
 
@@ -320,104 +359,25 @@ export const userService = {
       }
     }
 
-    // Handle tutor data for students
+    // Handle tutor data for students - Use invite-tutor-native Edge Function
     if (tutorData && data.role === 'Étudiant') {
       try {
         const establishmentId = await getCurrentUserEstablishmentId();
         
-        // Check if tutor with this email already exists
-        const { data: existingTutor } = await supabase
-          .from('tutors')
-          .select('id')
-          .eq('email', tutorData.email.toLowerCase())
-          .eq('establishment_id', establishmentId)
-          .maybeSingle();
-
-        let tutorId: string;
-
-        if (existingTutor) {
-          // Update existing tutor
-          const { data: updatedTutor, error: tutorUpdateError } = await supabase
-            .from('tutors')
-            .update({
-              first_name: tutorData.first_name,
-              last_name: tutorData.last_name,
-              phone: tutorData.phone,
-              company_name: tutorData.company_name,
-              company_address: tutorData.company_address,
-              position: tutorData.position,
-            })
-            .eq('id', existingTutor.id)
-            .select()
-            .single();
-
-          if (tutorUpdateError) throw tutorUpdateError;
-          tutorId = existingTutor.id;
-        } else {
-          // Create new tutor
-          const tutorCreateData = {
-            first_name: tutorData.first_name,
-            last_name: tutorData.last_name,
-            email: tutorData.email.toLowerCase(),
-            phone: tutorData.phone,
-            company_name: tutorData.company_name,
-            company_address: tutorData.company_address,
-            position: tutorData.position,
-            establishment_id: establishmentId
-          };
-
-          const { data: newTutor, error: tutorError } = await supabase
-            .from('tutors')
-            .insert([tutorCreateData])
-            .select()
-            .single();
-
-          if (tutorError) throw tutorError;
-          tutorId = newTutor.id;
-        }
-
-        // Check if assignment already exists
-        const { data: existingAssignment } = await supabase
-          .from('tutor_student_assignments')
-          .select('id')
-          .eq('student_id', id)
-          .eq('tutor_id', tutorId)
-          .maybeSingle();
-
-        if (existingAssignment) {
-          // Update existing assignment
-          await supabase
-            .from('tutor_student_assignments')
-            .update({
-              contract_type: tutorData.contract_type,
-              contract_start_date: tutorData.contract_start_date,
-              contract_end_date: tutorData.contract_end_date,
-              is_active: true
-            })
-            .eq('id', existingAssignment.id);
-        } else {
-          // Deactivate any existing assignments for this student
-          await supabase
-            .from('tutor_student_assignments')
-            .update({ is_active: false })
-            .eq('student_id', id);
-
-          // Create new assignment
-          const assignmentData = {
-            tutor_id: tutorId,
-            student_id: id,
-            contract_type: tutorData.contract_type,
-            contract_start_date: tutorData.contract_start_date,
-            contract_end_date: tutorData.contract_end_date,
-            is_active: true
-          };
-
-          await supabase
-            .from('tutor_student_assignments')
-            .insert([assignmentData]);
-        }
+        await inviteTutorNative(
+          tutorData.email,
+          tutorData.first_name,
+          tutorData.last_name,
+          tutorData.phone,
+          tutorData.company_name,
+          tutorData.company_address,
+          tutorData.position,
+          establishmentId,
+          id // student_id pour l'assignation automatique
+        );
+        console.log('✅ Tuteur invité/mis à jour et assigné à l\'étudiant');
       } catch (tutorError) {
-        console.error('Erreur lors de la gestion du tuteur:', tutorError);
+        console.error('Erreur lors de l\'invitation du tuteur:', tutorError);
       }
     }
 

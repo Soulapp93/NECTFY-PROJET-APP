@@ -15,6 +15,9 @@ verify_jwt = false
 [functions.generate-attendance-sheets]
 verify_jwt = false
 
+[functions.invite-tutor-native]
+verify_jwt = false
+
 [functions.invite-user-native]
 verify_jwt = false
 
