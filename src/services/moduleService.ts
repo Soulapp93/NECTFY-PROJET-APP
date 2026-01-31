@@ -38,28 +38,33 @@ export const moduleService = {
     
     if (modulesError) throw modulesError;
     
-    // Try to fetch instructors for each module
+    // Fetch instructors for each module
     const modulesWithInstructors = await Promise.all(
       (modules || []).map(async (mod) => {
-        try {
-          const { data: instructorAssignments } = await db
-            .from('module_instructors')
-            .select('instructor_id')
-            .eq('module_id', mod.id);
-          
-          if (instructorAssignments && instructorAssignments.length > 0) {
-            const instructorIds = instructorAssignments.map((a: any) => a.instructor_id);
-            const { data: instructors } = await supabase
-              .from('users')
-              .select('id, first_name, last_name, email')
-              .in('id', instructorIds);
-            
-            return { ...mod, instructors: instructors || [] };
-          }
-        } catch {
-          // If module_instructors table doesn't exist, just return module without instructors
+        const { data: instructorAssignments, error: assignError } = await db
+          .from('module_instructors')
+          .select('instructor_id')
+          .eq('module_id', mod.id);
+        
+        if (assignError) {
+          console.warn('Erreur récupération formateurs module:', assignError);
+          return { ...mod, instructors: [], module_instructors: [] };
         }
-        return { ...mod, instructors: [] };
+        
+        if (instructorAssignments && instructorAssignments.length > 0) {
+          const instructorIds = instructorAssignments.map((a: any) => a.instructor_id);
+          const { data: instructors } = await supabase
+            .from('users')
+            .select('id, first_name, last_name, email')
+            .in('id', instructorIds);
+          
+          return { 
+            ...mod, 
+            instructors: instructors || [],
+            module_instructors: instructorAssignments.map((a: any) => ({ instructor_id: a.instructor_id }))
+          };
+        }
+        return { ...mod, instructors: [], module_instructors: [] };
       })
     );
     
@@ -88,14 +93,13 @@ export const moduleService = {
         instructor_id: instructorId
       }));
 
-      try {
-        const { error: assignmentError } = await db
-          .from('module_instructors')
-          .insert(assignments);
+      const { error: assignmentError } = await db
+        .from('module_instructors')
+        .insert(assignments);
 
-        if (assignmentError) console.warn('Could not assign instructors:', assignmentError);
-      } catch {
-        console.warn('module_instructors table may not exist');
+      if (assignmentError) {
+        console.error('Erreur assignation formateurs:', assignmentError);
+        throw assignmentError;
       }
     }
 
@@ -116,39 +120,44 @@ export const moduleService = {
 
     if (moduleError) throw moduleError;
 
-    // Try to update instructor assignments
-    try {
-      // Supprimer les anciennes assignations de formateurs
-      await db
+    // Supprimer les anciennes assignations de formateurs
+    const { error: deleteError } = await db
+      .from('module_instructors')
+      .delete()
+      .eq('module_id', moduleId);
+
+    if (deleteError) {
+      console.error('Erreur suppression anciennes assignations:', deleteError);
+      throw deleteError;
+    }
+
+    // Ajouter les nouvelles assignations de formateurs
+    if (instructorIds.length > 0) {
+      const assignments = instructorIds.map(instructorId => ({
+        module_id: moduleId,
+        instructor_id: instructorId
+      }));
+
+      const { error: insertError } = await db
         .from('module_instructors')
-        .delete()
-        .eq('module_id', moduleId);
+        .insert(assignments);
 
-      // Ajouter les nouvelles assignations de formateurs
-      if (instructorIds.length > 0) {
-        const assignments = instructorIds.map(instructorId => ({
-          module_id: moduleId,
-          instructor_id: instructorId
-        }));
-
-        await db
-          .from('module_instructors')
-          .insert(assignments);
+      if (insertError) {
+        console.error('Erreur insertion nouvelles assignations:', insertError);
+        throw insertError;
       }
-    } catch {
-      console.warn('module_instructors table may not exist');
     }
   },
 
   async deleteModule(moduleId: string) {
-    // Supprimer d'abord les assignations de formateurs (if table exists)
-    try {
-      await db
-        .from('module_instructors')
-        .delete()
-        .eq('module_id', moduleId);
-    } catch {
-      console.warn('module_instructors table may not exist');
+    // Supprimer d'abord les assignations de formateurs
+    const { error: deleteAssignError } = await db
+      .from('module_instructors')
+      .delete()
+      .eq('module_id', moduleId);
+
+    if (deleteAssignError) {
+      console.warn('Erreur suppression assignations:', deleteAssignError);
     }
 
     // Supprimer le module

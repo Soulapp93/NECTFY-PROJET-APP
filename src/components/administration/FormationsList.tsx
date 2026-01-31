@@ -74,8 +74,9 @@ const FormationsList: React.FC = () => {
   };
 
   const handleSuccess = () => {
+    // Refetch formations immédiatement pour synchroniser l'UI
     fetchFormations();
-    toast.success('Formation mise à jour avec succès');
+    // Note: le toast est déjà affiché par EditFormationModal
   };
 
   const handleCreateSuccess = () => {
