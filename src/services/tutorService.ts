@@ -8,7 +8,6 @@ export interface Tutor {
   email: string;
   phone?: string;
   company_name: string;
-  company_address?: string;
   position?: string;
   is_activated: boolean;
   profile_photo_url?: string;
@@ -33,7 +32,6 @@ export interface CreateTutorData {
   email: string;
   phone?: string;
   company_name: string;
-  company_address?: string;
   position?: string;
   establishment_id: string;
 }

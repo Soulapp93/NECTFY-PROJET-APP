@@ -30,7 +30,6 @@ export const TutorModal: React.FC<TutorModalProps> = ({
     email: '',
     phone: '',
     company_name: '',
-    company_address: '',
     position: '',
     establishment_id: establishmentId
   });
@@ -47,7 +46,6 @@ export const TutorModal: React.FC<TutorModalProps> = ({
           email: tutor.email,
           phone: tutor.phone || '',
           company_name: tutor.company_name,
-          company_address: tutor.company_address || '',
           position: tutor.position || '',
           establishment_id: tutor.establishment_id
         });
@@ -58,7 +56,6 @@ export const TutorModal: React.FC<TutorModalProps> = ({
           email: '',
           phone: '',
           company_name: '',
-          company_address: '',
           position: '',
           establishment_id: establishmentId
         });
@@ -204,16 +201,6 @@ export const TutorModal: React.FC<TutorModalProps> = ({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="company_address">Adresse de l'entreprise</Label>
-            <Textarea
-              id="company_address"
-              value={formData.company_address}
-              onChange={(e) => handleChange('company_address', e.target.value)}
-              placeholder="Adresse complète de l'entreprise"
-              rows={3}
-            />
-          </div>
 
           <div className="flex justify-end space-x-3 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>

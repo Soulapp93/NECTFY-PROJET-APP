@@ -107,15 +107,19 @@ async function inviteTutorNative(
   position: string | undefined,
   establishmentId: string,
   studentId?: string
-): Promise<{ success: boolean; tutor_id?: string; error?: string }> {
+): Promise<{ success: boolean; tutor_id?: string; error?: string; warning?: string }> {
   try {
-    console.log(`Envoi invitation tuteur native à ${email}...`);
+    console.log(`[inviteTutorNative] 📧 Début invitation tuteur: ${email} pour étudiant: ${studentId || 'non spécifié'}`);
+    console.log(`[inviteTutorNative] Données: ${JSON.stringify({ email, firstName, lastName, companyName, position, establishmentId })}`);
     
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session?.access_token) {
-      throw new Error('Session non trouvée');
+      console.error('[inviteTutorNative] ❌ Pas de session active');
+      return { success: false, error: 'Session non trouvée - veuillez vous reconnecter' };
     }
+    
+    console.log('[inviteTutorNative] ✅ Session trouvée, appel Edge Function...');
     
     const { data, error } = await supabase.functions.invoke('invite-tutor-native', {
       headers: {
@@ -134,20 +138,28 @@ async function inviteTutorNative(
       }
     });
 
+    console.log('[inviteTutorNative] Réponse Edge Function:', JSON.stringify(data), 'Erreur:', error);
+
     if (error) {
-      console.error('Erreur invitation tuteur native:', error);
+      console.error('[inviteTutorNative] ❌ Erreur invocation:', error);
       return { success: false, error: error.message };
     }
     
     if (data?.error) {
-      console.error('Erreur API invitation tuteur:', data.error);
+      console.error('[inviteTutorNative] ❌ Erreur API:', data.error);
       return { success: false, error: data.error };
     }
 
-    console.log('✅ Invitation tuteur native envoyée:', data);
+    // Vérifier si il y a un warning (email envoyé mais avec problème potentiel)
+    if (data?.warning) {
+      console.warn('[inviteTutorNative] ⚠️ Warning:', data.warning);
+      return { success: true, tutor_id: data.tutor_id, warning: data.warning };
+    }
+
+    console.log('[inviteTutorNative] ✅ Succès! Tuteur ID:', data.tutor_id, 'Email ID:', data.email_id);
     return { success: true, tutor_id: data.tutor_id };
   } catch (error: any) {
-    console.error('Erreur lors de l\'invitation tuteur native:', error);
+    console.error('[inviteTutorNative] ❌ Exception:', error);
     return { success: false, error: error.message };
   }
 }
@@ -303,6 +315,9 @@ export const userService = {
 
     // Handle tutor data for students - Use invite-tutor-native Edge Function
     if (tutorData && userData.role === 'Étudiant') {
+      console.log('[createUser] 👤 Données tuteur détectées, lancement invitation...');
+      console.log('[createUser] tutorData:', JSON.stringify(tutorData));
+      
       const tutorResult = await inviteTutorNative(
         tutorData.email,
         tutorData.first_name,
@@ -315,11 +330,18 @@ export const userService = {
       );
       
       if (!tutorResult.success) {
-        console.error('Erreur lors de l\'invitation du tuteur:', tutorResult.error);
-        // On ne bloque pas la création de l'étudiant, mais on logue l'erreur
+        console.error('[createUser] ❌ Échec invitation tuteur:', tutorResult.error);
+        // On ne bloque pas la création de l'étudiant, mais on stocke l'erreur pour l'afficher
+        (newUser as any)._tutorInviteError = tutorResult.error;
       } else {
-        console.log('✅ Tuteur invité et assigné à l\'étudiant:', tutorResult.tutor_id);
+        console.log('[createUser] ✅ Tuteur invité et assigné:', tutorResult.tutor_id);
+        if (tutorResult.warning) {
+          console.warn('[createUser] ⚠️ Warning tuteur:', tutorResult.warning);
+          (newUser as any)._tutorInviteWarning = tutorResult.warning;
+        }
       }
+    } else {
+      console.log('[createUser] Pas de tutorData ou rôle non étudiant, skip invitation tuteur');
     }
 
     return newUser as User;
@@ -360,6 +382,9 @@ export const userService = {
 
     // Handle tutor data for students - Use invite-tutor-native Edge Function
     if (tutorData && data.role === 'Étudiant') {
+      console.log('[updateUser] 👤 Données tuteur détectées, lancement invitation...');
+      console.log('[updateUser] tutorData:', JSON.stringify(tutorData));
+      
       const establishmentId = await getCurrentUserEstablishmentId();
       
       const tutorResult = await inviteTutorNative(
@@ -374,10 +399,16 @@ export const userService = {
       );
       
       if (!tutorResult.success) {
-        console.error('Erreur lors de l\'invitation du tuteur:', tutorResult.error);
+        console.error('[updateUser] ❌ Échec invitation tuteur:', tutorResult.error);
+        (data as any)._tutorInviteError = tutorResult.error;
       } else {
-        console.log('✅ Tuteur invité/mis à jour et assigné à l\'étudiant:', tutorResult.tutor_id);
+        console.log('[updateUser] ✅ Tuteur invité/mis à jour:', tutorResult.tutor_id);
+        if (tutorResult.warning) {
+          (data as any)._tutorInviteWarning = tutorResult.warning;
+        }
       }
+    } else {
+      console.log('[updateUser] Pas de tutorData ou rôle non étudiant, skip invitation tuteur');
     }
 
     return data as User;

@@ -21,7 +21,6 @@ interface TutorInfo {
   email: string;
   phone?: string;
   company_name: string;
-  company_address?: string;
   position?: string;
   is_activated: boolean;
   profile_photo_url?: string;
@@ -398,12 +397,6 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({ isOpen, onClose, user
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Briefcase className="h-4 w-4" />
                         <span>{tutorInfo.position}</span>
-                      </div>
-                    )}
-                    {tutorInfo.company_address && (
-                      <div className="flex items-center gap-2 text-muted-foreground md:col-span-2">
-                        <MapPin className="h-4 w-4" />
-                        <span>{tutorInfo.company_address}</span>
                       </div>
                     )}
                     {tutorInfo.phone && (

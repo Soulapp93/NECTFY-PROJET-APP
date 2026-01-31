@@ -50,7 +50,6 @@ const SimplifiedUserModal: React.FC<SimplifiedUserModalProps> = ({
     email: '',
     phone: '',
     company_name: '',
-    company_address: '',
     position: '',
     contract_type: '',
     contract_start_date: '',
@@ -118,7 +117,6 @@ const SimplifiedUserModal: React.FC<SimplifiedUserModalProps> = ({
                     email: tutorDetails.email || '',
                     phone: tutorDetails.phone || '',
                     company_name: tutorDetails.company_name || '',
-                    company_address: '',
                     position: tutorDetails.position || '',
                     contract_type: '',
                     contract_start_date: '',
@@ -161,7 +159,6 @@ const SimplifiedUserModal: React.FC<SimplifiedUserModalProps> = ({
         email: '',
         phone: '',
         company_name: '',
-        company_address: '',
         position: '',
         contract_type: '',
         contract_start_date: '',
@@ -237,7 +234,6 @@ const SimplifiedUserModal: React.FC<SimplifiedUserModalProps> = ({
         email: tutorData.email,
         phone: tutorData.phone,
         company_name: tutorData.company_name,
-        company_address: tutorData.company_address,
         position: tutorData.position,
         establishment_id: '', // Sera défini dans le service
         contract_type: tutorData.contract_type,
@@ -246,6 +242,7 @@ const SimplifiedUserModal: React.FC<SimplifiedUserModalProps> = ({
       } : undefined;
 
       // Créer / mettre à jour l'utilisateur
+      console.log('[SimplifiedUserModal] Appel onSave avec tutorInfo:', tutorInfo ? 'OUI' : 'NON');
       const newUser = await onSave({
         first_name: formData.first_name,
         last_name: formData.last_name,
@@ -254,10 +251,22 @@ const SimplifiedUserModal: React.FC<SimplifiedUserModalProps> = ({
         status: formData.status,
       }, selectedFormations, tutorInfo);
 
-      // L'invitation est maintenant envoyée automatiquement par userService.createUser
-      // via la fonction native Supabase Auth - pas besoin d'appel supplémentaire
+      // Vérifier si l'invitation tuteur a échoué (info stockée dans l'utilisateur retourné)
+      const tutorError = (newUser as any)?._tutorInviteError;
+      const tutorWarning = (newUser as any)?._tutorInviteWarning;
 
-      toast.success(mode === 'create' ? 'Utilisateur créé et invitation envoyée' : 'Utilisateur mis à jour');
+      if (tutorError) {
+        toast.warning(`Utilisateur ${mode === 'create' ? 'créé' : 'mis à jour'}, mais l'invitation tuteur a échoué: ${tutorError}`);
+      } else if (tutorWarning) {
+        toast.warning(`Utilisateur ${mode === 'create' ? 'créé' : 'mis à jour'}. Tuteur créé mais: ${tutorWarning}`);
+      } else if (tutorInfo) {
+        toast.success(mode === 'create' 
+          ? 'Étudiant créé et invitation tuteur envoyée avec succès!' 
+          : 'Étudiant mis à jour et tuteur notifié');
+      } else {
+        toast.success(mode === 'create' ? 'Utilisateur créé et invitation envoyée' : 'Utilisateur mis à jour');
+      }
+      
       onClose();
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
@@ -550,19 +559,6 @@ const SimplifiedUserModal: React.FC<SimplifiedUserModalProps> = ({
                       </div>
                     </div>
 
-                    <div>
-                      <Label htmlFor="tutor_company_address">Adresse de l'entreprise</Label>
-                      <div className="relative">
-                        <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <Input
-                          id="tutor_company_address"
-                          value={tutorData.company_address}
-                          onChange={(e) => handleTutorChange('company_address', e.target.value)}
-                          className="pl-10"
-                          placeholder="123 Rue de l'Entreprise, Paris"
-                        />
-                      </div>
-                    </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
