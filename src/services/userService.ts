@@ -104,7 +104,6 @@ async function inviteTutorNative(
   lastName: string,
   phone: string | undefined,
   companyName: string,
-  companyAddress: string | undefined,
   position: string | undefined,
   establishmentId: string,
   studentId?: string
@@ -128,7 +127,6 @@ async function inviteTutorNative(
         last_name: lastName,
         phone,
         company_name: companyName,
-        company_address: companyAddress,
         position,
         establishment_id: establishmentId,
         student_id: studentId,
@@ -305,21 +303,22 @@ export const userService = {
 
     // Handle tutor data for students - Use invite-tutor-native Edge Function
     if (tutorData && userData.role === 'Étudiant') {
-      try {
-        await inviteTutorNative(
-          tutorData.email,
-          tutorData.first_name,
-          tutorData.last_name,
-          tutorData.phone,
-          tutorData.company_name,
-          tutorData.company_address,
-          tutorData.position,
-          establishmentId,
-          newUser.id // student_id pour l'assignation automatique
-        );
-        console.log('✅ Tuteur invité et assigné à l\'étudiant');
-      } catch (tutorError) {
-        console.error('Erreur lors de l\'invitation du tuteur:', tutorError);
+      const tutorResult = await inviteTutorNative(
+        tutorData.email,
+        tutorData.first_name,
+        tutorData.last_name,
+        tutorData.phone,
+        tutorData.company_name,
+        tutorData.position,
+        establishmentId,
+        newUser.id // student_id pour l'assignation automatique
+      );
+      
+      if (!tutorResult.success) {
+        console.error('Erreur lors de l\'invitation du tuteur:', tutorResult.error);
+        // On ne bloque pas la création de l'étudiant, mais on logue l'erreur
+      } else {
+        console.log('✅ Tuteur invité et assigné à l\'étudiant:', tutorResult.tutor_id);
       }
     }
 
@@ -361,23 +360,23 @@ export const userService = {
 
     // Handle tutor data for students - Use invite-tutor-native Edge Function
     if (tutorData && data.role === 'Étudiant') {
-      try {
-        const establishmentId = await getCurrentUserEstablishmentId();
-        
-        await inviteTutorNative(
-          tutorData.email,
-          tutorData.first_name,
-          tutorData.last_name,
-          tutorData.phone,
-          tutorData.company_name,
-          tutorData.company_address,
-          tutorData.position,
-          establishmentId,
-          id // student_id pour l'assignation automatique
-        );
-        console.log('✅ Tuteur invité/mis à jour et assigné à l\'étudiant');
-      } catch (tutorError) {
-        console.error('Erreur lors de l\'invitation du tuteur:', tutorError);
+      const establishmentId = await getCurrentUserEstablishmentId();
+      
+      const tutorResult = await inviteTutorNative(
+        tutorData.email,
+        tutorData.first_name,
+        tutorData.last_name,
+        tutorData.phone,
+        tutorData.company_name,
+        tutorData.position,
+        establishmentId,
+        id // student_id pour l'assignation automatique
+      );
+      
+      if (!tutorResult.success) {
+        console.error('Erreur lors de l\'invitation du tuteur:', tutorResult.error);
+      } else {
+        console.log('✅ Tuteur invité/mis à jour et assigné à l\'étudiant:', tutorResult.tutor_id);
       }
     }
 
