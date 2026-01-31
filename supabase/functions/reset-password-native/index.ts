@@ -219,8 +219,8 @@ serve(async (req) => {
               </p>
               <p style="color: #6b7280; font-size: 13px; line-height: 1.6; margin: 0;">
                 En activant votre compte, vous acceptez nos :<br>
-                📄 <a href="https://nectforma.com/cgu" style="color: #8B5CF6; text-decoration: none;">Conditions Générales d'Utilisation</a><br>
-                🔐 <a href="https://nectforma.com/politique-confidentialite" style="color: #8B5CF6; text-decoration: none;">Politique de Confidentialité</a>
+                📄 <a href="https://nectforma.com/cgu" target="_blank" style="color: #8B5CF6; text-decoration: none;">Conditions Générales d'Utilisation</a><br>
+                🔐 <a href="https://nectforma.com/politique-confidentialite" target="_blank" style="color: #8B5CF6; text-decoration: none;">Politique de Confidentialité</a>
               </p>
             </div>
             
@@ -380,8 +380,8 @@ serve(async (req) => {
               🔒 Sécurité & confidentialité
             </p>
             <p style="color: #6b7280; font-size: 13px; line-height: 1.6; margin: 0;">
-              📄 <a href="https://nectforma.com/cgu" style="color: #8B5CF6; text-decoration: none;">Conditions Générales d'Utilisation</a><br>
-              🔐 <a href="https://nectforma.com/politique-confidentialite" style="color: #8B5CF6; text-decoration: none;">Politique de Confidentialité</a>
+              📄 <a href="https://nectforma.com/cgu" target="_blank" style="color: #8B5CF6; text-decoration: none;">Conditions Générales d'Utilisation</a><br>
+              🔐 <a href="https://nectforma.com/politique-confidentialite" target="_blank" style="color: #8B5CF6; text-decoration: none;">Politique de Confidentialité</a>
             </p>
           </div>
           
