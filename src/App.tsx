@@ -130,11 +130,15 @@ const AppContent = () => {
 
   // Pages publiques (sans authentification)
   const publicPages = ['/', '/solutions', '/fonctionnalites', '/pourquoi-nous', '/cgu', '/politique-confidentialite'];
+  // Pages légales accessibles même connecté (CGU, Politique de Confidentialité)
+  const legalPages = ['/cgu', '/politique-confidentialite'];
   const isPublicPage = publicPages.includes(location.pathname);
+  const isLegalPage = legalPages.includes(location.pathname);
   
   if (isPublicPage) {
     // IMPORTANT: si l'utilisateur est connecté et arrive sur une page publique,
     // on le redirige vers l'application (sinon il reste "bloqué" sur la landing).
+    // EXCEPTION: les pages légales (CGU, Politique) restent accessibles même connecté.
     if (authLoading) {
       return (
         <div className="flex items-center justify-center min-h-screen">
@@ -143,7 +147,8 @@ const AppContent = () => {
       );
     }
 
-    if (userId) {
+    // Ne pas rediriger si c'est une page légale
+    if (userId && !isLegalPage) {
       const home = userRole === 'Admin' || userRole === 'AdminPrincipal' ? '/dashboard' : '/formations';
       return <Navigate to={home} replace />;
     }
