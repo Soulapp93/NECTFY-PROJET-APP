@@ -152,16 +152,51 @@ export const formationService = {
   async getFormationParticipantsCount(formationId: string): Promise<number> {
     console.log('Récupération du nombre de participants pour la formation:', formationId);
     
-    const { count, error } = await supabase
-      .from('user_formation_assignments')
-      .select('*', { count: 'exact', head: true })
-      .eq('formation_id', formationId);
+    // Utiliser la fonction RPC qui filtre uniquement les étudiants
+    const { data, error } = await supabase.rpc('get_formation_students', {
+      formation_id_param: formationId
+    });
 
     if (error) {
       console.error('Erreur lors de la récupération des participants:', error);
       return 0;
     }
 
-    return count || 0;
+    return data?.length || 0;
+  },
+
+  async getFormationInstructors(formationId: string): Promise<{ id: string; first_name: string; last_name: string }[]> {
+    console.log('Récupération des formateurs pour la formation:', formationId);
+    
+    // Récupérer les utilisateurs avec rôle "Formateur" assignés à cette formation
+    const { data, error } = await supabase
+      .from('user_formation_assignments')
+      .select(`
+        user_id,
+        user:users!inner(
+          id,
+          first_name,
+          last_name,
+          role
+        )
+      `)
+      .eq('formation_id', formationId);
+
+    if (error) {
+      console.error('Erreur lors de la récupération des formateurs:', error);
+      return [];
+    }
+
+    // Filtrer pour ne garder que les formateurs
+    const instructors = (data || [])
+      .filter((item: any) => item.user?.role === 'Formateur')
+      .map((item: any) => ({
+        id: item.user.id,
+        first_name: item.user.first_name,
+        last_name: item.user.last_name
+      }));
+
+    console.log('Formateurs récupérés:', instructors);
+    return instructors;
   }
 };

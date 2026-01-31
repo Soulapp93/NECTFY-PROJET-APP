@@ -14,6 +14,12 @@ import CreateAttendanceSessionModal from '@/components/emargement/CreateAttendan
 import FormationParticipantsModal from '@/components/administration/FormationParticipantsModal';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 
+interface FormationInstructor {
+  id: string;
+  first_name: string;
+  last_name: string;
+}
+
 const FormationDetail = () => {
   const { formationId } = useParams<{ formationId: string }>();
   const navigate = useNavigate();
@@ -23,6 +29,7 @@ const FormationDetail = () => {
   const [error, setError] = useState<string | null>(null);
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
+  const [instructors, setInstructors] = useState<FormationInstructor[]>([]);
   const { userRole } = useCurrentUser();
 
   // Get navigation context
@@ -34,8 +41,12 @@ const FormationDetail = () => {
       
       try {
         setLoading(true);
-        const data = await formationService.getFormationById(formationId);
-        setFormation(data);
+        const [formationData, instructorsData] = await Promise.all([
+          formationService.getFormationById(formationId),
+          formationService.getFormationInstructors(formationId)
+        ]);
+        setFormation(formationData);
+        setInstructors(instructorsData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erreur lors du chargement');
       } finally {
@@ -184,13 +195,15 @@ const FormationDetail = () => {
                           <BookOpen className="h-6 w-6 sm:h-7 sm:w-7" />
                         </div>
                         <div className="text-left flex-1 min-w-0">
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-2">
                             <div className="min-w-0">
                               <h3 className="font-bold text-foreground text-sm sm:text-base break-words">{module.title}</h3>
                               <div className="flex flex-wrap items-center text-xs sm:text-sm text-muted-foreground mt-1.5 gap-2 sm:gap-3">
-                                <span className="flex items-center text-primary font-medium">
-                                  Formateur: Marie Dubois
-                                </span>
+                                {instructors.length > 0 && (
+                                  <span className="flex items-center text-primary font-medium">
+                                    Formateur: {instructors.map(i => `${i.first_name} ${i.last_name}`).join(', ')}
+                                  </span>
+                                )}
                                 <span className="flex items-center bg-muted/50 px-2 py-0.5 rounded-full">
                                   <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1 text-primary" />
                                   <span>{module.duration_hours}h</span>
