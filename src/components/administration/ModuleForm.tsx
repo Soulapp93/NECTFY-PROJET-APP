@@ -29,11 +29,16 @@ const ModuleForm: React.FC<ModuleFormProps> = ({ onAdd, onRemove, moduleIndex, i
   );
 
   // Mettre à jour le formData si initialData change (pour l'édition)
+  // Utiliser JSON.stringify pour une comparaison profonde
   React.useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      const currentJson = JSON.stringify(formData);
+      const newJson = JSON.stringify(initialData);
+      if (currentJson !== newJson) {
+        setFormData(initialData);
+      }
     }
-  }, [initialData]);
+  }, [JSON.stringify(initialData)]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;

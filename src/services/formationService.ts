@@ -168,35 +168,54 @@ export const formationService = {
   async getFormationInstructors(formationId: string): Promise<{ id: string; first_name: string; last_name: string }[]> {
     console.log('Récupération des formateurs pour la formation:', formationId);
     
-    // Récupérer les utilisateurs avec rôle "Formateur" assignés à cette formation
-    const { data, error } = await supabase
-      .from('user_formation_assignments')
-      .select(`
-        user_id,
-        user:users!inner(
-          id,
-          first_name,
-          last_name,
-          role
-        )
-      `)
+    // D'abord récupérer tous les modules de cette formation
+    const { data: modules, error: modulesError } = await supabase
+      .from('formation_modules')
+      .select('id')
       .eq('formation_id', formationId);
 
-    if (error) {
-      console.error('Erreur lors de la récupération des formateurs:', error);
+    if (modulesError) {
+      console.error('Erreur lors de la récupération des modules:', modulesError);
       return [];
     }
 
-    // Filtrer pour ne garder que les formateurs
-    const instructors = (data || [])
-      .filter((item: any) => item.user?.role === 'Formateur')
-      .map((item: any) => ({
-        id: item.user.id,
-        first_name: item.user.first_name,
-        last_name: item.user.last_name
-      }));
+    if (!modules || modules.length === 0) {
+      return [];
+    }
 
-    console.log('Formateurs récupérés:', instructors);
-    return instructors;
+    const moduleIds = modules.map(m => m.id);
+    const db = supabase as any;
+
+    // Récupérer tous les formateurs assignés aux modules de cette formation
+    const { data: instructorAssignments, error: assignError } = await db
+      .from('module_instructors')
+      .select('instructor_id')
+      .in('module_id', moduleIds);
+
+    if (assignError) {
+      console.error('Erreur lors de la récupération des assignations:', assignError);
+      return [];
+    }
+
+    if (!instructorAssignments || instructorAssignments.length === 0) {
+      return [];
+    }
+
+    // Obtenir les IDs uniques des formateurs
+    const uniqueInstructorIds = [...new Set(instructorAssignments.map((a: any) => a.instructor_id))] as string[];
+
+    // Récupérer les informations des formateurs
+    const { data: instructors, error: usersError } = await supabase
+      .from('users')
+      .select('id, first_name, last_name')
+      .in('id', uniqueInstructorIds);
+
+    if (usersError) {
+      console.error('Erreur lors de la récupération des utilisateurs:', usersError);
+      return [];
+    }
+
+    console.log('Formateurs récupérés via modules:', instructors);
+    return instructors || [];
   }
 };
