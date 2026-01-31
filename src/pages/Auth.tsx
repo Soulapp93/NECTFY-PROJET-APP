@@ -364,8 +364,27 @@ const Auth = () => {
           </div>
         </div>
 
+        {/* Legal links */}
+        <div className="flex items-center justify-center gap-4 mt-6">
+          <Link 
+            to="/cgu" 
+            className="text-white/70 hover:text-white text-xs transition-colors flex items-center gap-1"
+          >
+            <Shield className="h-3 w-3" />
+            CGU
+          </Link>
+          <span className="text-white/30">•</span>
+          <Link 
+            to="/politique-confidentialite" 
+            className="text-white/70 hover:text-white text-xs transition-colors flex items-center gap-1"
+          >
+            <Lock className="h-3 w-3" />
+            Confidentialité
+          </Link>
+        </div>
+
         {/* Footer */}
-        <div className="text-center mt-6 text-white/50 text-xs">
+        <div className="text-center mt-4 text-white/50 text-xs">
           © {new Date().getFullYear()} NECTFORMA. Tous droits réservés.
         </div>
       </div>
