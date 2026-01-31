@@ -165,54 +165,92 @@ serve(async (req) => {
         </head>
         <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px;">
           <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+            <!-- Header -->
             <div style="background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%); padding: 40px 30px; text-align: center;">
               <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">NECTFORMA</h1>
-              <p style="color: rgba(255,255,255,0.9); margin-top: 8px; font-size: 14px;">Plateforme de gestion de formation</p>
+              <p style="color: rgba(255,255,255,0.9); margin-top: 8px; font-size: 14px;">Plateforme intelligente de gestion de formation</p>
             </div>
             
+            <!-- Main Content -->
             <div style="padding: 40px 30px;">
-              <h2 style="color: #1a1a1a; margin: 0 0 20px; font-size: 24px;">
-                Activation de votre compte 🔐
+              <h2 style="color: #1a1a1a; margin: 0 0 24px; font-size: 24px; font-weight: 600;">
+                Activation de votre compte
               </h2>
               
-              <p style="color: #4a4a4a; line-height: 1.6; font-size: 16px; margin-bottom: 20px;">
-                Bonjour ${userData.first_name} ${userData.last_name},
+              <p style="color: #4a4a4a; line-height: 1.7; font-size: 16px; margin-bottom: 20px;">
+                Bonjour <strong>${userData.first_name} ${userData.last_name}</strong>,
               </p>
               
-              <p style="color: #4a4a4a; line-height: 1.6; font-size: 16px; margin-bottom: 20px;">
-                Votre compte sur <strong style="color: #8B5CF6;">${establishmentName}</strong> 
-                en tant que <strong>${getRoleLabel(userData.role)}</strong> n'est pas encore activé.
+              <p style="color: #4a4a4a; line-height: 1.7; font-size: 16px; margin-bottom: 20px;">
+                Bienvenue sur <strong style="color: #8B5CF6;">${establishmentName}</strong> — Nectforma 🎓
               </p>
               
-              <p style="color: #4a4a4a; line-height: 1.6; font-size: 16px; margin-bottom: 30px;">
-                Pour activer votre compte et définir votre mot de passe, cliquez sur le bouton ci-dessous :
+              <p style="color: #4a4a4a; line-height: 1.7; font-size: 16px; margin-bottom: 20px;">
+                Votre compte <strong>${getRoleLabel(userData.role)}</strong> n'est pas encore activé.<br>
+                Pour accéder à votre espace personnel et commencer à utiliser la plateforme, veuillez activer votre compte en définissant votre mot de passe.
               </p>
               
-              <div style="text-align: center; margin: 30px 0;">
+              <p style="color: #4a4a4a; line-height: 1.7; font-size: 16px; margin-bottom: 8px;">
+                👉 Cliquez sur le bouton ci-dessous pour activer votre compte en toute sécurité :
+              </p>
+              
+              <div style="text-align: center; margin: 32px 0;">
                 <a href="${activationLink}" 
-                   style="display: inline-block; background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);">
-                  Activer mon compte
+                   style="display: inline-block; background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%); color: #ffffff; text-decoration: none; padding: 18px 48px; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);">
+                  🔐 Activer mon compte
                 </a>
               </div>
               
-              <div style="background-color: #f8f7ff; border-radius: 12px; padding: 20px; margin-top: 30px;">
-                <p style="color: #6b7280; font-size: 14px; margin: 0;">
-                  <strong>⏳ Ce lien expire dans 7 jours.</strong><br>
-                  Si vous n'avez pas demandé ce lien, vous pouvez ignorer cet email.
+              <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 16px 20px; margin: 24px 0;">
+                <p style="color: #92400e; font-size: 14px; margin: 0; font-weight: 500;">
+                  ⏳ Ce lien est valide pendant 7 jours.
                 </p>
               </div>
               
-              <p style="color: #9ca3af; font-size: 12px; margin-top: 30px; text-align: center;">
-                Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
-                <a href="${activationLink}" style="color: #8B5CF6; word-break: break-all;">${activationLink}</a>
+              <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin-bottom: 0;">
+                Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email en toute sécurité.
               </p>
             </div>
             
-            <div style="background-color: #f9fafb; padding: 20px 30px; text-align: center; border-top: 1px solid #e5e7eb;">
-              <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+            <!-- Security Section -->
+            <div style="background-color: #f8f7ff; padding: 24px 30px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #4a4a4a; font-size: 14px; margin: 0 0 12px; font-weight: 600;">
+                🔒 Sécurité & confidentialité
+              </p>
+              <p style="color: #6b7280; font-size: 13px; line-height: 1.6; margin: 0;">
+                En activant votre compte, vous acceptez nos :<br>
+                📄 <a href="https://nectforma.com/cgu" style="color: #8B5CF6; text-decoration: none;">Conditions Générales d'Utilisation</a><br>
+                🔐 <a href="https://nectforma.com/politique-confidentialite" style="color: #8B5CF6; text-decoration: none;">Politique de Confidentialité</a>
+              </p>
+            </div>
+            
+            <!-- Footer -->
+            <div style="background-color: #1a1a2e; padding: 32px 30px; text-align: center;">
+              <p style="color: #ffffff; font-size: 14px; margin: 0 0 8px; font-weight: 500;">
+                Cordialement,<br>
+                L'équipe Nectforma
+              </p>
+              <p style="color: rgba(255,255,255,0.7); font-size: 13px; margin: 8px 0 16px;">
+                Plateforme intelligente de gestion de formation
+              </p>
+              <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; margin-top: 16px;">
+                <p style="color: rgba(255,255,255,0.6); font-size: 12px; margin: 0;">
+                  🌐 <a href="https://nectforma.com" style="color: #a78bfa; text-decoration: none;">https://nectforma.com</a><br>
+                  📩 <a href="mailto:contact@nectforma.com" style="color: #a78bfa; text-decoration: none;">contact@nectforma.com</a>
+                </p>
+              </div>
+              <p style="color: rgba(255,255,255,0.4); font-size: 11px; margin-top: 16px;">
                 © ${new Date().getFullYear()} NECTFORMA. Tous droits réservés.
               </p>
             </div>
+          </div>
+          
+          <!-- Fallback Link -->
+          <div style="max-width: 600px; margin: 16px auto 0; text-align: center;">
+            <p style="color: #9ca3af; font-size: 11px;">
+              Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
+              <a href="${activationLink}" style="color: #8B5CF6; word-break: break-all; font-size: 10px;">${activationLink}</a>
+            </p>
           </div>
         </body>
         </html>
@@ -254,7 +292,7 @@ serve(async (req) => {
 
     // Generate reset token
     const resetToken = crypto.randomUUID() + '-' + Date.now();
-    const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
     // Store reset token (reuse activation tokens table or create a new entry)
     // Delete old tokens first
@@ -293,50 +331,87 @@ serve(async (req) => {
       </head>
       <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px;">
         <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+          <!-- Header -->
           <div style="background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%); padding: 40px 30px; text-align: center;">
             <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">NECTFORMA</h1>
-            <p style="color: rgba(255,255,255,0.9); margin-top: 8px; font-size: 14px;">Plateforme de gestion de formation</p>
+            <p style="color: rgba(255,255,255,0.9); margin-top: 8px; font-size: 14px;">Plateforme intelligente de gestion de formation</p>
           </div>
           
+          <!-- Main Content -->
           <div style="padding: 40px 30px;">
-            <h2 style="color: #1a1a1a; margin: 0 0 20px; font-size: 24px;">
+            <h2 style="color: #1a1a1a; margin: 0 0 24px; font-size: 24px; font-weight: 600;">
               Réinitialisation du mot de passe 🔐
             </h2>
             
-            <p style="color: #4a4a4a; line-height: 1.6; font-size: 16px; margin-bottom: 20px;">
-              Bonjour ${userData.first_name} ${userData.last_name},
+            <p style="color: #4a4a4a; line-height: 1.7; font-size: 16px; margin-bottom: 20px;">
+              Bonjour <strong>${userData.first_name} ${userData.last_name}</strong>,
             </p>
             
-            <p style="color: #4a4a4a; line-height: 1.6; font-size: 16px; margin-bottom: 30px;">
+            <p style="color: #4a4a4a; line-height: 1.7; font-size: 16px; margin-bottom: 20px;">
               Vous avez demandé la réinitialisation de votre mot de passe sur <strong style="color: #8B5CF6;">${establishmentName}</strong>.
-              Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe :
             </p>
             
-            <div style="text-align: center; margin: 30px 0;">
+            <p style="color: #4a4a4a; line-height: 1.7; font-size: 16px; margin-bottom: 8px;">
+              👉 Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe :
+            </p>
+            
+            <div style="text-align: center; margin: 32px 0;">
               <a href="${resetLink}" 
-                 style="display: inline-block; background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);">
-                Réinitialiser mon mot de passe
+                 style="display: inline-block; background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%); color: #ffffff; text-decoration: none; padding: 18px 48px; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);">
+                🔑 Réinitialiser mon mot de passe
               </a>
             </div>
             
-            <div style="background-color: #fff3cd; border-radius: 12px; padding: 20px; margin-top: 30px; border-left: 4px solid #ffc107;">
-              <p style="color: #856404; font-size: 14px; margin: 0;">
-                <strong>⚠️ Ce lien expire dans 1 heure.</strong><br>
-                Si vous n'avez pas demandé cette réinitialisation, ignorez cet email. Votre mot de passe actuel restera inchangé.
+            <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 16px 20px; margin: 24px 0;">
+              <p style="color: #92400e; font-size: 14px; margin: 0; font-weight: 500;">
+                ⚠️ Ce lien expire dans <strong>15 minutes</strong> pour des raisons de sécurité.<br>
+                Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.
               </p>
             </div>
             
-            <p style="color: #9ca3af; font-size: 12px; margin-top: 30px; text-align: center;">
-              Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
-              <a href="${resetLink}" style="color: #8B5CF6; word-break: break-all;">${resetLink}</a>
+            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin-bottom: 0;">
+              Votre mot de passe actuel restera inchangé si vous n'utilisez pas ce lien.
             </p>
           </div>
           
-          <div style="background-color: #f9fafb; padding: 20px 30px; text-align: center; border-top: 1px solid #e5e7eb;">
-            <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+          <!-- Security Section -->
+          <div style="background-color: #f8f7ff; padding: 24px 30px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #4a4a4a; font-size: 14px; margin: 0 0 12px; font-weight: 600;">
+              🔒 Sécurité & confidentialité
+            </p>
+            <p style="color: #6b7280; font-size: 13px; line-height: 1.6; margin: 0;">
+              📄 <a href="https://nectforma.com/cgu" style="color: #8B5CF6; text-decoration: none;">Conditions Générales d'Utilisation</a><br>
+              🔐 <a href="https://nectforma.com/politique-confidentialite" style="color: #8B5CF6; text-decoration: none;">Politique de Confidentialité</a>
+            </p>
+          </div>
+          
+          <!-- Footer -->
+          <div style="background-color: #1a1a2e; padding: 32px 30px; text-align: center;">
+            <p style="color: #ffffff; font-size: 14px; margin: 0 0 8px; font-weight: 500;">
+              Cordialement,<br>
+              L'équipe Nectforma
+            </p>
+            <p style="color: rgba(255,255,255,0.7); font-size: 13px; margin: 8px 0 16px;">
+              Plateforme intelligente de gestion de formation
+            </p>
+            <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; margin-top: 16px;">
+              <p style="color: rgba(255,255,255,0.6); font-size: 12px; margin: 0;">
+                🌐 <a href="https://nectforma.com" style="color: #a78bfa; text-decoration: none;">https://nectforma.com</a><br>
+                📩 <a href="mailto:contact@nectforma.com" style="color: #a78bfa; text-decoration: none;">contact@nectforma.com</a>
+              </p>
+            </div>
+            <p style="color: rgba(255,255,255,0.4); font-size: 11px; margin-top: 16px;">
               © ${new Date().getFullYear()} NECTFORMA. Tous droits réservés.
             </p>
           </div>
+        </div>
+        
+        <!-- Fallback Link -->
+        <div style="max-width: 600px; margin: 16px auto 0; text-align: center;">
+          <p style="color: #9ca3af; font-size: 11px;">
+            Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
+            <a href="${resetLink}" style="color: #8B5CF6; word-break: break-all; font-size: 10px;">${resetLink}</a>
+          </p>
         </div>
       </body>
       </html>
