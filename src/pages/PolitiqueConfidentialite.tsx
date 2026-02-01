@@ -197,11 +197,11 @@ const PolitiqueConfidentialite = () => {
             </Link>
             
             <Link 
-              to="/" 
+              to="/auth" 
               className="flex items-center text-muted-foreground hover:text-primary transition-colors group"
             >
               <ArrowLeft className="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform" />
-              Retour à l'accueil
+              Retour à la connexion
             </Link>
           </div>
         </div>
