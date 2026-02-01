@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, Download, Printer, CheckCircle, XCircle, Clock, PenTool, Building } from 'lucide-react';
+import { FileText, Download, Printer, CheckCircle, XCircle, Clock, PenTool, Building, UserX } from 'lucide-react';
 import InstructorSigningModal from './InstructorSigningModal';
 import RealtimeAttendanceIndicator from './RealtimeAttendanceIndicator';
 import { format } from 'date-fns';
@@ -418,8 +418,23 @@ const GeneratedAttendanceSheet: React.FC<GeneratedAttendanceSheetProps> = ({
                 <div>📅 {format(new Date(attendanceSheet.date), 'dd/MM/yyyy', { locale: fr })}</div>
                 <div>🕒 {attendanceSheet.start_time.substring(0, 5)} - {attendanceSheet.end_time.substring(0, 5)}</div>
                 <div>🏫 {attendanceSheet.room || 'Salle non spécifiée'}</div>
-                <div>👨‍🏫 {attendanceSheet.instructor ? `${attendanceSheet.instructor.first_name} ${attendanceSheet.instructor.last_name}` : 'Non assigné'}</div>
+                {(attendanceSheet as any).instructor_absent ? (
+                  <div className="flex items-center gap-1 text-amber-600 font-medium">
+                    <UserX className="w-4 h-4" />
+                    Formateur absent
+                  </div>
+                ) : (
+                  <div>👨‍🏫 {attendanceSheet.instructor ? `${attendanceSheet.instructor.first_name} ${attendanceSheet.instructor.last_name}` : 'Non assigné'}</div>
+                )}
               </div>
+              {(attendanceSheet as any).instructor_absent && (
+                <div className="mt-3">
+                  <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-300">
+                    <UserX className="w-3 h-3 mr-1" />
+                    Session sans formateur - Émargement étudiants uniquement
+                  </Badge>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -514,9 +529,9 @@ const GeneratedAttendanceSheet: React.FC<GeneratedAttendanceSheetProps> = ({
 
         {/* Signatures des responsables */}
         <div className="p-6 border-t">
-          <div className={`grid gap-8 ${attendanceSheet.session_type === 'autonomie' ? 'grid-cols-1 max-w-md mx-auto' : 'grid-cols-2'}`}>
-            {/* Zone Signature Formateur - Masquée pour les sessions en autonomie */}
-            {attendanceSheet.session_type !== 'autonomie' && (
+          <div className={`grid gap-8 ${(attendanceSheet.session_type === 'autonomie' || (attendanceSheet as any).instructor_absent) ? 'grid-cols-1 max-w-md mx-auto' : 'grid-cols-2'}`}>
+            {/* Zone Signature Formateur - Masquée pour les sessions en autonomie ou formateur absent */}
+            {attendanceSheet.session_type !== 'autonomie' && !(attendanceSheet as any).instructor_absent && (
               <div>
                 <h4 className="font-semibold mb-3">Signature du Formateur</h4>
                 {(() => {

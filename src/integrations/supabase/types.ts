@@ -178,6 +178,7 @@ export type Database = {
           formation_id: string
           generated_at: string
           id: string
+          instructor_absent: boolean
           instructor_id: string | null
           is_open_for_signing: boolean | null
           opened_at: string | null
@@ -203,6 +204,7 @@ export type Database = {
           formation_id: string
           generated_at?: string
           id?: string
+          instructor_absent?: boolean
           instructor_id?: string | null
           is_open_for_signing?: boolean | null
           opened_at?: string | null
@@ -228,6 +230,7 @@ export type Database = {
           formation_id?: string
           generated_at?: string
           id?: string
+          instructor_absent?: boolean
           instructor_id?: string | null
           is_open_for_signing?: boolean | null
           opened_at?: string | null

@@ -3,8 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
-import { Send, Calendar, Clock, Users } from 'lucide-react';
+import { Send, Calendar, Clock, Users, UserX, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -22,12 +24,17 @@ interface ScheduleSlot {
   start_time: string;
   end_time: string;
   room: string;
+  instructor_id: string | null;
   formation_modules: {
     title: string;
   };
   schedules: {
     formation_id: string;
   };
+  instructor?: {
+    first_name: string;
+    last_name: string;
+  } | null;
 }
 
 interface GroupedSlots {
@@ -52,6 +59,7 @@ const SendAttendanceLinkModal: React.FC<SendAttendanceLinkModalProps> = ({
   const [allSlots, setAllSlots] = useState<ScheduleSlot[]>([]);
   const [groupedSlots, setGroupedSlots] = useState<GroupedSlots[]>([]);
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
+  const [instructorAbsent, setInstructorAbsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
 
@@ -102,8 +110,10 @@ const SendAttendanceLinkModal: React.FC<SendAttendanceLinkModalProps> = ({
           start_time,
           end_time,
           room,
+          instructor_id,
           formation_modules (title),
-          schedules!inner (formation_id)
+          schedules!inner (formation_id),
+          users:instructor_id (first_name, last_name)
         `)
         .eq('schedules.formation_id', selectedFormationId)
         .order('date', { ascending: true })
@@ -168,7 +178,7 @@ const SendAttendanceLinkModal: React.FC<SendAttendanceLinkModalProps> = ({
         // Vérifier si une feuille d'émargement existe déjà pour ce créneau
         const { data: existingSheet, error: checkError } = await supabase
           .from('attendance_sheets')
-          .select('id, signature_link_token, signature_link_expires_at')
+          .select('id, signature_link_token, signature_link_expires_at, instructor_id')
           .eq('schedule_slot_id', slotId)
           .maybeSingle();
 
@@ -180,10 +190,21 @@ const SendAttendanceLinkModal: React.FC<SendAttendanceLinkModalProps> = ({
         let sheetId: string;
         let token: string;
         let expiresAt: string;
+        let instructorId: string | null = slot.instructor_id;
 
         if (existingSheet) {
           // Feuille existante - générer un nouveau token si nécessaire
           sheetId = existingSheet.id;
+          instructorId = existingSheet.instructor_id;
+          
+          // Mettre à jour le statut d'absence du formateur
+          await supabase
+            .from('attendance_sheets')
+            .update({ 
+              instructor_absent: instructorAbsent,
+              session_type: 'autonomie' // Session autonomie quand envoi de lien
+            } as any)
+            .eq('id', sheetId);
           
           if (existingSheet.signature_link_token && 
               existingSheet.signature_link_expires_at && 
@@ -210,8 +231,10 @@ const SendAttendanceLinkModal: React.FC<SendAttendanceLinkModalProps> = ({
               room: slot.room,
               title: slot.formation_modules?.title || 'Cours',
               session_type: 'autonomie',
-              status: 'En attente'
-            })
+              status: 'En attente',
+              instructor_id: slot.instructor_id,
+              instructor_absent: instructorAbsent
+            } as any)
             .select()
             .single();
 
@@ -221,6 +244,7 @@ const SendAttendanceLinkModal: React.FC<SendAttendanceLinkModalProps> = ({
           }
 
           sheetId = newSheet.id;
+          instructorId = slot.instructor_id;
 
           // Générer le token
           const result = await attendanceService.generateSignatureToken(sheetId);
@@ -231,8 +255,9 @@ const SendAttendanceLinkModal: React.FC<SendAttendanceLinkModalProps> = ({
         // Récupérer les étudiants de la formation
         const { data: students, error: studentsError } = await supabase
           .from('user_formation_assignments')
-          .select('user_id')
-          .eq('formation_id', selectedFormationId);
+          .select('user_id, users!inner(role)')
+          .eq('formation_id', selectedFormationId)
+          .eq('users.role', 'Étudiant');
 
         if (studentsError) {
           console.error('Error fetching students:', studentsError);
@@ -241,13 +266,25 @@ const SendAttendanceLinkModal: React.FC<SendAttendanceLinkModalProps> = ({
 
         const studentIds = students.map(s => s.user_id);
 
-        // Envoyer le lien aux étudiants
-        await attendanceService.sendSignatureLink(sheetId, studentIds);
+        // Déterminer les destinataires
+        let recipientIds: string[] = [...studentIds];
+        
+        // Si le formateur n'est pas absent, ajouter le formateur aux destinataires
+        if (!instructorAbsent && instructorId) {
+          recipientIds.push(instructorId);
+        }
+
+        // Envoyer le lien aux destinataires
+        await attendanceService.sendSignatureLink(sheetId, recipientIds);
       }
 
-      toast.success(`Liens envoyés pour ${selectedSlots.length} créneau(x)`);
+      const absentMsg = instructorAbsent ? ' (formateur absent)' : '';
+      toast.success(`Liens envoyés pour ${selectedSlots.length} créneau(x)${absentMsg}`);
       onSuccess();
       onClose();
+      // Reset state
+      setInstructorAbsent(false);
+      setSelectedSlots([]);
     } catch (error: any) {
       console.error('Error sending links:', error);
       toast.error('Erreur lors de l\'envoi des liens');
@@ -357,6 +394,12 @@ const SendAttendanceLinkModal: React.FC<SendAttendanceLinkModalProps> = ({
                                     {slot.room}
                                   </span>
                                 )}
+                                {(slot as any).users && (
+                                  <span className="flex items-center gap-1 text-primary">
+                                    <Users className="h-3 w-3" />
+                                    {(slot as any).users.first_name} {(slot as any).users.last_name}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -369,11 +412,50 @@ const SendAttendanceLinkModal: React.FC<SendAttendanceLinkModalProps> = ({
             </div>
           )}
 
+          {/* Option formateur absent */}
+          {selectedSlots.length > 0 && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="instructor-absent" className="text-sm font-medium flex items-center gap-2">
+                        <UserX className="h-4 w-4" />
+                        Formateur absent
+                      </Label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Cochez cette option si le formateur est absent pour cette session
+                      </p>
+                    </div>
+                    <Switch
+                      id="instructor-absent"
+                      checked={instructorAbsent}
+                      onCheckedChange={setInstructorAbsent}
+                    />
+                  </div>
+                  
+                  {instructorAbsent && (
+                    <div className="bg-amber-500/10 rounded-md p-3 text-xs text-amber-700 dark:text-amber-300">
+                      <p className="font-medium mb-1">⚠️ Mode formateur absent activé :</p>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>Le lien sera envoyé uniquement aux étudiants</li>
+                        <li>Le formateur ne recevra pas de notification</li>
+                        <li>La feuille d'émargement sera générée avec la mention "Formateur absent"</li>
+                        <li>Seules les signatures des étudiants seront requises</li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Information importante */}
           {selectedSlots.length > 0 && (
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 text-sm">
-              <p className="text-blue-600 dark:text-blue-400">
-                <strong>Important :</strong> Le lien sera envoyé à tous les étudiants de la formation 
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 text-sm">
+              <p className="text-primary">
+                <strong>Important :</strong> Le lien sera envoyé {instructorAbsent ? 'uniquement aux étudiants' : 'à tous les participants (étudiants et formateur)'} de la formation 
                 via une notification dans l'application. Ils auront 24 heures pour signer. 
                 La feuille sera automatiquement envoyée pour validation administrative après expiration du délai.
               </p>

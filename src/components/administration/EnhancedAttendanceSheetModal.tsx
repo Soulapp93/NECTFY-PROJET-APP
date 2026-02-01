@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Edit, Download, CheckCircle2, CheckCircle, XCircle, Clock, Building } from 'lucide-react';
+import { X, Edit, Download, CheckCircle2, CheckCircle, XCircle, Clock, Building, UserX } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -374,10 +374,23 @@ const EnhancedAttendanceSheetModal: React.FC<EnhancedAttendanceSheetModalProps> 
                   <div>📅 {format(new Date(attendanceSheet.date), 'dd/MM/yyyy', { locale: fr })}</div>
                   <div>🕒 {attendanceSheet.start_time.substring(0, 5)} - {attendanceSheet.end_time.substring(0, 5)}</div>
                   <div>🏫 {attendanceSheet.room || 'Salle non spécifiée'}</div>
-                  {attendanceSheet.session_type !== 'autonomie' && (
+                  {(attendanceSheet as any).instructor_absent ? (
+                    <div className="flex items-center gap-1 text-amber-300 font-medium">
+                      <UserX className="w-4 h-4" />
+                      Formateur absent
+                    </div>
+                  ) : attendanceSheet.session_type !== 'autonomie' && (
                     <div>👨‍🏫 {(attendanceSheet as any).instructor ? `${(attendanceSheet as any).instructor.first_name} ${(attendanceSheet as any).instructor.last_name}` : 'Non assigné'}</div>
                   )}
                 </div>
+                {(attendanceSheet as any).instructor_absent && (
+                  <div className="mt-3 flex justify-center">
+                    <div className="inline-flex items-center gap-1 bg-amber-500/20 text-amber-200 px-4 py-1 rounded-full text-sm">
+                      <UserX className="w-3 h-3" />
+                      Session sans formateur - Émargement étudiants uniquement
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -490,9 +503,9 @@ const EnhancedAttendanceSheetModal: React.FC<EnhancedAttendanceSheetModalProps> 
 
           {/* Signatures des responsables */}
           <div className="p-6 border-t">
-            <div className={`grid gap-8 ${attendanceSheet.session_type === 'autonomie' ? 'grid-cols-1' : 'grid-cols-2'}`}>
-              {/* Signature formateur - masquée pour les sessions en autonomie */}
-              {attendanceSheet.session_type !== 'autonomie' && (
+            <div className={`grid gap-8 ${(attendanceSheet.session_type === 'autonomie' || (attendanceSheet as any).instructor_absent) ? 'grid-cols-1' : 'grid-cols-2'}`}>
+              {/* Signature formateur - masquée pour les sessions en autonomie ou formateur absent */}
+              {attendanceSheet.session_type !== 'autonomie' && !(attendanceSheet as any).instructor_absent && (
                 <div>
                   <h4 className="font-semibold mb-3">Signature du Formateur</h4>
                   <div className="border border-gray-300 rounded-lg h-24 bg-gray-50 flex items-center justify-center p-2">
@@ -517,7 +530,7 @@ const EnhancedAttendanceSheetModal: React.FC<EnhancedAttendanceSheetModalProps> 
                   </div>
                 </div>
               )}
-              <div className={attendanceSheet.session_type === 'autonomie' ? 'max-w-md mx-auto' : ''}>
+              <div className={(attendanceSheet.session_type === 'autonomie' || (attendanceSheet as any).instructor_absent) ? 'max-w-md mx-auto' : ''}>
                 <h4 className="font-semibold mb-3">Signature de l'Administration</h4>
                 <div className="border border-gray-300 rounded-lg h-24 bg-gray-50 flex items-center justify-center p-2">
                   {attendanceSheet.validated_by && adminSignature ? (
