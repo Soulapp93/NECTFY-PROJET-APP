@@ -56,6 +56,12 @@ const NotificationBell = () => {
     if (actionUrl) {
       setIsDialogOpen(false);
       setIsOpen(false);
+      // IMPORTANT: si c'est une URL absolue (https://...), react-router la transforme en route "/https://..."
+      // => 404. Dans ce cas, on redirige via le navigateur.
+      if (/^https?:\/\//i.test(actionUrl)) {
+        window.location.assign(actionUrl);
+        return;
+      }
       navigate(actionUrl);
     }
   };
