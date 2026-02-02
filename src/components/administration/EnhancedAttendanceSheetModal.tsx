@@ -488,58 +488,58 @@ const EnhancedAttendanceSheetModal: React.FC<EnhancedAttendanceSheetModalProps> 
 
           {/* Signatures des responsables */}
           <div className="p-6 border-t">
-            <div className={`grid gap-8 ${attendanceSheet.session_type === 'autonomie' ? 'grid-cols-1' : 'grid-cols-2'}`}>
-              {/* Signature formateur - masquée uniquement pour les sessions en autonomie */}
-              {attendanceSheet.session_type !== 'autonomie' && (
-                <div>
-                  <h4 className="font-semibold mb-3">Signature du Formateur</h4>
-                  {(attendanceSheet as any).instructor_absent ? (
-                    // Formateur absent - Afficher "Absent" dans la zone de signature
-                    <>
-                      <div className="border border-amber-300 rounded-lg h-24 bg-amber-50 flex items-center justify-center p-2">
-                        <div className="text-center">
-                          <UserX className="w-8 h-8 text-amber-600 mx-auto mb-1" />
-                          <span className="text-sm font-medium text-amber-700">ABSENT</span>
+            {(() => {
+              const isInstructorAbsent =
+                Boolean((attendanceSheet as any).instructor_absent) || attendanceSheet.session_type === 'autonomie';
+              const resolvedInstructorName =
+                instructorName
+                  ? instructorName
+                  : (attendanceSheet as any).instructor
+                    ? `${(attendanceSheet as any).instructor.first_name} ${(attendanceSheet as any).instructor.last_name}`
+                    : 'Formateur non assigné';
+
+              return (
+                <div className="grid gap-8 grid-cols-1 md:grid-cols-2">
+                  {/* Signature formateur - toujours affichée, même en autonomie */}
+                  <div>
+                    <h4 className="font-semibold mb-3">Signature du Formateur</h4>
+                    {isInstructorAbsent ? (
+                      <>
+                        <div className="border border-border rounded-lg h-24 bg-muted flex items-center justify-center p-2">
+                          <span
+                            className="text-2xl font-bold text-muted-foreground italic"
+                            style={{ fontFamily: 'cursive, "Brush Script MT", Georgia, serif' }}
+                          >
+                            ABSENT
+                          </span>
                         </div>
-                      </div>
-                      <div className="mt-2 text-center text-sm text-gray-600 border-t pt-2">
-                        {instructorName
-                          ? instructorName
-                          : (attendanceSheet as any).instructor
-                          ? `${(attendanceSheet as any).instructor.first_name} ${(attendanceSheet as any).instructor.last_name}`
-                          : 'Formateur non assigné'}
-                      </div>
-                    </>
-                  ) : (
-                    // Formateur présent - Zone de signature normale
-                    <>
-                      <div className="border border-gray-300 rounded-lg h-24 bg-gray-50 flex items-center justify-center p-2">
-                        {instructorSignature ? (
-                          <img 
-                            src={instructorSignature} 
-                            alt="Signature formateur" 
-                            className="h-16 w-auto"
-                          />
-                        ) : (
-                          <div className="text-xs text-gray-500 text-center">
-                            En attente de signature
-                          </div>
-                        )}
-                      </div>
-                      <div className="mt-2 text-center text-sm text-gray-600 border-t pt-2">
-                        {instructorName
-                          ? instructorName
-                          : (attendanceSheet as any).instructor
-                          ? `${(attendanceSheet as any).instructor.first_name} ${(attendanceSheet as any).instructor.last_name}`
-                          : 'Formateur non assigné'}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-              <div className={attendanceSheet.session_type === 'autonomie' ? 'max-w-md mx-auto' : ''}>
+                        <div className="mt-2 text-center text-sm text-muted-foreground border-t border-border pt-2">
+                          {resolvedInstructorName}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="border border-border rounded-lg h-24 bg-muted flex items-center justify-center p-2">
+                          {instructorSignature ? (
+                            <img
+                              src={instructorSignature}
+                              alt="Signature formateur"
+                              className="h-16 w-auto"
+                            />
+                          ) : (
+                            <div className="text-xs text-muted-foreground text-center">En attente de signature</div>
+                          )}
+                        </div>
+                        <div className="mt-2 text-center text-sm text-muted-foreground border-t border-border pt-2">
+                          {resolvedInstructorName}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div>
                 <h4 className="font-semibold mb-3">Signature de l'Administration</h4>
-                <div className="border border-gray-300 rounded-lg h-24 bg-gray-50 flex items-center justify-center p-2">
+                <div className="border border-border rounded-lg h-24 bg-muted flex items-center justify-center p-2">
                   {attendanceSheet.validated_by && adminSignature ? (
                     <img 
                       src={adminSignature} 
@@ -547,16 +547,18 @@ const EnhancedAttendanceSheetModal: React.FC<EnhancedAttendanceSheetModalProps> 
                       className="h-16 w-auto"
                     />
                   ) : (
-                    <div className="text-xs text-gray-500 text-center">
+                    <div className="text-xs text-muted-foreground text-center">
                       {attendanceSheet.status === 'Validé' ? 'Signature non disponible' : 'En attente de validation'}
                     </div>
                   )}
                 </div>
-                <div className="mt-2 text-center text-sm text-gray-600 border-t pt-2">
+                <div className="mt-2 text-center text-sm text-muted-foreground border-t border-border pt-2">
                   Administration
                 </div>
-              </div>
-            </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Footer */}
