@@ -374,23 +374,8 @@ const EnhancedAttendanceSheetModal: React.FC<EnhancedAttendanceSheetModalProps> 
                   <div>📅 {format(new Date(attendanceSheet.date), 'dd/MM/yyyy', { locale: fr })}</div>
                   <div>🕒 {attendanceSheet.start_time.substring(0, 5)} - {attendanceSheet.end_time.substring(0, 5)}</div>
                   <div>🏫 {attendanceSheet.room || 'Salle non spécifiée'}</div>
-                  {(attendanceSheet as any).instructor_absent ? (
-                    <div className="flex items-center gap-1 text-amber-300 font-medium">
-                      <UserX className="w-4 h-4" />
-                      Formateur absent
-                    </div>
-                  ) : attendanceSheet.session_type !== 'autonomie' && (
-                    <div>👨‍🏫 {(attendanceSheet as any).instructor ? `${(attendanceSheet as any).instructor.first_name} ${(attendanceSheet as any).instructor.last_name}` : 'Non assigné'}</div>
-                  )}
+                  <div>👨‍🏫 {(attendanceSheet as any).instructor ? `${(attendanceSheet as any).instructor.first_name} ${(attendanceSheet as any).instructor.last_name}` : 'Non assigné'}</div>
                 </div>
-                {(attendanceSheet as any).instructor_absent && (
-                  <div className="mt-3 flex justify-center">
-                    <div className="inline-flex items-center gap-1 bg-amber-500/20 text-amber-200 px-4 py-1 rounded-full text-sm">
-                      <UserX className="w-3 h-3" />
-                      Session sans formateur - Émargement étudiants uniquement
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>

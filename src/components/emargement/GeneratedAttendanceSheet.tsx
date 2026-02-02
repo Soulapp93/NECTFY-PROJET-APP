@@ -418,23 +418,8 @@ const GeneratedAttendanceSheet: React.FC<GeneratedAttendanceSheetProps> = ({
                 <div>📅 {format(new Date(attendanceSheet.date), 'dd/MM/yyyy', { locale: fr })}</div>
                 <div>🕒 {attendanceSheet.start_time.substring(0, 5)} - {attendanceSheet.end_time.substring(0, 5)}</div>
                 <div>🏫 {attendanceSheet.room || 'Salle non spécifiée'}</div>
-                {(attendanceSheet as any).instructor_absent ? (
-                  <div className="flex items-center gap-1 text-amber-600 font-medium">
-                    <UserX className="w-4 h-4" />
-                    Formateur absent
-                  </div>
-                ) : (
-                  <div>👨‍🏫 {attendanceSheet.instructor ? `${attendanceSheet.instructor.first_name} ${attendanceSheet.instructor.last_name}` : 'Non assigné'}</div>
-                )}
+                <div>👨‍🏫 {attendanceSheet.instructor ? `${attendanceSheet.instructor.first_name} ${attendanceSheet.instructor.last_name}` : 'Non assigné'}</div>
               </div>
-              {(attendanceSheet as any).instructor_absent && (
-                <div className="mt-3">
-                  <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-300">
-                    <UserX className="w-3 h-3 mr-1" />
-                    Session sans formateur - Émargement étudiants uniquement
-                  </Badge>
-                </div>
-              )}
             </div>
           </div>
         </div>
