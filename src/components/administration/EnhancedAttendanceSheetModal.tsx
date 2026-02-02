@@ -484,8 +484,13 @@ const EnhancedAttendanceSheetModal: React.FC<EnhancedAttendanceSheetModalProps> 
           {/* Signatures des responsables */}
           <div className="p-6 border-t">
             {(() => {
-              const isInstructorAbsent =
-                Boolean((attendanceSheet as any).instructor_absent) || attendanceSheet.session_type === 'autonomie';
+              // AUDIT: Différenciation claire entre "formateur absent" et "session autonomie"
+              // - instructor_absent = true → Session avec formateur absent (afficher 2 colonnes avec ABSENT en rouge)
+              // - session_type = 'autonomie' → Session en autonomie réelle (pas de formateur prévu)
+              const isInstructorAbsent = Boolean((attendanceSheet as any).instructor_absent);
+              const isAutonomySession = attendanceSheet.session_type === 'autonomie';
+              
+              // Le nom du formateur doit toujours être affiché (même si absent)
               const resolvedInstructorName =
                 instructorName
                   ? instructorName
@@ -493,16 +498,44 @@ const EnhancedAttendanceSheetModal: React.FC<EnhancedAttendanceSheetModalProps> 
                     ? `${(attendanceSheet as any).instructor.first_name} ${(attendanceSheet as any).instructor.last_name}`
                     : 'Formateur non assigné';
 
+              // Pour les sessions autonomie RÉELLES (sans formateur absent), on affiche une seule colonne centrée
+              if (isAutonomySession && !isInstructorAbsent) {
+                return (
+                  <div className="flex justify-center">
+                    <div className="w-full max-w-md">
+                      <h4 className="font-semibold mb-3 text-center">Signature de l'Administration</h4>
+                      <div className="border border-border rounded-lg h-24 bg-muted flex items-center justify-center p-2">
+                        {attendanceSheet.validated_by && adminSignature ? (
+                          <img 
+                            src={adminSignature} 
+                            alt="Signature administration" 
+                            className="h-16 w-auto"
+                          />
+                        ) : (
+                          <div className="text-xs text-muted-foreground text-center">
+                            {attendanceSheet.status === 'Validé' ? 'Signature non disponible' : 'En attente de validation'}
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-2 text-center text-sm text-muted-foreground border-t border-border pt-2">
+                        Administration
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              // Pour les sessions formateur absent OU présentielles normales → 2 colonnes
               return (
                 <div className="grid gap-8 grid-cols-1 md:grid-cols-2">
-                  {/* Signature formateur - toujours affichée, même en autonomie */}
+                  {/* Signature formateur - toujours affichée avec nom du formateur */}
                   <div>
                     <h4 className="font-semibold mb-3">Signature du Formateur</h4>
                     {isInstructorAbsent ? (
                       <>
                         <div className="border border-border rounded-lg h-24 bg-muted flex items-center justify-center p-2">
                           <span
-                            className="text-2xl font-bold text-muted-foreground italic"
+                            className="text-2xl font-bold text-red-600 italic"
                             style={{ fontFamily: 'cursive, "Brush Script MT", Georgia, serif' }}
                           >
                             ABSENT
@@ -533,23 +566,23 @@ const EnhancedAttendanceSheetModal: React.FC<EnhancedAttendanceSheetModalProps> 
                   </div>
 
                   <div>
-                <h4 className="font-semibold mb-3">Signature de l'Administration</h4>
-                <div className="border border-border rounded-lg h-24 bg-muted flex items-center justify-center p-2">
-                  {attendanceSheet.validated_by && adminSignature ? (
-                    <img 
-                      src={adminSignature} 
-                      alt="Signature administration" 
-                      className="h-16 w-auto"
-                    />
-                  ) : (
-                    <div className="text-xs text-muted-foreground text-center">
-                      {attendanceSheet.status === 'Validé' ? 'Signature non disponible' : 'En attente de validation'}
+                    <h4 className="font-semibold mb-3">Signature de l'Administration</h4>
+                    <div className="border border-border rounded-lg h-24 bg-muted flex items-center justify-center p-2">
+                      {attendanceSheet.validated_by && adminSignature ? (
+                        <img 
+                          src={adminSignature} 
+                          alt="Signature administration" 
+                          className="h-16 w-auto"
+                        />
+                      ) : (
+                        <div className="text-xs text-muted-foreground text-center">
+                          {attendanceSheet.status === 'Validé' ? 'Signature non disponible' : 'En attente de validation'}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <div className="mt-2 text-center text-sm text-muted-foreground border-t border-border pt-2">
-                  Administration
-                </div>
+                    <div className="mt-2 text-center text-sm text-muted-foreground border-t border-border pt-2">
+                      Administration
+                    </div>
                   </div>
                 </div>
               );

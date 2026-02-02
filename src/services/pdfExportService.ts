@@ -396,11 +396,14 @@ export const pdfExportService = {
         currentY = signatureY;
       }
 
-      // Check if this is an autonomy session (no instructor signature needed)
-      const isAutonomySession = attendanceSheet.session_type === 'autonomie';
+      // AUDIT: Différenciation claire entre "formateur absent" et "session autonomie"
+      // - instructor_absent = true → Session avec formateur absent (2 colonnes, ABSENT en rouge + nom formateur)
+      // - session_type = 'autonomie' (sans instructor_absent) → Session autonomie réelle (1 colonne centrée)
+      const isInstructorAbsent = Boolean((attendanceSheet as any).instructor_absent);
+      const isAutonomySession = attendanceSheet.session_type === 'autonomie' && !isInstructorAbsent;
 
       if (!isAutonomySession) {
-        // Trainer signature - only for non-autonomy sessions
+        // Trainer signature - afficher pour sessions normales ET formateur absent
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(12);
         pdf.setTextColor(0, 0, 0);
@@ -409,8 +412,14 @@ export const pdfExportService = {
         pdf.setLineWidth(0.3);
         pdf.rect(margin, currentY + 5, 85, 35);
         
-        // Display trainer signature if exists
-        if (instructorSignature?.signature_data) {
+        if (isInstructorAbsent) {
+          // Formateur absent - afficher ABSENT en rouge avec style cursive
+          pdf.setFontSize(20);
+          pdf.setFont('helvetica', 'bolditalic');
+          pdf.setTextColor(220, 38, 38); // Rouge (text-red-600)
+          pdf.text('ABSENT', margin + 42.5, currentY + 25, { align: 'center' });
+        } else if (instructorSignature?.signature_data) {
+          // Display trainer signature if exists
           try {
             pdf.addImage(
               instructorSignature.signature_data,
@@ -432,7 +441,7 @@ export const pdfExportService = {
           pdf.text('En attente de signature', margin + 15, currentY + 25);
         }
 
-        // Instructor name below signature box
+        // Instructor name below signature box - TOUJOURS affiché (même si absent)
         pdf.setFontSize(9);
         pdf.setFont('helvetica', 'normal');
         pdf.setTextColor(100, 100, 100);
