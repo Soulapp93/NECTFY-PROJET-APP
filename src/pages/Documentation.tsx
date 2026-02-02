@@ -43,7 +43,7 @@ const Documentation = () => {
 
   const handleExportPDF = async () => {
     setIsExporting(true);
-    toast.info('Génération du PDF en cours...');
+    toast.info('Génération du PDF en cours... Cela peut prendre quelques secondes.');
 
     try {
       const { default: jsPDF } = await import('jspdf');
@@ -54,58 +54,74 @@ const Documentation = () => {
         throw new Error('Contenu non trouvé');
       }
 
-      // Créer un PDF
+      // Créer un PDF A4
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 15;
+      const margin = 10;
       
       // Page de titre
       pdf.setFontSize(28);
-      pdf.setTextColor(139, 92, 246); // Violet primary
+      pdf.setTextColor(139, 92, 246);
       pdf.text('NECTFORMA', pageWidth / 2, 60, { align: 'center' });
       
       pdf.setFontSize(18);
       pdf.setTextColor(100, 100, 100);
-      pdf.text('Guide d\'utilisation complet', pageWidth / 2, 75, { align: 'center' });
+      pdf.text("Guide d'utilisation complet", pageWidth / 2, 75, { align: 'center' });
       
       pdf.setFontSize(12);
       pdf.setTextColor(150, 150, 150);
       pdf.text(`Généré le ${new Date().toLocaleDateString('fr-FR')}`, pageWidth / 2, 90, { align: 'center' });
 
-      // Capture du contenu
+      // Capture du contenu avec options optimisées
       const canvas = await html2canvas(content, {
-        scale: 2,
+        scale: 1.5,
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        allowTaint: true,
+        imageTimeout: 15000,
+        removeContainer: true,
       });
 
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const imgData = canvas.toDataURL('image/jpeg', 0.85);
       const imgWidth = pageWidth - (margin * 2);
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
-      // Ajouter les pages avec le contenu
-      let heightLeft = imgHeight;
-      let position = 0;
+      // Calculer le nombre de pages nécessaires
+      const pageContentHeight = pageHeight - (margin * 2);
+      let yPosition = 0;
       
+      // Ajouter nouvelle page pour le contenu
       pdf.addPage();
       
-      while (heightLeft > 0) {
-        pdf.addImage(imgData, 'JPEG', margin, position - (imgHeight - heightLeft), imgWidth, imgHeight);
-        heightLeft -= (pageHeight - margin * 2);
-        
-        if (heightLeft > 0) {
+      // Boucle pour gérer la pagination correctement
+      while (yPosition < imgHeight) {
+        if (yPosition > 0) {
           pdf.addPage();
-          position = margin;
         }
+        
+        // Calculer la position Y dans l'image source
+        const sourceY = (yPosition / imgHeight) * canvas.height;
+        
+        // Ajouter l'image avec un offset négatif pour "scroller" vers le bas
+        pdf.addImage(
+          imgData,
+          'JPEG',
+          margin,
+          margin - yPosition,
+          imgWidth,
+          imgHeight
+        );
+        
+        yPosition += pageContentHeight;
       }
 
       pdf.save('NECTFORMA-Guide-Utilisation.pdf');
       toast.success('PDF généré avec succès !');
     } catch (error) {
       console.error('Erreur export PDF:', error);
-      toast.error('Erreur lors de la génération du PDF');
+      toast.error('Erreur lors de la génération du PDF. Veuillez réessayer.');
     } finally {
       setIsExporting(false);
     }
