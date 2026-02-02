@@ -143,6 +143,9 @@ const EnhancedAttendanceSheetModal: React.FC<EnhancedAttendanceSheetModalProps> 
       console.log('Signature formateur trouvée:', !!instrSig);
       console.log('ID formateur (attendance_sheet.instructor_id):', attendanceSheet.instructor_id);
 
+      // Variable pour savoir si on a déjà récupéré le nom du formateur
+      let instructorNameFetched = false;
+
       if (instrSig) {
         console.log('Utilisation de la signature formateur persistée');
         setInstructorSignature(instrSig);
@@ -155,7 +158,20 @@ const EnhancedAttendanceSheetModal: React.FC<EnhancedAttendanceSheetModalProps> 
             .single();
           if (instructorData) {
             setInstructorName(`${instructorData.first_name} ${instructorData.last_name}`);
+            instructorNameFetched = true;
           }
+        }
+      }
+
+      // IMPORTANT: Toujours charger le nom du formateur depuis instructor_id même s'il n'a pas signé
+      if (!instructorNameFetched && attendanceSheet.instructor_id) {
+        const { data: instructorData } = await supabase
+          .from('users')
+          .select('first_name, last_name')
+          .eq('id', attendanceSheet.instructor_id)
+          .single();
+        if (instructorData) {
+          setInstructorName(`${instructorData.first_name} ${instructorData.last_name}`);
         }
       }
 
