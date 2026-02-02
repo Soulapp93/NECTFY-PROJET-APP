@@ -154,6 +154,11 @@ const Notifications = () => {
     const actionUrl = notification.metadata?.action_url;
     if (actionUrl) {
       setIsDetailOpen(false);
+      // IMPORTANT: si c'est une URL absolue (https://...), react-router la transforme en route "/https://..." => 404
+      if (/^https?:\/\//i.test(actionUrl)) {
+        window.location.assign(actionUrl);
+        return;
+      }
       navigate(actionUrl);
     }
   };
