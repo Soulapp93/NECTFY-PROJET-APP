@@ -209,11 +209,6 @@ const SendSignatureLinkModal: React.FC<SendSignatureLinkModalProps> = ({
           <div className="bg-muted p-4 rounded-lg space-y-2">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold">{attendanceSheet.formations?.title}</h3>
-              {attendanceSheet.session_type === 'autonomie' && (
-                <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                  Session en autonomie
-                </Badge>
-              )}
             </div>
             <p className="text-sm text-muted-foreground">
               {format(new Date(attendanceSheet.date), 'EEEE d MMMM yyyy', { locale: fr })} • {attendanceSheet.start_time.substring(0, 5)} - {attendanceSheet.end_time.substring(0, 5)}

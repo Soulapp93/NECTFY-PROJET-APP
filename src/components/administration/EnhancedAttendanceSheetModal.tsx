@@ -359,11 +359,6 @@ const EnhancedAttendanceSheetModal: React.FC<EnhancedAttendanceSheetModalProps> 
             
             <div className={`text-center ${establishmentInfo ? 'pt-12' : ''}`}>
               <h1 className="text-4xl font-bold mb-6">FEUILLE D'ÉMARGEMENT</h1>
-              {attendanceSheet.session_type === 'autonomie' && (
-                <div className="inline-flex items-center gap-2 bg-blue-500/20 text-blue-100 px-4 py-1 rounded-full text-sm mb-4">
-                  Session en autonomie
-                </div>
-              )}
               <div className="space-y-2 text-base">
                 <div className="font-semibold text-xl">{attendanceSheet.formations?.title}</div>
                 {(attendanceSheet as any).schedule_slots?.formation_modules?.title && (
