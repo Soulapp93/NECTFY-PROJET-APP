@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import FloatingCTA from '@/components/landing/FloatingCTA';
 import ChatWidget from '@/components/landing/ChatWidget';
 import FAQSection from '@/components/landing/FAQSection';
@@ -757,19 +758,18 @@ const Index = () => {
                   <label htmlFor="subject" className="block text-sm font-medium text-foreground mb-2">
                     Sujet
                   </label>
-                  <select
-                    id="subject"
-                    name="subject"
-                    required
-                    className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors text-foreground"
-                  >
-                    <option value="">Sélectionnez un sujet</option>
-                    <option value="demo">Demande de démonstration</option>
-                    <option value="devis">Demande de devis</option>
-                    <option value="support">Support technique</option>
-                    <option value="partenariat">Partenariat</option>
-                    <option value="autre">Autre</option>
-                  </select>
+                  <Select name="subject" required>
+                    <SelectTrigger className="w-full h-12">
+                      <SelectValue placeholder="Sélectionnez un sujet" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="demo">Demande de démonstration</SelectItem>
+                      <SelectItem value="devis">Demande de devis</SelectItem>
+                      <SelectItem value="support">Support technique</SelectItem>
+                      <SelectItem value="partenariat">Partenariat</SelectItem>
+                      <SelectItem value="autre">Autre</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <label htmlFor="message" className="block text-sm font-medium text-foreground mb-2">

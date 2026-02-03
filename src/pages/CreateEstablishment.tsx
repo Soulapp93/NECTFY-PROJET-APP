@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { z } from 'zod';
 
 // Validation schemas
@@ -353,17 +354,19 @@ const CreateEstablishment = () => {
                       <Users className="h-4 w-4 text-primary" />
                       Nombre d'étudiants
                     </Label>
-                    <select
-                      id="numberOfStudents"
+                    <Select
                       value={formData.numberOfStudents}
-                      onChange={(e) => handleInputChange('numberOfStudents', e.target.value)}
-                      className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                      onValueChange={(value) => handleInputChange('numberOfStudents', value)}
                     >
-                      <option value="">Sélectionnez</option>
-                      {userRanges.map(range => (
-                        <option key={range} value={range}>{range}</option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="h-10">
+                        <SelectValue placeholder="Sélectionnez" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {userRanges.map(range => (
+                          <SelectItem key={range} value={range}>{range}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div>
@@ -371,17 +374,19 @@ const CreateEstablishment = () => {
                       <Users className="h-4 w-4 text-primary" />
                       Nombre de formateurs
                     </Label>
-                    <select
-                      id="numberOfInstructors"
+                    <Select
                       value={formData.numberOfInstructors}
-                      onChange={(e) => handleInputChange('numberOfInstructors', e.target.value)}
-                      className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                      onValueChange={(value) => handleInputChange('numberOfInstructors', value)}
                     >
-                      <option value="">Sélectionnez</option>
-                      {userRanges.map(range => (
-                        <option key={range} value={range}>{range}</option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="h-10">
+                        <SelectValue placeholder="Sélectionnez" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {userRanges.map(range => (
+                          <SelectItem key={range} value={range}>{range}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
