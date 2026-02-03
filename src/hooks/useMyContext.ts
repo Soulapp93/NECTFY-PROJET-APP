@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { rpcWithRetry } from '@/lib/supabaseRetry';
 
@@ -53,6 +53,7 @@ interface ContextResponse {
  * - Pour les tuteurs: retourne les infos de leur apprenti
  * - Contourne les problèmes RLS côté client
  * - Inclut retry automatique pour les erreurs réseau transitoires
+ * - Écoute les changements en temps réel sur users et tutors
  */
 export const useMyContext = () => {
   const [data, setData] = useState<MyContextData>({
@@ -63,6 +64,8 @@ export const useMyContext = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const userIdRef = useRef<string | null>(null);
 
   const fetchContext = useCallback(async () => {
     try {
@@ -79,9 +82,12 @@ export const useMyContext = () => {
           establishment: null,
           role: null
         });
+        userIdRef.current = null;
         setLoading(false);
         return;
       }
+
+      userIdRef.current = sessionData.session.user.id;
 
       // Appeler la RPC SECURITY DEFINER avec retry
       const { data: contextData, error: rpcError } = await rpcWithRetry(
@@ -130,9 +136,49 @@ export const useMyContext = () => {
     }
   }, []);
 
+  // Setup realtime subscription for profile updates
   useEffect(() => {
     // Fetch initial
     fetchContext();
+
+    // Subscribe to realtime changes on users and tutors tables for profile updates
+    const channel = supabase
+      .channel('profile-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'users'
+        },
+        (payload) => {
+          // Only refetch if the update is for the current user
+          if (userIdRef.current && payload.new && (payload.new as any).id === userIdRef.current) {
+            console.log('User profile realtime update detected');
+            fetchContext();
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'tutors'
+        },
+        (payload) => {
+          // Only refetch if the update is for the current tutor
+          if (userIdRef.current && payload.new && (payload.new as any).id === userIdRef.current) {
+            console.log('Tutor profile realtime update detected');
+            fetchContext();
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Profile realtime subscription status:', status);
+      });
+
+    channelRef.current = channel;
 
     // Écouter les changements d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -145,6 +191,7 @@ export const useMyContext = () => {
           establishment: null,
           role: null
         });
+        userIdRef.current = null;
         setLoading(false);
         setError(null);
       }
@@ -152,6 +199,10 @@ export const useMyContext = () => {
 
     return () => {
       subscription.unsubscribe();
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [fetchContext]);
 
