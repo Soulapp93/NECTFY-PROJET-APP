@@ -108,8 +108,14 @@
     @apply border-border;
   }
 
+  html {
+    font-size: 14px; /* Réduction de la taille de base (16px par défaut) */
+  }
+
   body {
     @apply bg-background text-foreground font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
