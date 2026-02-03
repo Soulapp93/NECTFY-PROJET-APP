@@ -230,18 +230,6 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({ isOpen, onClose, user
                   </p>
                 </div>
               </div>
-              
-              <div className="flex items-start gap-3">
-                <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                  <Building className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">ID Établissement</label>
-                  <p className="text-foreground font-medium text-sm truncate max-w-[200px]">
-                    {user.establishment_id}
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
 
