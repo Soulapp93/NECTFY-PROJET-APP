@@ -385,7 +385,7 @@ const EnhancedAttendanceSheetModal: React.FC<EnhancedAttendanceSheetModalProps> 
                   <div>📅 {format(new Date(attendanceSheet.date), 'dd/MM/yyyy', { locale: fr })}</div>
                   <div>🕒 {attendanceSheet.start_time.substring(0, 5)} - {attendanceSheet.end_time.substring(0, 5)}</div>
                   <div>🏫 {attendanceSheet.room || 'Salle non spécifiée'}</div>
-                  <div>👨‍🏫 {(attendanceSheet as any).instructor ? `${(attendanceSheet as any).instructor.first_name} ${(attendanceSheet as any).instructor.last_name}` : 'Non assigné'}</div>
+                  <div>👨‍🏫 {instructorName || ((attendanceSheet as any).instructor ? `${(attendanceSheet as any).instructor.first_name} ${(attendanceSheet as any).instructor.last_name}` : 'Non assigné')}</div>
                 </div>
               </div>
             </div>
