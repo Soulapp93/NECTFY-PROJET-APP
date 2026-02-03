@@ -318,52 +318,52 @@ const Messagerie = () => {
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] bg-gradient-to-br from-background via-background to-primary/5">
       {/* Header */}
-      <div className="p-4 sm:p-6 border-b border-border/50 bg-card/80 backdrop-blur-sm">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-start sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="lg:hidden shrink-0"
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              >
-                {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </Button>
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border shadow-sm">
+        <div className="w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-start sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg">
-                  <Mail className="h-5 w-5 text-primary-foreground" />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="lg:hidden shrink-0"
+                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                >
+                  {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                </Button>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-r from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/25 flex-shrink-0">
+                  <Mail className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
                 </div>
-                <div>
-                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Messagerie</h1>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 hidden sm:block">
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground truncate">Messagerie</h1>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 hidden sm:block truncate">
                     Communiquez avec les formateurs, étudiants et l'administration
                   </p>
                 </div>
               </div>
+              <Button 
+                onClick={() => setIsNewMessageOpen(true)} 
+                className="gap-2 shadow-lg hover:shadow-xl transition-all shrink-0"
+                size="default"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span className="hidden sm:inline">Nouveau message</span>
+                <span className="sm:hidden">Nouveau</span>
+              </Button>
             </div>
-            <Button 
-              onClick={() => setIsNewMessageOpen(true)} 
-              className="gap-2 shadow-lg hover:shadow-xl transition-all shrink-0"
-              size="default"
-            >
-              <Sparkles className="h-4 w-4" />
-              <span className="hidden sm:inline">Nouveau message</span>
-              <span className="sm:hidden">Nouveau</span>
-            </Button>
-          </div>
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Input
-                placeholder="Rechercher un message..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full text-sm bg-background/50 border-border/50 focus:border-primary/50"
-              />
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Input
+                  placeholder="Rechercher un message..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full text-sm bg-background/50 border-border/50 focus:border-primary/50"
+                />
+              </div>
+              <Button variant="outline" size="icon" onClick={refetch} disabled={loading} className="shrink-0 bg-background/50">
+                <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+              </Button>
             </div>
-            <Button variant="outline" size="icon" onClick={refetch} disabled={loading} className="shrink-0 bg-background/50">
-              <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-            </Button>
           </div>
         </div>
       </div>

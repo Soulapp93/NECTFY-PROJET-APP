@@ -230,48 +230,54 @@ const Notifications = () => {
   ];
 
   return (
-    <div className="container max-w-4xl mx-auto py-6 px-4 space-y-6">
+    <div className="min-h-screen">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg">
-            <Bell className="h-6 w-6 text-primary-foreground" />
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border shadow-sm">
+        <div className="w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 max-w-4xl mx-auto">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-r from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/25 flex-shrink-0">
+                <Bell className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground truncate">Notifications</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate mt-0.5">
+                  {unreadCount > 0 
+                    ? `${unreadCount} notification${unreadCount > 1 ? 's' : ''} non lue${unreadCount > 1 ? 's' : ''}` 
+                    : 'Aucune nouvelle notification'
+                  }
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => refetch()}
+                className="gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                <span className="hidden sm:inline">Actualiser</span>
+              </Button>
+              
+              {unreadCount > 0 && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={markAllAsRead}
+                  className="gap-2"
+                >
+                  <CheckCheck className="h-4 w-4" />
+                  <span className="hidden sm:inline">Tout marquer comme lu</span>
+                </Button>
+              )}
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
-            <p className="text-sm text-muted-foreground">
-              {unreadCount > 0 
-                ? `${unreadCount} notification${unreadCount > 1 ? 's' : ''} non lue${unreadCount > 1 ? 's' : ''}` 
-                : 'Aucune nouvelle notification'
-              }
-            </p>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => refetch()}
-            className="gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            <span className="hidden sm:inline">Actualiser</span>
-          </Button>
-          
-          {unreadCount > 0 && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={markAllAsRead}
-              className="gap-2"
-            >
-              <CheckCheck className="h-4 w-4" />
-              <span className="hidden sm:inline">Tout marquer comme lu</span>
-            </Button>
-          )}
         </div>
       </div>
+      
+      <div className="container max-w-4xl mx-auto py-6 px-4 space-y-6">
 
       {/* Filters */}
       <Card>
@@ -513,6 +519,7 @@ const Notifications = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 };

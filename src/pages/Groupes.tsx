@@ -19,20 +19,22 @@ const Groupes = () => {
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] bg-gradient-to-br from-background via-background to-muted/20">
       {/* Header */}
-      <div className="p-4 sm:p-6 border-b border-primary/10 bg-gradient-to-r from-card via-card/95 to-card/90 backdrop-blur-md shadow-lg">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 flex items-center justify-center shadow-xl ring-4 ring-primary/20">
-              <UsersIcon className="h-7 w-7 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-                Groupe établissement
-              </h1>
-              <p className="text-sm sm:text-base text-muted-foreground mt-1 flex items-center gap-2">
-                <span className="inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-                Communiquez avec tous les membres de l'établissement
-              </p>
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border shadow-sm">
+        <div className="w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-r from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/25 flex-shrink-0">
+                <UsersIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground truncate">
+                  Groupe établissement
+                </h1>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate mt-0.5 flex items-center gap-2">
+                  <span className="inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+                  Communiquez avec tous les membres de l'établissement
+                </p>
+              </div>
             </div>
           </div>
         </div>

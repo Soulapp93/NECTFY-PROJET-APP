@@ -229,12 +229,29 @@ const Compte = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <PageHeader 
-        title="Mon profil"
-        description="Gérez vos informations personnelles et les paramètres de votre profil"
-        icon={UserCircle}
-      />
+    <div className="min-h-screen">
+      {/* Header */}
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border shadow-sm">
+        <div className="w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-r from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/25 flex-shrink-0">
+                <UserCircle className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground truncate">
+                  Mon profil
+                </h1>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate mt-0.5">
+                  Gérez vos informations personnelles et les paramètres de votre profil
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-4 sm:p-6 lg:p-8">
 
       <div className="max-w-4xl">
         <ProfileSettings
@@ -246,6 +263,7 @@ const Compte = () => {
           isUploadingPhoto={isUploadingPhoto}
           isDeletingPhoto={isDeletingPhoto}
         />
+      </div>
       </div>
     </div>
   );
