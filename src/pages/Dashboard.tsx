@@ -83,13 +83,29 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 lg:space-y-10 min-h-screen">
+    <div className="min-h-screen">
       {/* Header */}
-      <PageHeader 
-        title="Tableau de bord"
-        description="Bienvenue sur votre espace de gestion NECTFORMA"
-        icon={LayoutDashboard}
-      />
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border shadow-sm">
+        <div className="w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-r from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/25 flex-shrink-0">
+                <LayoutDashboard className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground truncate">
+                  Tableau de bord
+                </h1>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate mt-0.5">
+                  Bienvenue sur votre espace de gestion NECTFORMA
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 lg:space-y-10">
 
       {/* Filters */}
       <DashboardFilters 
@@ -143,6 +159,7 @@ const Dashboard = () => {
         onOpenChange={setShowTextBookModal}
         selectedFormationId={selectedFormationId}
       />
+      </div>
     </div>
   );
 };
