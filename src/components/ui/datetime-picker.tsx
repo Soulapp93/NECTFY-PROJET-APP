@@ -29,6 +29,48 @@ interface DateTimePickerProps {
   showTimezone?: boolean
 }
 
+const parisParts = (d: Date) => {
+  const formatter = new Intl.DateTimeFormat('fr-FR', {
+    timeZone: 'Europe/Paris',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
+
+  const parts = formatter.formatToParts(d)
+  const get = (type: string) => parts.find(p => p.type === type)?.value || '0'
+
+  return {
+    year: parseInt(get('year')),
+    month: parseInt(get('month')),
+    day: parseInt(get('day')),
+    hour: parseInt(get('hour')),
+    minute: parseInt(get('minute')),
+  }
+}
+
+const isSameYmd = (a: { year: number; month: number; day: number }, b: { year: number; month: number; day: number }) =>
+  a.year === b.year && a.month === b.month && a.day === b.day
+
+const clampMinHourMinute = (hour: string, minute: string, minHour: number, minMinute: number) => {
+  const h = parseInt(hour)
+  const m = parseInt(minute)
+
+  if (h < minHour) return { hour: String(minHour).padStart(2, '0'), minute: String(minMinute).padStart(2, '0') }
+  if (h === minHour && m < minMinute) return { hour: String(minHour).padStart(2, '0'), minute: String(minMinute).padStart(2, '0') }
+  return { hour, minute }
+}
+
+const addMinuteWithCarry = (hour: number, minute: number) => {
+  const total = hour * 60 + minute + 1
+  const h = Math.min(23, Math.floor(total / 60))
+  const m = total % 60
+  return { hour: h, minute: m }
+}
+
 // Simple and reliable: Build UTC ISO from Paris wall-clock time
 const buildUtcIso = (year: number, month: number, day: number, hour: number, minute: number): string => {
   // Create a date string that we interpret as Paris time
@@ -115,6 +157,20 @@ export function DateTimePicker({
   const [selectedHour, setSelectedHour] = React.useState<string>('09')
   const [selectedMinute, setSelectedMinute] = React.useState<string>('00')
 
+  const minParis = React.useMemo(() => (minDate ? parisParts(minDate) : null), [minDate])
+  const selectedParisYmd = React.useMemo(() => {
+    if (!selectedDate) return null
+    return { year: selectedDate.getFullYear(), month: selectedDate.getMonth() + 1, day: selectedDate.getDate() }
+  }, [selectedDate])
+
+  const isMinDaySelected = !!(minParis && selectedParisYmd && isSameYmd(minParis, selectedParisYmd))
+  const minTimeForSelectedDay = React.useMemo(() => {
+    if (!minParis || !isMinDaySelected) return null
+    // Require strictly future time to avoid "send immediately" edge cases
+    const plusOne = addMinuteWithCarry(minParis.hour, minParis.minute)
+    return { hour: plusOne.hour, minute: plusOne.minute }
+  }, [minParis, isMinDaySelected])
+
   // Parse incoming value
   React.useEffect(() => {
     if (value) {
@@ -147,19 +203,53 @@ export function DateTimePicker({
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date)
     if (date) {
+      // If selecting the minDate day, clamp time so it's never in the past (Paris time)
+      if (minParis) {
+        const ymd = { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() }
+        if (isSameYmd(minParis, ymd)) {
+          const plusOne = addMinuteWithCarry(minParis.hour, minParis.minute)
+          const clamped = clampMinHourMinute(selectedHour, selectedMinute, plusOne.hour, plusOne.minute)
+          setSelectedHour(clamped.hour)
+          setSelectedMinute(clamped.minute)
+          emitChange(date, clamped.hour, clamped.minute)
+          setCalendarOpen(false)
+          return
+        }
+      }
+
       emitChange(date, selectedHour, selectedMinute)
       setCalendarOpen(false)
     }
   }
 
   const handleHourChange = (hour: string) => {
-    setSelectedHour(hour)
-    emitChange(selectedDate, hour, selectedMinute)
+    let nextHour = hour
+    let nextMinute = selectedMinute
+
+    if (minTimeForSelectedDay) {
+      const clamped = clampMinHourMinute(hour, selectedMinute, minTimeForSelectedDay.hour, minTimeForSelectedDay.minute)
+      nextHour = clamped.hour
+      nextMinute = clamped.minute
+      setSelectedMinute(nextMinute)
+    }
+
+    setSelectedHour(nextHour)
+    emitChange(selectedDate, nextHour, nextMinute)
   }
 
   const handleMinuteChange = (minute: string) => {
-    setSelectedMinute(minute)
-    emitChange(selectedDate, selectedHour, minute)
+    let nextHour = selectedHour
+    let nextMinute = minute
+
+    if (minTimeForSelectedDay) {
+      const clamped = clampMinHourMinute(selectedHour, minute, minTimeForSelectedDay.hour, minTimeForSelectedDay.minute)
+      nextHour = clamped.hour
+      nextMinute = clamped.minute
+      setSelectedHour(nextHour)
+    }
+
+    setSelectedMinute(nextMinute)
+    emitChange(selectedDate, nextHour, nextMinute)
   }
 
   const handleClear = () => {
@@ -235,14 +325,18 @@ export function DateTimePicker({
                 <SelectValue placeholder="HH" />
               </SelectTrigger>
               <SelectContent position="popper" className="max-h-[280px] overflow-y-auto">
-                {Array.from({ length: 24 }, (_, i) => {
-                  const val = String(i).padStart(2, '0')
-                  return (
-                    <SelectItem key={val} value={val}>
-                      {val}h
-                    </SelectItem>
-                  )
-                })}
+                {(() => {
+                  const start = isMinDaySelected ? (minTimeForSelectedDay?.hour ?? 0) : 0
+                  const hours = Array.from({ length: 24 - start }, (_, i) => start + i)
+                  return hours.map((h) => {
+                    const val = String(h).padStart(2, '0')
+                    return (
+                      <SelectItem key={val} value={val}>
+                        {val}h
+                      </SelectItem>
+                    )
+                  })
+                })()}
               </SelectContent>
             </Select>
             
@@ -253,14 +347,22 @@ export function DateTimePicker({
                 <SelectValue placeholder="MM" />
               </SelectTrigger>
               <SelectContent position="popper" className="max-h-[280px] overflow-y-auto">
-                {Array.from({ length: 60 }, (_, i) => {
-                  const val = String(i).padStart(2, '0')
-                  return (
-                    <SelectItem key={val} value={val}>
-                      {val}
-                    </SelectItem>
-                  )
-                })}
+                {(() => {
+                  const minMinute =
+                    minTimeForSelectedDay && selectedHour === String(minTimeForSelectedDay.hour).padStart(2, '0')
+                      ? minTimeForSelectedDay.minute
+                      : 0
+                  const start = isMinDaySelected ? minMinute : 0
+                  const minutes = Array.from({ length: 60 - start }, (_, i) => start + i)
+                  return minutes.map((m) => {
+                    const val = String(m).padStart(2, '0')
+                    return (
+                      <SelectItem key={val} value={val}>
+                        {val}
+                      </SelectItem>
+                    )
+                  })
+                })()}
               </SelectContent>
             </Select>
           </div>
