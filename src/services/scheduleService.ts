@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { retryQuery } from '@/lib/supabaseRetry';
 
 export interface Schedule {
   id: string;
@@ -45,18 +46,29 @@ export interface ScheduleSlot {
   };
 }
 
+const RETRY_OPTIONS = {
+  maxRetries: 3,
+  baseDelayMs: 500,
+  onRetry: (attempt: number, err: Error) => {
+    console.warn(`Retry attempt ${attempt} for schedule service:`, err.message);
+  }
+};
+
 export const scheduleService = {
   // Get all schedules
   async getSchedules(): Promise<Schedule[]> {
-    const { data, error } = await supabase
-      .from('schedules')
-      .select(`
-        *,
-        formations(title, color)
-      `)
-      .order('created_at', { ascending: false });
+    const { data, error } = await retryQuery(
+      () => supabase
+        .from('schedules')
+        .select(`
+          *,
+          formations(title, color)
+        `)
+        .order('created_at', { ascending: false }),
+      RETRY_OPTIONS
+    );
 
-    if (error) throw error;
+    if (error) throw new Error(error.message);
     return (data || []) as Schedule[];
   },
 

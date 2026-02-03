@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { getAppBaseUrl } from '@/lib/appBaseUrl';
+import { retryQuery } from '@/lib/supabaseRetry';
 
 export interface User {
   id: string;
@@ -206,14 +207,25 @@ async function sendLegacyActivationEmail(user: User, establishmentId: string): P
   }
 }
 
+const RETRY_OPTIONS = {
+  maxRetries: 3,
+  baseDelayMs: 500,
+  onRetry: (attempt: number, err: Error) => {
+    console.warn(`Retry attempt ${attempt} for user service:`, err.message);
+  }
+};
+
 export const userService = {
   async getUsers(): Promise<User[]> {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const { data, error } = await retryQuery(
+      () => supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false }),
+      RETRY_OPTIONS
+    );
 
-    if (error) throw error;
+    if (error) throw new Error(error.message);
     return (data || []) as User[];
   },
 

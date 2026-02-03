@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { retryQuery, rpcWithRetry, isTransientError } from '@/lib/supabaseRetry';
 
 export interface Formation {
   id: string;
@@ -18,6 +19,14 @@ export interface Formation {
   updated_at: string;
   formation_modules?: any[];
 }
+
+const RETRY_OPTIONS = {
+  maxRetries: 3,
+  baseDelayMs: 500,
+  onRetry: (attempt: number, err: Error) => {
+    console.warn(`Retry attempt ${attempt} for formation service:`, err.message);
+  }
+};
 
 export const formationService = {
   async createFormation(formationData: Omit<Formation, 'id' | 'created_at' | 'updated_at'>) {
@@ -41,19 +50,22 @@ export const formationService = {
   async getFormations() {
     console.log('Récupération des formations...');
     
-    const { data, error } = await supabase
-      .from('formations')
-      .select(`
-        *,
-        formation_modules (
-          id,
-          title,
-          description,
-          duration_hours,
-          order_index
-        )
-      `)
-      .order('created_at', { ascending: false });
+    const { data, error } = await retryQuery(
+      () => supabase
+        .from('formations')
+        .select(`
+          *,
+          formation_modules (
+            id,
+            title,
+            description,
+            duration_hours,
+            order_index
+          )
+        `)
+        .order('created_at', { ascending: false }),
+      RETRY_OPTIONS
+    );
 
     if (error) {
       console.error('Erreur lors de la récupération des formations:', error);
@@ -71,20 +83,23 @@ export const formationService = {
   async getFormationById(id: string) {
     console.log('Récupération de la formation par ID:', id);
     
-    const { data, error } = await supabase
-      .from('formations')
-      .select(`
-        *,
-        formation_modules (
-          id,
-          title,
-          description,
-          duration_hours,
-          order_index
-        )
-      `)
-      .eq('id', id)
-      .single();
+    const { data, error } = await retryQuery(
+      () => supabase
+        .from('formations')
+        .select(`
+          *,
+          formation_modules (
+            id,
+            title,
+            description,
+            duration_hours,
+            order_index
+          )
+        `)
+        .eq('id', id)
+        .single(),
+      RETRY_OPTIONS
+    );
 
     if (error) {
       console.error('Erreur lors de la récupération de la formation:', error);
@@ -152,17 +167,20 @@ export const formationService = {
   async getFormationParticipantsCount(formationId: string): Promise<number> {
     console.log('Récupération du nombre de participants pour la formation:', formationId);
     
-    // Utiliser la fonction RPC qui filtre uniquement les étudiants
-    const { data, error } = await supabase.rpc('get_formation_students', {
-      formation_id_param: formationId
-    });
+    // Utiliser la fonction RPC qui filtre uniquement les étudiants avec retry
+    const { data, error } = await rpcWithRetry(
+      () => supabase.rpc('get_formation_students', {
+        formation_id_param: formationId
+      }),
+      RETRY_OPTIONS
+    );
 
     if (error) {
       console.error('Erreur lors de la récupération des participants:', error);
       return 0;
     }
 
-    return data?.length || 0;
+    return (data as any[])?.length || 0;
   },
 
   async getFormationInstructors(formationId: string): Promise<{ id: string; first_name: string; last_name: string }[]> {
