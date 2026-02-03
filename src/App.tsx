@@ -7,6 +7,7 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import Sidebar from './components/Sidebar';
 import NotificationBell from './components/NotificationBell';
+import MobileHeader from './components/MobileHeader';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import AdminPrincipalRoute from './components/AdminPrincipalRoute';
@@ -176,8 +177,11 @@ const AppContent = () => {
         <Sidebar />
         
         <div className="flex flex-col flex-1 w-full min-w-0">
-          {/* Header - always visible */}
-          <header className="flex h-14 sm:h-16 items-center justify-end border-b bg-white px-4 sm:px-6 sticky top-0 z-40 shadow-sm">
+          {/* Header mobile */}
+          <MobileHeader />
+
+          {/* Header desktop */}
+          <header className="hidden md:flex h-14 sm:h-16 items-center justify-end border-b bg-white px-4 sm:px-6 sticky top-0 z-40 shadow-sm">
             <div className="flex items-center space-x-3 sm:space-x-4">
               <NotificationBell />
             </div>
