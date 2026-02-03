@@ -121,14 +121,14 @@
 
   /* Desktop compact scaling */
   @media (min-width: 1024px) {
-    html {
-      font-size: 13px;
+html {
+  font-size: 12px;
     }
   }
 
-  @media (min-width: 1440px) {
-    html {
-      font-size: 14px;
+@media (min-width: 1440px) {
+  html {
+    font-size: 13px;
     }
   }
 
