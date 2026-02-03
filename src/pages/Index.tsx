@@ -322,6 +322,9 @@ const Index = () => {
               <Link to="/pourquoi-nous" className="text-white/80 hover:text-white font-medium transition-all duration-300 hover:scale-105">
                 Pourquoi nous ?
               </Link>
+              <Link to="/documentation" className="text-white/80 hover:text-white font-medium transition-all duration-300 hover:scale-105">
+                Documentation
+              </Link>
               <a 
                 href="#contact" 
                 className="text-white/80 hover:text-white font-medium transition-all duration-300 hover:scale-105"
