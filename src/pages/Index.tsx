@@ -62,10 +62,10 @@ const Index = () => {
     {
       id: 'dashboard',
       icon: LayoutDashboard,
-      title: 'Tableau de Bord',
+      title: 'Tableau de bord',
       subtitle: 'Vue d\'ensemble en temps réel',
-      description: 'Accédez à une vue synthétique de votre établissement avec des indicateurs clés : taux de présence, sessions à venir, cahiers de textes à compléter, et statistiques globales.',
-      benefits: ['Statistiques de présence en temps réel', 'Alertes sur les cahiers de textes manquants', 'Vue des prochaines sessions'],
+      description: 'Accédez à une vue synthétique de votre établissement avec des indicateurs clés : taux de présence, sessions à venir, cahiers de texte à compléter, et statistiques globales.',
+      benefits: ['Statistiques de présence en temps réel', 'Alertes sur les cahiers de texte manquants', 'Vue des prochaines sessions'],
       details: [
         'Taux de présence global et par formation',
         'Nombre de sessions planifiées cette semaine',
@@ -80,13 +80,13 @@ const Index = () => {
       icon: ShieldCheck,
       title: 'Administration',
       subtitle: 'Gestion centralisée complète',
-      description: 'Centre de contrôle unifié pour gérer les utilisateurs, formations, cahiers de textes, emplois du temps et feuilles d\'émargement depuis une interface intuitive avec des onglets dédiés.',
+      description: 'Centre de contrôle unifié pour gérer les utilisateurs, formations, cahiers de texte, emplois du temps et feuilles d\'émargement depuis une interface intuitive avec des onglets dédiés.',
       benefits: ['Interface unifiée avec onglets', 'Accès rapide à toutes les fonctions', 'Gestion complète des données'],
       details: [
         'Onglet Utilisateurs : création, import Excel, gestion des rôles',
         'Onglet Formations : modules, participants, instructeurs',
-        'Onglet Cahiers de Textes : suivi par formation',
-        'Onglet Emplois du Temps : planning visuel',
+        'Onglet Cahiers de texte : suivi par formation',
+        'Onglet Emplois du temps : planning visuel',
         'Onglet Émargements : génération et suivi'
       ],
       imagePlaceholder: 'administration',
@@ -95,8 +95,8 @@ const Index = () => {
     {
       id: 'users',
       icon: Users,
-      title: 'Gestion des Utilisateurs',
-      subtitle: 'Apprenants, Formateurs, Administrateurs',
+      title: 'Gestion des utilisateurs',
+      subtitle: 'Apprenants, formateurs, administrateurs',
       description: 'Gérez l\'ensemble des profils de votre établissement. Créez des comptes individuellement ou par import Excel, attribuez les rôles (AdminPrincipal, Admin, Formateur, Étudiant) et suivez leur activité.',
       benefits: ['Import/Export Excel des utilisateurs', 'Attribution des rôles granulaire', 'Invitations par email automatiques'],
       details: [
@@ -113,7 +113,7 @@ const Index = () => {
     {
       id: 'formations',
       icon: GraduationCap,
-      title: 'Gestion des Formations',
+      title: 'Gestion des formations',
       subtitle: 'Programmes modulaires complets',
       description: 'Créez des formations structurées avec modules personnalisés. Définissez les dates, durées, niveaux et assignez des formateurs et apprenants. Chaque formation dispose de son propre espace.',
       benefits: ['Structure modulaire flexible', 'Assignation formateurs/apprenants', 'Espace dédié par formation'],
@@ -131,16 +131,16 @@ const Index = () => {
     {
       id: 'textbooks',
       icon: BookText,
-      title: 'Cahiers de Textes',
+      title: 'Cahiers de texte',
       subtitle: 'Suivi pédagogique détaillé',
-      description: 'Tenez à jour les cahiers de textes de vos formations. Chaque entrée documente : date, horaires, matière abordée, contenu du cours et travail à faire. Pièces jointes supportées.',
+      description: 'Tenez à jour les cahiers de texte de vos formations. Chaque entrée documente : date, horaires, matière abordée, contenu du cours et travail à faire. Pièces jointes supportées.',
       benefits: ['Entrées liées aux créneaux EDT', 'Historique complet des cours', 'Pièces jointes (PDF, images, etc.)'],
       details: [
         'Création automatique depuis l\'emploi du temps',
         'Champs : matière, contenu, travail à faire',
         'Upload de documents de cours',
         'Vue chronologique par formation',
-        'Export PDF des cahiers de textes',
+        'Export PDF des cahiers de texte',
         'Alertes pour entrées manquantes'
       ],
       imagePlaceholder: 'textbooks',
@@ -149,7 +149,7 @@ const Index = () => {
     {
       id: 'schedule',
       icon: CalendarDays,
-      title: 'Emplois du Temps',
+      title: 'Emplois du temps',
       subtitle: 'Planning intelligent et flexible',
       description: 'Planifiez les séances de formation avec un calendrier visuel. Définissez les modules, formateurs, salles et horaires. Génération automatique des feuilles d\'émargement.',
       benefits: ['Vue calendrier interactive', 'Gestion des salles et formateurs', 'Import Excel des plannings'],
@@ -167,7 +167,7 @@ const Index = () => {
     {
       id: 'attendance',
       icon: ClipboardCheck,
-      title: 'Gestion des Émargements',
+      title: 'Gestion des émargements',
       subtitle: 'Signatures numériques conformes',
       description: 'Système d\'émargement digital complet : génération automatique des feuilles depuis l\'EDT, signatures électroniques, QR codes dynamiques, et suivi des présences en temps réel.',
       benefits: ['QR Code dynamique sécurisé', 'Signature électronique tactile', 'Conformité réglementaire'],
@@ -186,7 +186,7 @@ const Index = () => {
     {
       id: 'messaging',
       icon: Mail,
-      title: 'Messagerie Interne',
+      title: 'Messagerie interne',
       subtitle: 'Communication professionnelle',
       description: 'Messagerie intégrée type email pour communiquer avec tous les utilisateurs de votre établissement. Envoyez des messages individuels ou groupés avec pièces jointes.',
       benefits: ['Messages avec pièces jointes', 'Envoi individuel ou groupé', 'Boîte de réception organisée'],
@@ -204,7 +204,7 @@ const Index = () => {
     {
       id: 'groups',
       icon: UsersRound,
-      title: 'Groupes Établissement',
+      title: 'Groupes établissement',
       subtitle: 'Discussions collaboratives',
       description: 'Créez des groupes de discussion pour vos formations, équipes ou projets. Chat en temps réel, partage de fichiers et collaboration instantanée entre membres.',
       benefits: ['Groupes par formation automatiques', 'Chat temps réel', 'Partage de fichiers'],
@@ -222,7 +222,7 @@ const Index = () => {
     {
       id: 'establishment',
       icon: Building2,
-      title: 'Gestion du Compte Établissement',
+      title: 'Gestion du compte établissement',
       subtitle: 'Configuration et paramètres',
       description: 'Configurez les informations de votre établissement : nom, logo, coordonnées, SIRET. Personnalisez l\'apparence et gérez les paramètres globaux de la plateforme.',
       benefits: ['Logo et identité visuelle', 'Informations légales complètes', 'Personnalisation de l\'interface'],
@@ -240,7 +240,7 @@ const Index = () => {
     {
       id: 'profiles',
       icon: UserCircle,
-      title: 'Gestion des Profils',
+      title: 'Gestion des profils',
       subtitle: 'Compte utilisateur personnel',
       description: 'Chaque utilisateur dispose d\'un espace profil pour gérer ses informations personnelles, sa photo, sa signature enregistrée et ses préférences de notifications.',
       benefits: ['Photo de profil', 'Signature électronique enregistrée', 'Préférences personnelles'],
@@ -258,7 +258,7 @@ const Index = () => {
     {
       id: 'tutors',
       icon: Briefcase,
-      title: 'Espace Tuteurs Entreprises',
+      title: 'Espace tuteurs entreprises',
       subtitle: 'Suivi des alternants',
       description: 'Espace dédié aux tuteurs entreprises pour le suivi de leurs alternants. Visualisation des plannings, consultation des présences et communication avec l\'établissement.',
       benefits: ['Vue planning de l\'alternant', 'Suivi des présences', 'Communication directe'],
@@ -276,7 +276,7 @@ const Index = () => {
     {
       id: 'virtual-classes',
       icon: Monitor,
-      title: 'Classes Virtuelles',
+      title: 'Classes virtuelles',
       subtitle: 'À venir',
       description: 'Organisez des sessions de formation en ligne avec visioconférence intégrée. Partagez votre écran, interagissez en temps réel avec vos apprenants et enregistrez vos sessions pour les rendre accessibles ultérieurement.',
       benefits: ['Visioconférence intégrée', 'Partage d\'écran', 'Enregistrement des sessions'],

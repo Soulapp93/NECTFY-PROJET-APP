@@ -105,8 +105,8 @@ const Sidebar = () => {
   const administrationSubItems = [
     { name: 'Gestion des utilisateurs', href: '/administration?tab=users', icon: Users },
     { name: 'Gestion des formations', href: '/administration?tab=formations', icon: GraduationCap },
-    { name: 'Gestion des Cahiers de Texte', href: '/administration?tab=textbooks', icon: BookText },
-    { name: 'Gestion des Emplois du Temps', href: '/administration?tab=schedules', icon: CalendarDays },
+    { name: 'Gestion des cahiers de texte', href: '/administration?tab=textbooks', icon: BookText },
+    { name: 'Gestion des emplois du temps', href: '/administration?tab=schedules', icon: CalendarDays },
     { name: 'Feuilles d\'émargement', href: '/administration?tab=attendance', icon: ClipboardCheck },
   ];
   
@@ -114,42 +114,41 @@ const Sidebar = () => {
   const principalAdminNavigation: NavigationItem[] = [
     { name: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Administration', href: '/administration', icon: ShieldCheck, subItems: administrationSubItems },
-    { name: 'Formation', href: '/formations', icon: GraduationCap },
+    { name: 'Formations', href: '/formations', icon: GraduationCap },
     { name: 'Emploi du temps', href: '/emploi-temps', icon: CalendarClock },
     { name: 'Messagerie', href: '/messagerie', icon: Mail },
     { name: 'Groupes', href: '/groupes', icon: UsersRound },
     { name: 'Gestion du compte', href: '/gestion-etablissement', icon: Building2 },
-    { name: 'Mon Profil', href: '/compte', icon: UserCircle },
+    { name: 'Mon profil', href: '/compte', icon: UserCircle },
   ];
 
   // Navigation pour Admin (SANS gestion du compte - réservé à AdminPrincipal)
   const adminNavigation: NavigationItem[] = [
     { name: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Administration', href: '/administration', icon: ShieldCheck, subItems: administrationSubItems },
-    { name: 'Formation', href: '/formations', icon: GraduationCap },
+    { name: 'Formations', href: '/formations', icon: GraduationCap },
     { name: 'Emploi du temps', href: '/emploi-temps', icon: CalendarClock },
     { name: 'Messagerie', href: '/messagerie', icon: Mail },
     { name: 'Groupes', href: '/groupes', icon: UsersRound },
-    { name: 'Mon Profil', href: '/compte', icon: UserCircle },
+    { name: 'Mon profil', href: '/compte', icon: UserCircle },
   ];
 
   // Navigation pour tuteurs (4 onglets - vue apprenti uniquement, pas de tableau de bord)
   const tutorNavigation: NavigationItem[] = [
-    { name: 'Formation Apprenti', href: '/formations', icon: GraduationCap },
-    { name: 'Suivi Émargement Apprenti', href: '/suivi-emargement', icon: ClipboardCheck },
-    { name: 'Emploi du temps Apprenti', href: '/emploi-temps', icon: CalendarClock },
-    { name: 'Mon Profil', href: '/compte', icon: UserCircle },
+    { name: 'Formation apprenti', href: '/formations', icon: GraduationCap },
+    { name: 'Suivi émargement apprenti', href: '/suivi-emargement', icon: ClipboardCheck },
+    { name: 'Emploi du temps apprenti', href: '/emploi-temps', icon: CalendarClock },
+    { name: 'Mon profil', href: '/compte', icon: UserCircle },
   ];
 
   // Navigation pour les formateurs et étudiants (avec profil)
   const limitedNavigation: NavigationItem[] = [
-    { name: 'Formation', href: '/formations', icon: GraduationCap },
-    
-    { name: 'Suivi Émargement', href: '/suivi-emargement', icon: ClipboardCheck },
+    { name: 'Formations', href: '/formations', icon: GraduationCap },
+    { name: 'Suivi émargement', href: '/suivi-emargement', icon: ClipboardCheck },
     { name: 'Emploi du temps', href: '/emploi-temps', icon: CalendarClock },
     { name: 'Messagerie', href: '/messagerie', icon: Mail },
     { name: 'Groupes', href: '/groupes', icon: UsersRound },
-    { name: 'Mon Profil', href: '/compte', icon: UserCircle },
+    { name: 'Mon profil', href: '/compte', icon: UserCircle },
   ];
 
   // Sélectionner la navigation selon le rôle
@@ -245,7 +244,7 @@ const Sidebar = () => {
                     {userDisplayInfo.relationInfo.type === 'tutor' ? (
                       <div className="space-y-0.5">
                         <p className="text-[10px] text-white/80 font-medium flex items-center gap-1">
-                          <span className="text-xs">👨‍🏫</span> Mon Tuteur
+                          <span className="text-xs">👨‍🏫</span> Mon tuteur
                         </p>
                         <p className="text-[10px] text-white font-semibold truncate pl-4">
                           {userDisplayInfo.relationInfo.name}
@@ -260,7 +259,7 @@ const Sidebar = () => {
                     ) : (
                       <div className="space-y-0.5">
                         <p className="text-[10px] text-white/80 font-medium flex items-center gap-1">
-                          <span className="text-xs">👨‍🎓</span> Mon Apprenti
+                          <span className="text-xs">👨‍🎓</span> Mon apprenti
                         </p>
                         <p className="text-[10px] text-white font-semibold truncate pl-4">
                           {userDisplayInfo.relationInfo.name}

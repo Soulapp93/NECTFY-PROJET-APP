@@ -70,7 +70,7 @@ const CreateScheduleModal: React.FC<CreateScheduleModalProps> = ({
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
               <CalendarDays className="h-4 w-4 text-primary-foreground" />
             </div>
-            Créer un Emploi du Temps
+            Créer un emploi du temps
           </DialogTitle>
         </DialogHeader>
 

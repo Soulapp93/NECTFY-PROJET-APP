@@ -231,7 +231,7 @@ const Compte = () => {
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <PageHeader 
-        title="Mon Profil"
+        title="Mon profil"
         description="Gérez vos informations personnelles et les paramètres de votre profil"
         icon={UserCircle}
       />

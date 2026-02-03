@@ -24,25 +24,25 @@ const Administration = () => {
     switch (activeTab) {
       case 'users': 
         return {
-          title: 'Gestion des Utilisateurs',
+          title: 'Gestion des utilisateurs',
           description: 'Gérez les comptes utilisateurs de la plateforme.',
           icon: Users
         };
       case 'formations': 
         return {
-          title: 'Gestion des Formations',
+          title: 'Gestion des formations',
           description: 'Créez et gérez les formations proposées.',
           icon: GraduationCap
         };
       case 'textbooks': 
         return {
-          title: 'Gestion des Cahiers de Texte',
+          title: 'Gestion des cahiers de texte',
           description: 'Consultez et gérez les cahiers de texte.',
           icon: BookText
         };
       case 'schedules': 
         return {
-          title: 'Gestion des Emplois du Temps',
+          title: 'Gestion des emplois du temps',
           description: 'Organisez les emplois du temps des formations.',
           icon: CalendarDays
         };

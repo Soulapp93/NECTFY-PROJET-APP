@@ -139,7 +139,7 @@ const TextBooksList: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center space-x-3">
           <BookText className="h-5 sm:h-6 w-5 sm:w-6 text-purple-600" />
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Gestion des Cahiers de Texte</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Gestion des cahiers de texte</h2>
         </div>
         <div className="flex items-center space-x-2 flex-wrap">
           {/* View mode toggle */}
@@ -155,7 +155,7 @@ const TextBooksList: React.FC = () => {
           </Tabs>
           <Button onClick={() => setIsCreateModalOpen(true)} className="bg-purple-600 hover:bg-purple-700 text-xs sm:text-sm" size="sm">
             <Plus className="h-4 w-4 mr-1 sm:mr-2" />
-            <span className="hidden sm:inline">Créer un Cahier de texte</span>
+            <span className="hidden sm:inline">Créer un cahier de texte</span>
             <span className="sm:hidden">Créer</span>
           </Button>
         </div>

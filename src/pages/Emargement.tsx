@@ -108,7 +108,7 @@ const Emargement = () => {
       {/* Header Section */}
       <div className="p-4 sm:p-6 lg:p-8 border-b border-border/50 bg-card/80 backdrop-blur-sm">
         <PageHeader 
-          title="Gestion des Émargements"
+          title="Gestion des émargements"
           description="Suivez, signez et analysez les présences"
           icon={ClipboardCheck}
         />
@@ -118,14 +118,14 @@ const Emargement = () => {
         {/* Badge Mon Pointage */}
         <div className="mb-6">
           <Badge className="bg-purple-600 text-white px-4 py-2 text-sm font-medium rounded-full">
-            📋 Mon Pointage
+            📋 Mon pointage
           </Badge>
         </div>
 
         <div className="space-y-4 sm:space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Mon Pointage</h2>
+              <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Mon pointage</h2>
               <p className="text-sm text-gray-600">Cours du jour</p>
             </div>
             <div className="flex gap-2 flex-wrap">

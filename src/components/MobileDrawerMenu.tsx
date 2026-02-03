@@ -109,7 +109,7 @@ const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({ isOpen, onClose }) 
       sections.push({
         title: 'Compte',
         items: [
-          { name: 'Mon Profil', href: '/compte', icon: User, description: 'Paramètres du compte' },
+          { name: 'Mon profil', href: '/compte', icon: User, description: 'Paramètres du compte' },
         ]
       });
       
@@ -158,7 +158,7 @@ const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({ isOpen, onClose }) 
 
     // Section Compte
     const accountItems: MenuItem[] = [
-      { name: 'Mon Profil', href: '/compte', icon: User, description: 'Paramètres du compte' },
+      { name: 'Mon profil', href: '/compte', icon: User, description: 'Paramètres du compte' },
     ];
 
     if (isPrincipalAdmin) {

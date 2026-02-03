@@ -169,7 +169,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileSpreadsheet className="h-5 w-5 text-primary" />
-            Import Excel - Emploi du Temps
+            Import Excel - Emploi du temps
           </DialogTitle>
           <DialogDescription>
             Importez votre emploi du temps depuis un fichier Excel. Téléchargez d'abord le modèle pour connaître le format requis.

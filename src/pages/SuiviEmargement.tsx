@@ -283,11 +283,11 @@ const SuiviEmargement = () => {
   const getPageTitle = () => {
     if (userRole === 'Tuteur') {
       if (studentInfo) {
-        return `Suivi Émargement - ${studentInfo.name}`;
+        return `Suivi émargement - ${studentInfo.name}`;
       }
-      return 'Suivi Émargement Apprenti';
+      return 'Suivi émargement apprenti';
     }
-    return 'Suivi Émargement';
+    return 'Suivi émargement';
   };
 
   const getPageDescription = () => {
@@ -326,7 +326,7 @@ const SuiviEmargement = () => {
     return (
       <div className="p-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Suivi Émargement Apprenti</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Suivi émargement apprenti</h1>
           <p className="text-gray-600">Suivez les émargements de votre apprenti</p>
         </div>
         

@@ -54,7 +54,7 @@ const Dashboard = () => {
       trend: stats.attendanceRate >= 80 ? { value: stats.attendanceRate - 70, isPositive: true } : undefined
     },
     {
-      title: 'Cahiers de textes',
+      title: 'Cahiers de texte',
       value: loading ? '...' : stats.textBookMissingEntries.toString(),
       icon: FileText,
       description: 'Entrées non effectuées',

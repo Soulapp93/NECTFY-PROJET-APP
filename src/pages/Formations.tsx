@@ -22,7 +22,7 @@ const Formations = () => {
     return (
       <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 min-h-screen">
         <PageHeader 
-          title="Formations Apprenti"
+          title="Formations apprenti"
           description="Suivez les formations de votre apprenti"
           icon={GraduationCap}
         />

@@ -27,7 +27,7 @@ const Groupes = () => {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-                Groupe Établissement
+                Groupe établissement
               </h1>
               <p className="text-sm sm:text-base text-muted-foreground mt-1 flex items-center gap-2">
                 <span className="inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>

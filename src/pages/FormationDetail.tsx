@@ -162,7 +162,7 @@ const FormationDetail = () => {
                 className="bg-white/20 border-white/30 text-white hover:bg-white/30 text-xs sm:text-sm w-full sm:w-auto justify-center"
               >
                 <BookText className="h-4 w-4 mr-2 flex-shrink-0" />
-                <span className="whitespace-nowrap">Cahier de Texte</span>
+                <span className="whitespace-nowrap">Cahier de texte</span>
               </Button>
             </div>
           </div>

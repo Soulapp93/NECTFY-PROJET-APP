@@ -24,8 +24,8 @@ const MobileHeader = () => {
       '/groupes': 'Groupes',
       '/emargement': 'Émargement',
       '/emargement-qr': 'Scanner QR',
-      '/suivi-emargement': 'Suivi Émargement',
-      '/compte': 'Mon Profil',
+      '/suivi-emargement': 'Suivi émargement',
+      '/compte': 'Mon profil',
       '/gestion-etablissement': 'Gestion établissement',
     };
     
