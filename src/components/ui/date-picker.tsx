@@ -60,7 +60,11 @@ export function DatePicker({
           selected={selected}
           onSelect={(d) => {
             if (!d) return;
-            onChange?.(format(d, "yyyy-MM-dd"));
+            // Use local date formatting to avoid timezone shifts
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            onChange?.(`${year}-${month}-${day}`);
           }}
           locale={fr}
           initialFocus
