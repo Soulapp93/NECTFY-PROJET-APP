@@ -31,7 +31,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
 }) => {
   return (
     <div className={cn(
-      sticky && 'sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border shadow-sm -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 sm:py-4 mb-4 sm:mb-6',
+      sticky && 'sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border shadow-sm -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 sm:py-4 mb-4 sm:mb-6',
       !sticky && 'mb-4 sm:mb-6',
       className
     )}>
