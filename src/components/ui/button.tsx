@@ -22,11 +22,11 @@ const buttonVariants = cva(
         elegant: "bg-card text-card-foreground border border-border/50 hover:bg-muted/50 shadow-sm hover:shadow-md active:scale-[0.98] rounded-lg"
       },
       size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 px-3",
-        lg: "h-10 px-6 text-base",
-        icon: "h-8 w-8",
-        xs: "h-7 px-3 text-xs"
+        default: "h-8 px-3 py-1.5",
+        sm: "h-7 px-2.5",
+        lg: "h-9 px-5 text-sm",
+        icon: "h-7 w-7",
+        xs: "h-6 px-2 text-xs"
       },
     },
     defaultVariants: {
