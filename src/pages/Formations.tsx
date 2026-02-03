@@ -13,6 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import { TutorFormationsView } from '@/components/formations/TutorFormationsView';
 import { PageHeader } from '@/components/ui/page-header';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ErrorState } from '@/components/ui/error-state';
+import { LoadingState } from '@/components/ui/loading-state';
 
 const Formations = () => {
   const { userRole } = useCurrentUser();
@@ -117,10 +119,14 @@ const FormationsContent = ({ userRole }: { userRole: string | null }) => {
 
   const levels = ['BAC+1', 'BAC+2', 'BAC+3', 'BAC+4', 'BAC+5'];
 
+  const isNetworkError = error?.toLowerCase().includes('load failed') || 
+                         error?.toLowerCase().includes('failed to fetch') ||
+                         error?.toLowerCase().includes('connexion');
+
   if (loading) {
     return (
-      <div className="p-8 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+      <div className="p-8">
+        <LoadingState message="Chargement des formations..." />
       </div>
     );
   }
@@ -128,10 +134,12 @@ const FormationsContent = ({ userRole }: { userRole: string | null }) => {
   if (error) {
     return (
       <div className="p-8">
-        <div className="text-red-600">Erreur: {error}</div>
-        <button onClick={refetch} className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg">
-          Réessayer
-        </button>
+        <ErrorState 
+          title="Erreur de chargement"
+          message={error}
+          onRetry={refetch}
+          isNetworkError={isNetworkError}
+        />
       </div>
     );
   }
