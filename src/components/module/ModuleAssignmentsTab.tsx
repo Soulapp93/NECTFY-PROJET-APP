@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, FileText, Users, Calendar, Edit, Trash2, Upload, CheckCircle, Clock, Eye } from 'lucide-react';
+import { Plus, FileText, Users, Calendar, Edit, Trash2, Upload, Eye, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { assignmentService, Assignment, AssignmentSubmission } from '@/services/assignmentService';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -7,6 +7,7 @@ import CreateAssignmentModal from './CreateAssignmentModal';
 import AssignmentSubmissionsModal from './AssignmentSubmissionsModal';
 import SubmitAssignmentModal from './SubmitAssignmentModal';
 import StudentCorrectionViewModal from './StudentCorrectionViewModal';
+import AssignmentDetailModal from './AssignmentDetailModal';
 import { toast } from 'sonner';
 
 interface ModuleAssignmentsTabProps {
@@ -21,6 +22,7 @@ const ModuleAssignmentsTab: React.FC<ModuleAssignmentsTabProps> = ({ moduleId })
   const [showSubmissionsModal, setShowSubmissionsModal] = useState<Assignment | null>(null);
   const [showSubmitModal, setShowSubmitModal] = useState<Assignment | null>(null);
   const [showCorrectionModal, setShowCorrectionModal] = useState<{ assignment: Assignment; submission: AssignmentSubmission } | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState<Assignment | null>(null);
   const [studentSubmissions, setStudentSubmissions] = useState<Record<string, AssignmentSubmission | null>>({});
 
   const { userId, userRole, loading: userLoading } = useCurrentUser();
@@ -159,9 +161,9 @@ const ModuleAssignmentsTab: React.FC<ModuleAssignmentsTabProps> = ({ moduleId })
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-medium text-gray-900">{assignment.title}</h3>
+                      <h3 className="font-medium text-foreground">{assignment.title}</h3>
                       {assignment.is_published && (
-                        <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs">
+                        <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full text-xs">
                           Publié
                         </span>
                       )}
@@ -174,16 +176,16 @@ const ModuleAssignmentsTab: React.FC<ModuleAssignmentsTabProps> = ({ moduleId })
                     </div>
                     
                     {assignment.description && (
-                      <p className="text-gray-600 text-sm mb-3">{assignment.description}</p>
+                      <p className="text-muted-foreground text-sm mb-3 line-clamp-2">{assignment.description}</p>
                     )}
                     
-                    <div className="flex items-center flex-wrap gap-3 text-sm text-gray-500">
+                    <div className="flex items-center flex-wrap gap-3 text-sm text-muted-foreground">
                       <span className="flex items-center">
                         <FileText className="h-4 w-4 mr-1" />
                         {assignment.assignment_type}
                       </span>
                       {assignment.due_date && (
-                        <span className={`flex items-center ${isOverdue && !hasSubmitted ? 'text-red-600' : ''}`}>
+                        <span className={`flex items-center ${isOverdue && !hasSubmitted ? 'text-destructive' : ''}`}>
                           <Calendar className="h-4 w-4 mr-1" />
                           Échéance: {new Date(assignment.due_date).toLocaleDateString()}
                           {isOverdue && !hasSubmitted && ' (Dépassée)'}
@@ -193,7 +195,18 @@ const ModuleAssignmentsTab: React.FC<ModuleAssignmentsTabProps> = ({ moduleId })
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2 ml-4">
+                  <div className="flex items-center gap-2 ml-4 flex-wrap justify-end">
+                    {/* === BOUTON VOIR DÉTAILS - POUR TOUS === */}
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => setShowDetailModal(assignment)}
+                      className="text-primary"
+                    >
+                      <Info className="h-4 w-4 mr-1" />
+                      Détails
+                    </Button>
+
                     {/* === BOUTONS ÉTUDIANT === */}
                     {isEtudiant && (
                       <>
@@ -250,7 +263,7 @@ const ModuleAssignmentsTab: React.FC<ModuleAssignmentsTabProps> = ({ moduleId })
                             <Button 
                               size="sm" 
                               variant="ghost" 
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="text-destructive hover:text-destructive/80 hover:bg-destructive/10"
                               onClick={() => handleDelete(assignment.id)}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -319,6 +332,13 @@ const ModuleAssignmentsTab: React.FC<ModuleAssignmentsTabProps> = ({ moduleId })
           submission={showCorrectionModal.submission}
           assignmentTitle={showCorrectionModal.assignment.title}
           onClose={() => setShowCorrectionModal(null)}
+        />
+      )}
+
+      {showDetailModal && (
+        <AssignmentDetailModal
+          assignment={showDetailModal}
+          onClose={() => setShowDetailModal(null)}
         />
       )}
     </div>
