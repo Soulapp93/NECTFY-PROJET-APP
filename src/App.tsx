@@ -173,8 +173,10 @@ const AppContent = () => {
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="flex h-screen w-full bg-gray-50">
-        {/* Sidebar - always visible */}
-        <Sidebar />
+        {/* Sidebar - desktop only (mobile uses the drawer menu from MobileHeader) */}
+        <div className="hidden md:block">
+          <Sidebar />
+        </div>
         
         <div className="flex flex-col flex-1 w-full min-w-0">
           {/* Header mobile */}
