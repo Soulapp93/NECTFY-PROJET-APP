@@ -39,7 +39,18 @@ export const useMessages = () => {
 
   const sendMessage = async (messageData: any) => {
     try {
-      await messageService.createMessage(messageData);
+      // Map frontend field names to service expected format
+      const normalizedData = {
+        subject: messageData.subject,
+        content: messageData.content,
+        recipients: messageData.recipients,
+        attachments: messageData.attachments,
+        is_draft: messageData.is_draft,
+        // Map scheduled_for to scheduledFor for the service
+        scheduledFor: messageData.scheduled_for || messageData.scheduledFor,
+      };
+      
+      await messageService.createMessage(normalizedData);
       await fetchMessages();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de l\'envoi du message');

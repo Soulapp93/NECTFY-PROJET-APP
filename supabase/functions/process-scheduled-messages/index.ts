@@ -11,9 +11,40 @@ const jsonHeaders = {
   "Content-Type": "application/json; charset=utf-8",
 };
 
+const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
+
 interface RecipientPayload {
   type: "user" | "formation" | "all_instructors";
   ids?: string[];
+}
+
+function generateMessageEmailHtml(senderName: string, subject: string, recipientName: string): string {
+  return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;font-family:'Segoe UI',sans-serif;background:#f4f4f7;"><table width="100%" style="padding:40px 20px;"><tr><td align="center"><table width="600" style="background:#fff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.1);"><tr><td style="background:linear-gradient(135deg,#8B5CF6,#7C3AED);padding:30px 40px;border-radius:12px 12px 0 0;"><h1 style="color:#fff;margin:0;font-size:24px;">NECTFORMA</h1></td></tr><tr><td style="padding:40px;"><p style="color:#374151;">Bonjour <strong>${recipientName}</strong>,</p><div style="background:#F3F4F6;border-left:4px solid #8B5CF6;padding:20px;border-radius:0 8px 8px 0;margin-bottom:24px;"><h2 style="color:#1F2937;font-size:18px;margin:0 0 12px;">📩 Nouveau message reçu</h2><p style="color:#4B5563;margin:0;"><strong>${senderName}</strong> vous a envoyé: "${subject}".</p></div><table width="100%"><tr><td align="center" style="padding:20px 0;"><a href="https://nectforme.lovable.app/messagerie" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED);color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;">Lire le message</a></td></tr></table></td></tr><tr><td style="background:#F9FAFB;padding:24px 40px;border-radius:0 0 12px 12px;border-top:1px solid #E5E7EB;text-align:center;"><p style="color:#6B7280;font-size:13px;margin:0;">© ${new Date().getFullYear()} NECTFORMA</p></td></tr></table></td></tr></table></body></html>`;
+}
+
+async function sendEmailNotification(brevoApiKey: string, toEmail: string, toName: string, senderName: string, messageSubject: string): Promise<void> {
+  try {
+    const response = await fetch(BREVO_API_URL, {
+      method: "POST",
+      headers: { "accept": "application/json", "api-key": brevoApiKey, "content-type": "application/json" },
+      body: JSON.stringify({ 
+        sender: { name: "NECTFORMA", email: "noreply@nectforma.com" }, 
+        to: [{ email: toEmail, name: toName }], 
+        subject: `📩 Nouveau message de ${senderName} - NECTFORMA`, 
+        htmlContent: generateMessageEmailHtml(senderName, messageSubject, toName), 
+        tags: ["notification", "message", "scheduled"] 
+      }),
+    });
+    
+    if (response.ok) {
+      console.log(`Email notification sent successfully to ${toEmail}`);
+    } else {
+      const errorText = await response.text();
+      console.error(`Failed to send email to ${toEmail}: ${errorText}`);
+    }
+  } catch (error) { 
+    console.error("Error sending email:", error); 
+  }
 }
 
 serve(async (req) => {
@@ -22,7 +53,8 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  console.log("Processing scheduled messages...");
+  const now = new Date();
+  console.log(`[${now.toISOString()}] Processing scheduled messages...`);
 
   try {
     const supabaseAdmin = createClient(
@@ -30,14 +62,18 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    const brevoApiKey = Deno.env.get("BREVO_API_KEY");
+
     // Find all scheduled messages that are due (scheduled_for <= now)
-    const now = new Date().toISOString();
+    const nowIso = now.toISOString();
+    console.log(`Looking for messages with scheduled_for <= ${nowIso}`);
+    
     const { data: scheduledMessages, error: fetchError } = await supabaseAdmin
       .from("messages")
       .select("*")
       .not("scheduled_for", "is", null)
       .not("scheduled_recipients", "is", null)
-      .lte("scheduled_for", now)
+      .lte("scheduled_for", nowIso)
       .eq("is_draft", false);
 
     if (fetchError) {
@@ -57,33 +93,38 @@ serve(async (req) => {
 
     for (const message of scheduledMessages) {
       try {
-        console.log(`Processing message ${message.id}...`);
+        console.log(`Processing message ${message.id} (scheduled_for: ${message.scheduled_for})...`);
         
         const recipients = message.scheduled_recipients as RecipientPayload;
         const senderId = message.sender_id;
 
-        // Resolve sender establishment
+        // Get sender info for email notifications
         const { data: senderUser } = await supabaseAdmin
           .from("users")
-          .select("establishment_id")
+          .select("first_name, last_name, establishment_id")
           .eq("id", senderId)
           .maybeSingle();
 
+        let senderName = senderUser ? `${senderUser.first_name} ${senderUser.last_name}` : "Un utilisateur";
         let establishmentId = senderUser?.establishment_id;
         
         if (!establishmentId) {
           const { data: senderTutor } = await supabaseAdmin
             .from("tutors")
-            .select("establishment_id")
+            .select("first_name, last_name, establishment_id")
             .eq("id", senderId)
             .maybeSingle();
           establishmentId = senderTutor?.establishment_id;
+          if (senderTutor) {
+            senderName = `${senderTutor.first_name} ${senderTutor.last_name}`;
+          }
         }
 
         // Build recipients list
         const recipientRows: Array<{ message_id: string; recipient_id: string; recipient_type: string; is_read: boolean; read_at: string | null }> = [];
+        const emailRecipients: Array<{ email: string; name: string }> = [];
 
-        const addUserRecipients = (userIds: string[]) => {
+        const addUserRecipients = async (userIds: string[]) => {
           const unique = Array.from(new Set(userIds)).filter((id) => id && id !== senderId);
           for (const rid of unique) {
             recipientRows.push({
@@ -93,6 +134,17 @@ serve(async (req) => {
               is_read: false,
               read_at: null,
             });
+            
+            // Get user info for email
+            const { data: u } = await supabaseAdmin
+              .from("users")
+              .select("email, first_name, last_name")
+              .eq("id", rid)
+              .maybeSingle();
+            
+            if (u) {
+              emailRecipients.push({ email: u.email, name: `${u.first_name} ${u.last_name}` });
+            }
           }
         };
 
@@ -104,7 +156,7 @@ serve(async (req) => {
             .eq("role", "Formateur");
 
           console.log(`Found ${(instructors || []).length} instructors`);
-          addUserRecipients((instructors || []).map((i: any) => i.id as string));
+          await addUserRecipients((instructors || []).map((i: any) => i.id as string));
         } else if (recipients.type === "formation" && recipients.ids?.length) {
           const { data: assignments } = await supabaseAdmin
             .from("user_formation_assignments")
@@ -121,10 +173,10 @@ serve(async (req) => {
               .eq("role", "Étudiant");
 
             console.log(`Found ${(students || []).length} students`);
-            addUserRecipients((students || []).map((s: any) => s.id as string));
+            await addUserRecipients((students || []).map((s: any) => s.id as string));
           }
         } else if (recipients.type === "user" && recipients.ids?.length) {
-          addUserRecipients(recipients.ids);
+          await addUserRecipients(recipients.ids);
         }
 
         // Insert recipients
@@ -153,6 +205,14 @@ serve(async (req) => {
           continue;
         }
 
+        // Send email notifications
+        if (brevoApiKey && emailRecipients.length > 0) {
+          console.log(`Sending ${emailRecipients.length} email notifications for message ${message.id}...`);
+          await Promise.all(
+            emailRecipients.map(r => sendEmailNotification(brevoApiKey, r.email, r.name, senderName, message.subject))
+          );
+        }
+
         processedCount++;
         console.log(`Successfully processed message ${message.id}`);
       } catch (err) {
@@ -161,7 +221,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Processed ${processedCount} messages, ${errorCount} errors`);
+    console.log(`Completed: processed ${processedCount} messages, ${errorCount} errors`);
     return new Response(
       JSON.stringify({ success: true, processed: processedCount, errors: errorCount }),
       { status: 200, headers: jsonHeaders }

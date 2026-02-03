@@ -179,17 +179,25 @@ const NewMessageModal = ({ isOpen, onClose, replyTo }: NewMessageModalProps) => 
         }
       }
 
+      const isScheduled = scheduleDelivery && scheduledDate;
+      
       await sendMessage({
         subject,
         content: message,
-        // scheduledDate is already in ISO format with timezone from DateTimePicker
-        scheduled_for: scheduleDelivery && scheduledDate ? scheduledDate : undefined,
+        // scheduledFor is already in ISO format with timezone from DateTimePicker
+        scheduledFor: isScheduled ? scheduledDate : undefined,
         is_draft: isDraft,
         recipients,
         attachments
       });
 
-      toast.success(isDraft ? 'Brouillon enregistré' : 'Message envoyé avec succès');
+      const successMessage = isDraft 
+        ? 'Brouillon enregistré' 
+        : isScheduled 
+          ? `Message programmé pour ${new Date(scheduledDate).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })}`
+          : 'Message envoyé avec succès';
+      
+      toast.success(successMessage);
       handleClose();
     } catch (error) {
       toast.error('Erreur lors de l\'envoi du message');
