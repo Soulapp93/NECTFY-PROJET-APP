@@ -126,7 +126,7 @@ export const exportScheduleToPDFAdvanced = async (
       }
     }
     
-    // Nom de l'établissement (sans NECTFY)
+    // Nom de l'établissement (sans NECTFORMA)
     if (establishment?.name) {
       pdf.setFontSize(9);
       pdf.setFont('helvetica', 'bold');
@@ -845,7 +845,7 @@ const addFooter = (pdf: jsPDF, pageWidth: number, pageHeight: number, margin: nu
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(100, 100, 100);
     
-    // Afficher le nom de l'établissement dans le footer (sans NECTFY)
+    // Afficher le nom de l'établissement dans le footer (sans NECTFORMA)
     if (establishmentName) {
       pdf.text(establishmentName, margin, pageHeight - 6);
     } else {

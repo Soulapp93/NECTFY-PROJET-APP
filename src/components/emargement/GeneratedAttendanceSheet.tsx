@@ -642,7 +642,7 @@ const GeneratedAttendanceSheet: React.FC<GeneratedAttendanceSheetProps> = ({
 
         {/* Footer */}
         <div className="p-4 border-t bg-gray-50 text-center text-xs text-gray-500">
-          Document généré le {format(new Date(), 'PPP à HH:mm', { locale: fr })} - NECTFY
+          Document généré le {format(new Date(), 'PPP à HH:mm', { locale: fr })} - NECTFORMA
         </div>
       </div>
 

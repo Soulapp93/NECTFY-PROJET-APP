@@ -118,7 +118,7 @@ serve(async (req) => {
               body: {
                 userEmails: adminEmails,
                 title: "Feuille d'émargement à valider",
-                message: `La feuille d'émargement "${sheet.formations.title}" du ${new Date(sheet.date).toLocaleDateString('fr-FR')} est prête pour validation. Veuillez vous connecter à votre espace Nectfy.`,
+                message: `La feuille d'émargement "${sheet.formations.title}" du ${new Date(sheet.date).toLocaleDateString('fr-FR')} est prête pour validation. Veuillez vous connecter à votre espace NECTFORMA.`,
                 type: "attendance"
               }
             });

@@ -35,14 +35,14 @@ const ExportUsersModal: React.FC<ExportUsersModalProps> = ({
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     
-    // Header with NECTFY branding
+    // Header with NECTFORMA branding
     doc.setFillColor(139, 92, 246); // Primary violet color
     doc.rect(0, 0, pageWidth, 25, 'F');
     
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text('NECTFY', 15, 16);
+    doc.text('NECTFORMA', 15, 16);
     
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
@@ -128,10 +128,10 @@ const ExportUsersModal: React.FC<ExportUsersModalProps> = ({
     // Footer
     doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
-    doc.text('Document généré par NECTFY - Plateforme de gestion de formation', pageWidth / 2, pageHeight - 10, { align: 'center' });
+    doc.text('Document généré par NECTFORMA - Plateforme de gestion de formation', pageWidth / 2, pageHeight - 10, { align: 'center' });
     
     // Save PDF
-    const filename = `utilisateurs_nectfy_${new Date().toISOString().split('T')[0]}.pdf`;
+    const filename = `utilisateurs_nectforma_${new Date().toISOString().split('T')[0]}.pdf`;
     doc.save(filename);
     toast.success('Export PDF réalisé avec succès');
     onClose();
@@ -170,7 +170,7 @@ const ExportUsersModal: React.FC<ExportUsersModalProps> = ({
     XLSX.utils.book_append_sheet(wb, ws, 'Utilisateurs');
     
     // Save file
-    const filename = `utilisateurs_nectfy_${new Date().toISOString().split('T')[0]}.xlsx`;
+    const filename = `utilisateurs_nectforma_${new Date().toISOString().split('T')[0]}.xlsx`;
     XLSX.writeFile(wb, filename);
     toast.success('Export Excel réalisé avec succès');
     onClose();
@@ -220,7 +220,7 @@ const ExportUsersModal: React.FC<ExportUsersModalProps> = ({
                 </div>
                 <div>
                   <Label htmlFor="pdf" className="font-medium cursor-pointer">PDF</Label>
-                  <p className="text-sm text-muted-foreground">Document prêt à imprimer avec branding NECTFY</p>
+                  <p className="text-sm text-muted-foreground">Document prêt à imprimer avec branding NECTFORMA</p>
                 </div>
               </div>
             </div>

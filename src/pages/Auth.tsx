@@ -8,31 +8,31 @@ import { toast } from 'sonner';
 const DEMO_ACCOUNTS = [
   { 
     role: 'Admin Principal', 
-    email: 'admin.principal@demo.nectfy.fr', 
+    email: 'admin.principal@demo.nectforma.fr', 
     password: 'Demo123!',
     icon: Shield,
   },
   { 
     role: 'Administrateur', 
-    email: 'admin@demo.nectfy.fr', 
+    email: 'admin@demo.nectforma.fr', 
     password: 'Demo123!',
     icon: Users,
   },
   { 
     role: 'Formateur', 
-    email: 'formateur@demo.nectfy.fr', 
+    email: 'formateur@demo.nectforma.fr', 
     password: 'Demo123!',
     icon: Briefcase,
   },
   { 
     role: 'Étudiant', 
-    email: 'etudiant@demo.nectfy.fr', 
+    email: 'etudiant@demo.nectforma.fr', 
     password: 'Demo123!',
     icon: GraduationCap,
   },
   { 
     role: 'Tuteur', 
-    email: 'tuteur@demo.nectfy.fr', 
+    email: 'tuteur@demo.nectforma.fr', 
     password: 'Demo123!',
     icon: UserCheck,
   },
@@ -57,7 +57,7 @@ const Auth = () => {
         const { data: demoCheck } = await supabase
           .from('establishments')
           .select('id')
-          .eq('email', 'demo@nectfy.fr')
+          .eq('email', 'demo@nectforma.fr')
           .maybeSingle();
 
         if (demoCheck) {

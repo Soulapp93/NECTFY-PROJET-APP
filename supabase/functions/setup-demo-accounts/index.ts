@@ -8,35 +8,35 @@ const corsHeaders = {
 
 const DEMO_ACCOUNTS = [
   { 
-    email: 'admin.principal@demo.nectfy.fr', 
+    email: 'admin.principal@demo.nectforma.fr', 
     password: 'Demo123!',
     role: 'AdminPrincipal',
     first_name: 'Admin',
     last_name: 'Principal'
   },
   { 
-    email: 'admin@demo.nectfy.fr', 
+    email: 'admin@demo.nectforma.fr', 
     password: 'Demo123!',
     role: 'Admin',
     first_name: 'Admin',
     last_name: 'Demo'
   },
   { 
-    email: 'formateur@demo.nectfy.fr', 
+    email: 'formateur@demo.nectforma.fr', 
     password: 'Demo123!',
     role: 'Formateur',
     first_name: 'Formateur',
     last_name: 'Demo'
   },
   { 
-    email: 'etudiant@demo.nectfy.fr', 
+    email: 'etudiant@demo.nectforma.fr', 
     password: 'Demo123!',
     role: 'Étudiant',
     first_name: 'Étudiant',
     last_name: 'Demo'
   },
   { 
-    email: 'tuteur@demo.nectfy.fr', 
+    email: 'tuteur@demo.nectforma.fr', 
     password: 'Demo123!',
     role: 'Tuteur',
     first_name: 'Tuteur',
@@ -67,7 +67,7 @@ serve(async (req) => {
     const { data: existingEstablishment } = await supabaseAdmin
       .from('establishments')
       .select('id')
-      .eq('email', 'demo@nectfy.fr')
+      .eq('email', 'demo@nectforma.fr')
       .maybeSingle();
 
     if (existingEstablishment) {
@@ -77,9 +77,9 @@ serve(async (req) => {
       const { data: newEstablishment, error: estError } = await supabaseAdmin
         .from('establishments')
         .insert({
-          name: 'Établissement Démo NECTFY',
+          name: 'Établissement Démo NECTFORMA',
           type: 'Centre de formation',
-          email: 'demo@nectfy.fr',
+          email: 'demo@nectforma.fr',
           address: '123 Rue de la Démo, 75001 Paris',
           phone: '01 23 45 67 89',
           director: 'Admin Principal Demo'
@@ -256,7 +256,7 @@ serve(async (req) => {
             const { data: studentUser } = await supabaseAdmin
               .from('users')
               .select('id')
-              .eq('email', 'etudiant@demo.nectfy.fr')
+              .eq('email', 'etudiant@demo.nectforma.fr')
               .eq('establishment_id', establishmentId)
               .maybeSingle();
 
@@ -280,7 +280,7 @@ serve(async (req) => {
                     contract_start_date: new Date().toISOString().split('T')[0],
                     contract_end_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
                   });
-                console.log(`Assigned tutor ${account.email} to student etudiant@demo.nectfy.fr`);
+                console.log(`Assigned tutor ${account.email} to student etudiant@demo.nectforma.fr`);
               }
             }
           }

@@ -603,7 +603,7 @@ const Index = () => {
             Prêt à transformer votre gestion ?
           </h2>
           <p className="text-xl md:text-2xl text-primary-foreground/90 mb-10">
-            Rejoignez les établissements qui ont déjà adopté NECTFY
+            Rejoignez les établissements qui ont déjà adopté NECTFORMA
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link 

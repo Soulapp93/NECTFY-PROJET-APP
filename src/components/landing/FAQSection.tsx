@@ -9,12 +9,12 @@ import {
 
 const faqs = [
   {
-    question: "Comment créer un compte sur NECTFY ?",
+    question: "Comment créer un compte sur NECTFORMA ?",
     answer: "Pour créer un compte, cliquez sur 'Créer un compte' en haut de la page. Vous serez guidé pour configurer votre établissement, ajouter vos informations et commencer à utiliser la plateforme. L'essai de 14 jours est entièrement gratuit, sans engagement."
   },
   {
-    question: "Quels types d'établissements peuvent utiliser NECTFY ?",
-    answer: "NECTFY s'adapte à tous les organismes de formation : centres de formation professionnelle, écoles, universités, CFA, organismes de formation continue, et même les entreprises avec leur propre académie interne."
+    question: "Quels types d'établissements peuvent utiliser NECTFORMA ?",
+    answer: "NECTFORMA s'adapte à tous les organismes de formation : centres de formation professionnelle, écoles, universités, CFA, organismes de formation continue, et même les entreprises avec leur propre académie interne."
   },
   {
     question: "Comment fonctionne le système d'émargement numérique ?",
@@ -22,11 +22,11 @@ const faqs = [
   },
   {
     question: "Puis-je importer mes données existantes ?",
-    answer: "Oui ! NECTFY permet l'import de données via fichiers Excel : utilisateurs, formations, emplois du temps. Notre équipe peut également vous accompagner pour migrer vos données existantes vers la plateforme."
+    answer: "Oui ! NECTFORMA permet l'import de données via fichiers Excel : utilisateurs, formations, emplois du temps. Notre équipe peut également vous accompagner pour migrer vos données existantes vers la plateforme."
   },
   {
     question: "La plateforme est-elle conforme au RGPD ?",
-    answer: "Absolument. NECTFY est conçu dans le respect du RGPD. Vos données sont hébergées en France, sécurisées et chiffrées. Vous gardez le contrôle total sur les données de votre établissement."
+    answer: "Absolument. NECTFORMA est conçu dans le respect du RGPD. Vos données sont hébergées en France, sécurisées et chiffrées. Vous gardez le contrôle total sur les données de votre établissement."
   },
   {
     question: "Quel support technique est disponible ?",
@@ -55,7 +55,7 @@ const FAQSection = () => {
             Questions <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">fréquentes</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Retrouvez les réponses aux questions les plus courantes sur NECTFY
+            Retrouvez les réponses aux questions les plus courantes sur NECTFORMA
           </p>
         </div>
 

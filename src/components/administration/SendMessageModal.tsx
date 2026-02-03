@@ -27,7 +27,7 @@ const SendMessageModal: React.FC<SendMessageModalProps> = ({
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'nectfy' | 'gmail'>('nectfy');
+  const [activeTab, setActiveTab] = useState<'nectforma' | 'gmail'>('nectforma');
   const [attachments, setAttachments] = useState<File[]>([]);
   const [scheduleEnabled, setScheduleEnabled] = useState(false);
   const [scheduledDate, setScheduledDate] = useState('');
@@ -63,7 +63,7 @@ const SendMessageModal: React.FC<SendMessageModalProps> = ({
     toast.success('Gmail ouvert dans un nouvel onglet');
   };
 
-  const handleSendViaNectfy = async () => {
+  const handleSendViaNectforma = async () => {
     if (!subject.trim()) {
       toast.error('Veuillez saisir un sujet');
       return;
@@ -92,7 +92,7 @@ const SendMessageModal: React.FC<SendMessageModalProps> = ({
         });
       }
 
-      // Create message via NECTFY messaging system
+      // Create message via NECTFORMA messaging system
       await messageService.createMessage({
         subject,
         content: message,
@@ -129,11 +129,11 @@ const SendMessageModal: React.FC<SendMessageModalProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'nectfy' | 'gmail')}>
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'nectforma' | 'gmail')}>
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="nectfy" className="flex items-center gap-2">
+            <TabsTrigger value="nectforma" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
-              Via NECTFY
+              Via NECTFORMA
             </TabsTrigger>
             <TabsTrigger value="gmail" className="flex items-center gap-2">
               <ExternalLink className="h-4 w-4" />
@@ -174,8 +174,8 @@ const SendMessageModal: React.FC<SendMessageModalProps> = ({
               />
             </div>
 
-            {/* Schedule option - Only for NECTFY */}
-            {activeTab === 'nectfy' && (
+            {/* Schedule option - Only for NECTFORMA */}
+            {activeTab === 'nectforma' && (
               <div className="space-y-3 border-t pt-3">
                 <div className="flex items-center space-x-2">
                   <Checkbox
@@ -203,8 +203,8 @@ const SendMessageModal: React.FC<SendMessageModalProps> = ({
               </div>
             )}
 
-            {/* Attachments - Only for NECTFY */}
-            {activeTab === 'nectfy' && (
+            {/* Attachments - Only for NECTFORMA */}
+            {activeTab === 'nectforma' && (
               <div className="space-y-3 border-t pt-3">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Paperclip className="h-4 w-4" />
@@ -261,10 +261,10 @@ const SendMessageModal: React.FC<SendMessageModalProps> = ({
             )}
           </div>
 
-          <TabsContent value="nectfy" className="mt-4">
+          <TabsContent value="nectforma" className="mt-4">
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
               <p className="text-sm text-blue-700 dark:text-blue-300">
-                <strong>Message NECTFY :</strong> Les destinataires recevront le message dans leur espace messagerie NECTFY 
+                <strong>Message NECTFORMA :</strong> Les destinataires recevront le message dans leur espace messagerie NECTFORMA 
                 et une notification email les informant qu'ils ont reçu un message.
               </p>
             </div>
@@ -272,13 +272,13 @@ const SendMessageModal: React.FC<SendMessageModalProps> = ({
               <Button variant="outline" onClick={handleClose} disabled={loading}>
                 Annuler
               </Button>
-              <Button onClick={handleSendViaNectfy} disabled={loading}>
+              <Button onClick={handleSendViaNectforma} disabled={loading}>
                 {loading ? (
                   'Envoi en cours...'
                 ) : (
                   <>
                     <Send className="h-4 w-4 mr-2" />
-                    {scheduleEnabled ? 'Programmer' : 'Envoyer via NECTFY'}
+                    {scheduleEnabled ? 'Programmer' : 'Envoyer via NECTFORMA'}
                   </>
                 )}
               </Button>

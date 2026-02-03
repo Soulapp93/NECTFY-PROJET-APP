@@ -236,7 +236,7 @@ export default function AcceptInvitation() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-            NECTFY
+            NECTFORMA
           </h1>
           <p className="text-muted-foreground mt-2">Plateforme de gestion de formation</p>
         </div>

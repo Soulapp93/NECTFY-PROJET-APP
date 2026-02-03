@@ -109,7 +109,7 @@ const ResetPassword = () => {
               <span className="text-purple-600 font-bold text-xl">N</span>
             </div>
             <div>
-              <h1 className="text-3xl font-bold">NECTFY</h1>
+              <h1 className="text-3xl font-bold">NECTFORMA</h1>
               <p className="text-purple-200">Plateforme de gestion éducative</p>
             </div>
           </div>
@@ -119,7 +119,7 @@ const ResetPassword = () => {
           </h2>
           
           <p className="text-lg text-purple-100 mb-8">
-            Choisissez un nouveau mot de passe sécurisé pour protéger votre espace NECTFY.
+            Choisissez un nouveau mot de passe sécurisé pour protéger votre espace NECTFORMA.
           </p>
           
           <div className="space-y-4">
@@ -148,7 +148,7 @@ const ResetPassword = () => {
               <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">N</span>
               </div>
-              <span className="text-xl font-bold text-gray-900">NECTFY</span>
+              <span className="text-xl font-bold text-gray-900">NECTFORMA</span>
             </div>
 
             <div className="text-center mb-8">

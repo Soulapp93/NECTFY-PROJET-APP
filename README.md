@@ -1,4 +1,4 @@
-# NECTFY - Plateforme de gestion éducative
+# NECTFORMA - Plateforme de gestion éducative
 
 ## Project info
 

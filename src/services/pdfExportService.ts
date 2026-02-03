@@ -491,7 +491,7 @@ export const pdfExportService = {
       pdf.setTextColor(150, 150, 150);
       const footerY = Math.min(currentY + 55, 285);
       const generatedAt = format(new Date(), "dd MMMM yyyy 'à' HH:mm", { locale: fr });
-      pdf.text(`Document généré le ${generatedAt} - NECTFY`, pageWidth / 2, footerY, { align: 'center' });
+      pdf.text(`Document généré le ${generatedAt} - NECTFORMA`, pageWidth / 2, footerY, { align: 'center' });
 
       // Generate filename
       const filename = `emargement-${format(new Date(attendanceSheet.date), 'yyyy-MM-dd')}-${attendanceSheet.formations?.title?.replace(/\s+/g, '-')}.pdf`;
@@ -641,7 +641,7 @@ export const pdfExportService = {
         
         // App mention
         pdf.setFontSize(7);
-        pdf.text('Document généré automatiquement depuis NECTFY', pageWidth / 2, footerY, { align: 'center' });
+        pdf.text('Document généré automatiquement depuis NECTFORMA', pageWidth / 2, footerY, { align: 'center' });
       };
       
       // Function to handle page break - returns new Y position

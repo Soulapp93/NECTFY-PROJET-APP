@@ -208,7 +208,7 @@ const Solutions = () => {
                 <span className="text-primary-foreground font-bold text-lg">N</span>
               </div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                NECTFY
+                NECTFORMA
               </h1>
             </Link>
             
@@ -254,7 +254,7 @@ const Solutions = () => {
             Nos Solutions
           </h1>
           <p className="text-xl text-muted-foreground leading-relaxed">
-            Découvrez l'ensemble des modules NECTFY pour digitaliser 
+            Découvrez l'ensemble des modules NECTFORMA pour digitaliser 
             et automatiser la gestion de votre établissement de formation.
           </p>
         </div>
@@ -343,7 +343,7 @@ const Solutions = () => {
             Prêt à découvrir toutes nos solutions ?
           </h2>
           <p className="text-xl text-primary-foreground/90 mb-10">
-            Testez gratuitement NECTFY pendant 14 jours
+            Testez gratuitement NECTFORMA pendant 14 jours
           </p>
           <Link 
             to="/create-establishment" 
@@ -364,7 +364,7 @@ const Solutions = () => {
                 <span className="text-primary-foreground font-bold text-lg">N</span>
               </div>
               <div>
-                <h3 className="text-xl font-bold">NECTFY</h3>
+                <h3 className="text-xl font-bold">NECTFORMA</h3>
                 <p className="text-muted-foreground text-sm">© 2024 Tous droits réservés</p>
               </div>
             </div>
