@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Menu } from 'lucide-react';
 import NotificationBell from './NotificationBell';
+import MobileDrawerMenu from './MobileDrawerMenu';
 
 const MobileHeader = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   
   // Pages principales sans bouton retour
   const mainPages = ['/dashboard', '/formations', '/emploi-temps', '/messagerie', '/groupes', '/administration', '/compte'];
@@ -40,15 +42,23 @@ const MobileHeader = () => {
   return (
     <>
       <header className="md:hidden h-14 flex items-center justify-between border-b bg-white px-3 sticky top-0 z-40 shadow-sm safe-area-top">
-        {/* Bouton gauche: Retour uniquement si sous-page */}
+        {/* Bouton gauche: Menu hamburger ou Retour */}
         <div className="flex items-center w-10">
-          {canGoBack && (
+          {canGoBack ? (
             <button 
               onClick={() => navigate(-1)}
               className="flex items-center justify-center w-10 h-10 rounded-xl hover:bg-muted transition-colors"
               aria-label="Retour"
             >
               <ArrowLeft className="h-5 w-5 text-foreground" />
+            </button>
+          ) : (
+            <button 
+              onClick={() => setIsDrawerOpen(true)}
+              className="flex items-center justify-center w-10 h-10 rounded-xl hover:bg-muted transition-colors"
+              aria-label="Menu"
+            >
+              <Menu className="h-5 w-5 text-foreground" />
             </button>
           )}
         </div>
@@ -69,6 +79,11 @@ const MobileHeader = () => {
         </div>
       </header>
       
+      {/* Mobile Drawer Menu */}
+      <MobileDrawerMenu 
+        isOpen={isDrawerOpen} 
+        onClose={() => setIsDrawerOpen(false)} 
+      />
     </>
   );
 };
