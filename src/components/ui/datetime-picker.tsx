@@ -199,7 +199,13 @@ export function DateTimePicker({
                 mode="single"
                 selected={selectedDate}
                 onSelect={handleDateSelect}
-                disabled={(date) => minDate ? date < minDate : false}
+                disabled={(date) => {
+                  if (!minDate) return false
+                  // Compare dates by their calendar day (ignore time component)
+                  const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+                  const minDateOnly = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate())
+                  return dateOnly < minDateOnly
+                }}
                 initialFocus
                 locale={fr}
                 className="p-3 pointer-events-auto"
