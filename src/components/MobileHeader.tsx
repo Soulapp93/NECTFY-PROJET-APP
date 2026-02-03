@@ -41,7 +41,7 @@ const MobileHeader = () => {
 
   return (
     <>
-      <header className="md:hidden h-14 flex items-center justify-between border-b bg-white px-3 sticky top-0 z-40 shadow-sm safe-area-top">
+      <header className="md:hidden h-14 flex items-center justify-between border-b border-border/60 bg-background/80 backdrop-blur-xl px-3 sticky top-0 z-40 safe-area-top">
         {/* Bouton gauche: Menu hamburger ou Retour */}
         <div className="flex items-center w-10">
           {canGoBack ? (

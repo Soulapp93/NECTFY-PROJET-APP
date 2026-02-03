@@ -172,50 +172,45 @@ const AppContent = () => {
 
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="flex h-screen w-full bg-gray-50">
-        {/* Sidebar - desktop only (mobile uses the drawer menu from MobileHeader) */}
-        <div className="hidden md:block">
-          <Sidebar />
-        </div>
-        
-         <div className="flex flex-col flex-1 min-w-0">
-          {/* Header mobile */}
-          <MobileHeader />
+      {/* Sidebar - desktop only (mobile uses the drawer menu from MobileHeader) */}
+      <Sidebar />
 
-          {/* Header desktop */}
-           <header className="hidden md:flex h-14 sm:h-16 items-center justify-end border-b bg-background px-4 sm:px-6 sticky top-0 z-20 shadow-sm">
-            <div className="flex items-center space-x-3 sm:space-x-4">
-              <NotificationBell />
-            </div>
-          </header>
-          
-          <main className="flex-1 overflow-auto bg-gray-50">
-            <Routes>
-              {/* Route de signature déplacée dans le bloc public */}
-              <Route path="/dashboard" element={<ProtectedRoute><AdminRoute><Dashboard /></AdminRoute></ProtectedRoute>} />
-              <Route path="/administration" element={<ProtectedRoute><AdminRoute><Administration /></AdminRoute></ProtectedRoute>} />
-              <Route path="/formations" element={<ProtectedRoute><Formations /></ProtectedRoute>} />
-              <Route path="/formations/:formationId" element={<ProtectedRoute><FormationDetail /></ProtectedRoute>} />
-              <Route path="/cahier-texte/:textBookId" element={<ProtectedRoute><TextBookDetail /></ProtectedRoute>} />
-              <Route path="/cahier-texte/formation/:formationId" element={<ProtectedRoute><TextBookByFormation /></ProtectedRoute>} />
-              <Route path="/suivi-emargement" element={<ProtectedRoute><SuiviEmargement /></ProtectedRoute>} />
-              
-              <Route path="/emploi-temps" element={<ProtectedRoute><EmploiTemps /></ProtectedRoute>} />
-              <Route path="/emploi-temps/view/:scheduleId" element={<ProtectedRoute><EmploiTemps /></ProtectedRoute>} />
-              <Route path="/emploi-temps/edit/:scheduleId" element={<ProtectedRoute><EmploiTemps /></ProtectedRoute>} />
-              <Route path="/messagerie" element={<ProtectedRoute><TutorRestrictedRoute><Messagerie /></TutorRestrictedRoute></ProtectedRoute>} />
-              <Route path="/groupes" element={<ProtectedRoute><TutorRestrictedRoute><Groupes /></TutorRestrictedRoute></ProtectedRoute>} />
-              <Route path="/emargement" element={<ProtectedRoute><TutorRestrictedRoute><Emargement /></TutorRestrictedRoute></ProtectedRoute>} />
-              <Route path="/emargement-qr" element={<ProtectedRoute><TutorRestrictedRoute><EmargementQR /></TutorRestrictedRoute></ProtectedRoute>} />
-              <Route path="/gestion-etablissement" element={<ProtectedRoute><AdminPrincipalRoute><GestionEtablissement /></AdminPrincipalRoute></ProtectedRoute>} />
-              <Route path="/compte" element={<ProtectedRoute><Compte /></ProtectedRoute>} />
-              <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
-        </div>
-        
-        {/* Bottom Navigation removed - using only sidebar */}
+      {/* Content column (must be a direct sibling of <Sidebar /> for correct inset/gap behavior) */}
+      <div className="flex min-h-svh flex-1 flex-col min-w-0 bg-muted/20">
+        {/* Header mobile */}
+        <MobileHeader />
+
+        {/* Header desktop (notification band) */}
+        <header className="hidden md:flex h-14 sm:h-16 items-center justify-end border-b border-border/60 bg-background/80 backdrop-blur-xl px-4 sm:px-6 sticky top-0 z-20">
+          <div className="flex items-center space-x-3 sm:space-x-4">
+            <NotificationBell />
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-auto bg-muted/20">
+          <Routes>
+            {/* Route de signature déplacée dans le bloc public */}
+            <Route path="/dashboard" element={<ProtectedRoute><AdminRoute><Dashboard /></AdminRoute></ProtectedRoute>} />
+            <Route path="/administration" element={<ProtectedRoute><AdminRoute><Administration /></AdminRoute></ProtectedRoute>} />
+            <Route path="/formations" element={<ProtectedRoute><Formations /></ProtectedRoute>} />
+            <Route path="/formations/:formationId" element={<ProtectedRoute><FormationDetail /></ProtectedRoute>} />
+            <Route path="/cahier-texte/:textBookId" element={<ProtectedRoute><TextBookDetail /></ProtectedRoute>} />
+            <Route path="/cahier-texte/formation/:formationId" element={<ProtectedRoute><TextBookByFormation /></ProtectedRoute>} />
+            <Route path="/suivi-emargement" element={<ProtectedRoute><SuiviEmargement /></ProtectedRoute>} />
+
+            <Route path="/emploi-temps" element={<ProtectedRoute><EmploiTemps /></ProtectedRoute>} />
+            <Route path="/emploi-temps/view/:scheduleId" element={<ProtectedRoute><EmploiTemps /></ProtectedRoute>} />
+            <Route path="/emploi-temps/edit/:scheduleId" element={<ProtectedRoute><EmploiTemps /></ProtectedRoute>} />
+            <Route path="/messagerie" element={<ProtectedRoute><TutorRestrictedRoute><Messagerie /></TutorRestrictedRoute></ProtectedRoute>} />
+            <Route path="/groupes" element={<ProtectedRoute><TutorRestrictedRoute><Groupes /></TutorRestrictedRoute></ProtectedRoute>} />
+            <Route path="/emargement" element={<ProtectedRoute><TutorRestrictedRoute><Emargement /></TutorRestrictedRoute></ProtectedRoute>} />
+            <Route path="/emargement-qr" element={<ProtectedRoute><TutorRestrictedRoute><EmargementQR /></TutorRestrictedRoute></ProtectedRoute>} />
+            <Route path="/gestion-etablissement" element={<ProtectedRoute><AdminPrincipalRoute><GestionEtablissement /></AdminPrincipalRoute></ProtectedRoute>} />
+            <Route path="/compte" element={<ProtectedRoute><Compte /></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </main>
       </div>
       <Toaster />
     </SidebarProvider>
