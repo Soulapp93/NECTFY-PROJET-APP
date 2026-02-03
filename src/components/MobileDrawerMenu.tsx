@@ -145,14 +145,14 @@ const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({ isOpen, onClose }) 
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop - z-[60] to cover page content */}
       <div 
-        className="fixed inset-0 bg-black/50 z-50 md:hidden animate-fade-in"
+        className="fixed inset-0 bg-black/60 z-[60] md:hidden animate-fade-in"
         onClick={onClose}
       />
       
-      {/* Drawer - Same design as desktop sidebar */}
-      <div className="fixed inset-y-0 left-0 w-[85%] max-w-[280px] nect-gradient z-50 md:hidden shadow-2xl flex flex-col overflow-hidden rounded-r-2xl">
+      {/* Drawer - z-[70] to be above backdrop */}
+      <div className="fixed inset-y-0 left-0 w-[85%] max-w-[280px] nect-gradient z-[70] md:hidden shadow-2xl flex flex-col overflow-hidden rounded-r-2xl">
         {/* Subtle inner glow effect */}
         <div className="absolute inset-0 bg-gradient-to-b from-white/5 via-transparent to-black/10 pointer-events-none rounded-r-2xl z-0" />
         
