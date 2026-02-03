@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { rpcWithRetry } from '@/lib/supabaseRetry';
 
 export interface UserContext {
   id: string;
@@ -36,6 +37,14 @@ export interface MyContextData {
   role: string | null;
 }
 
+interface ContextResponse {
+  user: UserContext | null | 'null';
+  relation: RelationContext | null | 'null';
+  establishment: EstablishmentContext | null | 'null';
+  role: string | null;
+  error?: string;
+}
+
 /**
  * Hook moderne qui utilise une RPC SECURITY DEFINER pour récupérer
  * tout le contexte utilisateur en une seule requête sécurisée.
@@ -43,6 +52,7 @@ export interface MyContextData {
  * - Pour les étudiants: retourne les infos de leur tuteur
  * - Pour les tuteurs: retourne les infos de leur apprenti
  * - Contourne les problèmes RLS côté client
+ * - Inclut retry automatique pour les erreurs réseau transitoires
  */
 export const useMyContext = () => {
   const [data, setData] = useState<MyContextData>({
@@ -61,6 +71,7 @@ export const useMyContext = () => {
 
       // Vérifier si l'utilisateur est connecté
       const { data: sessionData } = await supabase.auth.getSession();
+      
       if (!sessionData.session) {
         setData({
           user: null,
@@ -72,24 +83,27 @@ export const useMyContext = () => {
         return;
       }
 
-      // Appeler la RPC SECURITY DEFINER
-      const { data: contextData, error: rpcError } = await supabase.rpc('get_my_context');
+      // Appeler la RPC SECURITY DEFINER avec retry
+      const { data: contextData, error: rpcError } = await rpcWithRetry(
+        () => supabase.rpc('get_my_context'),
+        {
+          maxRetries: 3,
+          baseDelayMs: 500,
+          onRetry: (attempt, err) => {
+            console.warn(`Retry attempt ${attempt} for get_my_context:`, err.message);
+          }
+        }
+      );
 
       if (rpcError) {
         console.error('Erreur get_my_context:', rpcError);
-        setError(rpcError.message);
+        setError('Erreur de chargement du contexte');
         setLoading(false);
         return;
       }
 
       // Cast vers le type attendu
-      const ctx = contextData as unknown as {
-        user: UserContext | null | 'null';
-        relation: RelationContext | null | 'null';
-        establishment: EstablishmentContext | null | 'null';
-        role: string | null;
-        error?: string;
-      };
+      const ctx = contextData as unknown as ContextResponse | null;
 
       if (!ctx || ctx.error) {
         console.error('Contexte invalide:', ctx);
@@ -107,9 +121,10 @@ export const useMyContext = () => {
       };
 
       setData(parsed);
+      setError(null);
     } catch (err) {
-      console.error('Erreur useMyContext:', err);
-      setError(err instanceof Error ? err.message : 'Erreur inconnue');
+      console.error('Erreur useMyContext après retries:', err);
+      setError(err instanceof Error ? err.message : 'Erreur de connexion');
     } finally {
       setLoading(false);
     }
@@ -131,6 +146,7 @@ export const useMyContext = () => {
           role: null
         });
         setLoading(false);
+        setError(null);
       }
     });
 
