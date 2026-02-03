@@ -30,11 +30,16 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   sticky = true
 }) => {
   return (
-      <div className={cn(
-       sticky && 'sticky top-0 z-0 bg-background/95 backdrop-blur-xl border-b border-border shadow-sm -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 sm:py-4 mb-4 sm:mb-6',
-      !sticky && 'mb-4 sm:mb-6',
-      className
-    )}>
+      <div
+        className={cn(
+          // NOTE: Pas de marges négatives ici.
+          // Les -mx-* faisaient déborder l'en-tête sous la sidebar lorsqu'elle est rabattue.
+          sticky &&
+            'sticky top-0 z-0 bg-background/95 backdrop-blur-xl border-b border-border shadow-sm px-4 sm:px-6 lg:px-8 py-3 sm:py-4 mb-4 sm:mb-6',
+          !sticky && 'mb-4 sm:mb-6',
+          className
+        )}
+      >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div className="flex items-center gap-3">
           {Icon && (
