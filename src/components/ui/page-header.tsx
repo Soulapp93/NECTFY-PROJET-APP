@@ -20,28 +20,28 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   className
 }) => {
   return (
-    <div className={cn('mb-6 sm:mb-8', className)}>
+    <div className={cn('mb-4 sm:mb-6', className)}>
       <div className={cn(
-        'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4',
+        'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3',
       )}>
-        <div className="flex items-center gap-3 sm:gap-4">
+        <div className="flex items-center gap-2.5 sm:gap-3">
           {Icon && (
             <div className={cn(
-              "h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shrink-0",
+              "h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md shrink-0",
               iconClassName
             )}>
-              <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
+              <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
             </div>
           )}
           <div>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">{title}</h1>
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold text-foreground">{title}</h1>
             {description && (
-              <p className="text-sm sm:text-base text-muted-foreground mt-0.5 sm:mt-1">{description}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">{description}</p>
             )}
           </div>
         </div>
         {children && (
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2">
             {children}
           </div>
         )}

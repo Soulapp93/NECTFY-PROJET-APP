@@ -109,13 +109,33 @@
   }
 
   html {
-    font-size: 14px; /* Réduction de la taille de base (16px par défaut) */
+    font-size: 13px; /* Échelle compacte SaaS pro */
   }
 
   body {
     @apply bg-background text-foreground font-sans;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    line-height: 1.5;
+  }
+
+  /* Desktop compact scaling */
+  @media (min-width: 1024px) {
+    html {
+      font-size: 13px;
+    }
+  }
+
+  @media (min-width: 1440px) {
+    html {
+      font-size: 14px;
+    }
+  }
+
+  @media (min-width: 1920px) {
+    html {
+      font-size: 14px;
+    }
   }
 }
 
