@@ -171,7 +171,18 @@ const AppContent = () => {
   }
 
   return (
-    <SidebarProvider defaultOpen={true}>
+    <SidebarProvider
+      defaultOpen={true}
+      style={
+        {
+          // IMPORTANT: ces variables DOIVENT être définies sur le wrapper du provider,
+          // sinon le "gap" (spacer) et la sidebar fixe n'ont pas la même largeur en mode rabattue.
+          // C'est précisément ce décalage qui fait passer les en-têtes sous la barre latérale.
+          "--sidebar-width": "16rem",
+          "--sidebar-width-icon": "4.5rem",
+        } as React.CSSProperties
+      }
+    >
       {/* Sidebar - desktop only (mobile uses the drawer menu from MobileHeader) */}
       <Sidebar />
 
