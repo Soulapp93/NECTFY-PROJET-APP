@@ -134,8 +134,11 @@ export const messageService = {
         throw new Error(data?.error || 'Erreur inconnue');
       }
 
-      // Notify recipients (fire and forget)
-      if (!messageData.is_draft) {
+      // IMPORTANT: Do NOT notify recipients immediately for scheduled messages.
+      // Scheduled delivery is handled later by the backend scheduler (recipients + emails).
+      const isScheduled = !!messageData.scheduledFor;
+      if (!messageData.is_draft && !isScheduled) {
+        // Notify recipients (fire and forget)
         this.notifyMessageRecipients(data.message, messageData.recipients).catch(console.error);
       }
 
