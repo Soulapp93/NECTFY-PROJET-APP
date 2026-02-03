@@ -3,7 +3,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import Sidebar from './components/Sidebar';
 import NotificationBell from './components/NotificationBell';
@@ -177,8 +177,7 @@ const AppContent = () => {
         
         <div className="flex flex-col flex-1 w-full min-w-0">
           {/* Header - always visible */}
-          <header className="flex h-14 sm:h-16 items-center justify-between border-b bg-white px-4 sm:px-6 sticky top-0 z-40 shadow-sm">
-            <SidebarTrigger className="h-9 w-9" />
+          <header className="flex h-14 sm:h-16 items-center justify-end border-b bg-white px-4 sm:px-6 sticky top-0 z-40 shadow-sm">
             <div className="flex items-center space-x-3 sm:space-x-4">
               <NotificationBell />
             </div>

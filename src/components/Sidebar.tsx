@@ -92,11 +92,11 @@ const Sidebar = () => {
   const userDisplayInfo = getUserDisplayInfo();
   
   const administrationSubItems = [
-    { name: 'Gestion des utilisateurs', href: '/administration?tab=users', icon: Users },
-    { name: 'Gestion des formations', href: '/administration?tab=formations', icon: GraduationCap },
-    { name: 'Gestion des cahiers de texte', href: '/administration?tab=textbooks', icon: BookText },
-    { name: 'Gestion des emplois du temps', href: '/administration?tab=schedules', icon: CalendarDays },
-    { name: 'Feuilles d\'émargement', href: '/administration?tab=attendance', icon: ClipboardCheck },
+    { name: 'Utilisateurs', href: '/administration?tab=users', icon: Users },
+    { name: 'Formations', href: '/administration?tab=formations', icon: GraduationCap },
+    { name: 'Cahiers de texte', href: '/administration?tab=textbooks', icon: BookText },
+    { name: 'Emplois du temps', href: '/administration?tab=schedules', icon: CalendarDays },
+    { name: 'Émargement', href: '/administration?tab=attendance', icon: ClipboardCheck },
   ];
   
   const principalAdminNavigation: NavigationItem[] = [
