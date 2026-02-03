@@ -146,21 +146,15 @@ const Sidebar = () => {
 
   return (
     <SidebarWrapper 
-      className={`
-        ${collapsed ? 'w-[72px]' : 'w-60'} 
-        nect-gradient 
-        text-white 
-        transition-all duration-300 ease-in-out
-        rounded-r-2xl
-        shadow-2xl
-        border-r-0
-        overflow-hidden
-        relative
-      `}
+      className="nect-gradient text-white shadow-2xl border-r-0 overflow-hidden rounded-r-2xl"
       collapsible="icon"
+      style={{
+        '--sidebar-width': '15rem',
+        '--sidebar-width-icon': '4.5rem',
+      } as React.CSSProperties}
     >
       {/* Subtle inner glow effect */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/5 via-transparent to-black/10 pointer-events-none rounded-r-2xl" />
+      <div className="absolute inset-0 bg-gradient-to-b from-white/5 via-transparent to-black/10 pointer-events-none rounded-r-2xl z-0" />
       
       {/* Header */}
       <SidebarHeader className="relative z-10 px-3 pt-5 pb-4">
