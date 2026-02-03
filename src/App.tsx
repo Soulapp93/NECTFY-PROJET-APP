@@ -178,7 +178,7 @@ const AppContent = () => {
           <Sidebar />
         </div>
         
-        <div className="flex flex-col flex-1 w-full min-w-0">
+         <div className="flex flex-col flex-1 min-w-0">
           {/* Header mobile */}
           <MobileHeader />
 
