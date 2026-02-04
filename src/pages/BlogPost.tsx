@@ -392,15 +392,23 @@ const BlogPostPage = () => {
               ref={contentRef}
               className="prose prose-lg max-w-none dark:prose-invert 
                 prose-headings:scroll-mt-20
+                prose-h1:text-3xl prose-h1:font-bold prose-h1:mt-8 prose-h1:mb-4
                 prose-h2:text-2xl prose-h2:font-bold prose-h2:mt-10 prose-h2:mb-4
                 prose-h3:text-xl prose-h3:font-semibold prose-h3:mt-8 prose-h3:mb-3
-                prose-p:text-muted-foreground prose-p:leading-relaxed
+                prose-p:text-foreground/80 prose-p:leading-relaxed prose-p:mb-4
                 prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-                prose-img:rounded-lg prose-img:shadow-md
-                prose-blockquote:border-l-primary prose-blockquote:bg-muted/50 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:rounded-r-lg
-                prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
-                prose-pre:bg-muted prose-pre:border
-                prose-ul:text-muted-foreground prose-ol:text-muted-foreground"
+                prose-img:rounded-xl prose-img:shadow-lg prose-img:my-8
+                prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-muted/50 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-xl prose-blockquote:not-italic
+                prose-code:bg-muted prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm prose-code:font-mono
+                prose-pre:bg-muted prose-pre:border prose-pre:rounded-xl prose-pre:overflow-x-auto
+                prose-ul:text-foreground/80 prose-ol:text-foreground/80
+                prose-li:mb-2
+                prose-strong:text-foreground prose-strong:font-semibold
+                prose-table:border prose-table:rounded-lg prose-table:overflow-hidden
+                prose-th:bg-muted prose-th:p-3 prose-th:text-left
+                prose-td:p-3 prose-td:border-t
+                [&_.carousel-slide]:rounded-xl [&_.carousel-slide]:shadow-lg [&_.carousel-slide]:overflow-hidden
+                [&_div[style*='background']]:rounded-xl [&_div[style*='background']]:my-4"
               dangerouslySetInnerHTML={{ __html: processContent(post.content) }}
             />
 

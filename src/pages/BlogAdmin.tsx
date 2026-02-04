@@ -5,7 +5,7 @@ import {
   FileText, TrendingUp, BarChart3, Calendar, Clock,
   Globe, Tag, Folder, Send, Save, ArrowLeft, Sparkles,
   Target, Lightbulb, Wand2, Bot, Settings, Power, Home,
-  Instagram, Linkedin, ChevronDown, ImagePlus, Check
+  Instagram, Linkedin, ChevronDown, ImagePlus, Check, Layout
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -45,6 +45,7 @@ import { AISEOOptimizer } from '@/components/blog-admin/AISEOOptimizer';
 import { AITopicPlanner } from '@/components/blog-admin/AITopicPlanner';
 import { AIContentEnhancer } from '@/components/blog-admin/AIContentEnhancer';
 import { EnhancedArticleEditor } from '@/components/blog-admin/EnhancedArticleEditor';
+import { ContentTemplates } from '@/components/blog-admin/ContentTemplates';
 import logoNf from '@/assets/logo-nf.png';
 
 const StatCard = ({ title, value, icon: Icon, trend }: { 
@@ -815,7 +816,7 @@ const BlogAdmin = () => {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-background border">
+          <TabsList className="bg-background border flex-wrap h-auto p-1">
             <TabsTrigger value="posts">
               <FileText className="h-4 w-4 mr-2" />
               Articles
@@ -823,6 +824,10 @@ const BlogAdmin = () => {
             <TabsTrigger value="ai-generator">
               <Sparkles className="h-4 w-4 mr-2" />
               Générateur IA
+            </TabsTrigger>
+            <TabsTrigger value="templates">
+              <Layout className="h-4 w-4 mr-2" />
+              Templates Visuels
             </TabsTrigger>
             <TabsTrigger value="ai-planner">
               <Lightbulb className="h-4 w-4 mr-2" />
@@ -973,6 +978,30 @@ const BlogAdmin = () => {
                 toast.info('Ouvrez l\'éditeur pour générer un article avec l\'IA');
               }}
             />
+          </TabsContent>
+
+          {/* Templates Tab */}
+          <TabsContent value="templates">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Layout className="h-5 w-5 text-primary" />
+                  Templates de Contenu Style Canva
+                </CardTitle>
+                <CardDescription>
+                  Créez des visuels professionnels pour LinkedIn, Instagram, TikTok et plus encore avec des templates prédéfinis et la génération d'images IA
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ContentTemplates 
+                  articleTitle={editingPost && editingPost !== 'new' ? editingPost.title : ''}
+                  articleContent={editingPost && editingPost !== 'new' ? editingPost.content : ''}
+                  onInsertContent={(content) => {
+                    toast.success('Contenu prêt à être utilisé !');
+                  }}
+                />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* AI Planner Tab */}
