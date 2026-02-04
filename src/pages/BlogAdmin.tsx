@@ -5,7 +5,7 @@ import {
   FileText, TrendingUp, BarChart3, Calendar, Clock,
   Globe, Tag, Folder, Send, Save, ArrowLeft, Sparkles,
   Target, Lightbulb, Wand2, Bot, Settings, Power, Home,
-  Instagram, Linkedin, ChevronDown
+  Instagram, Linkedin, ChevronDown, ImagePlus, Check
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import {
@@ -43,6 +44,7 @@ import { AIContentGenerator } from '@/components/blog-admin/AIContentGenerator';
 import { AISEOOptimizer } from '@/components/blog-admin/AISEOOptimizer';
 import { AITopicPlanner } from '@/components/blog-admin/AITopicPlanner';
 import { AIContentEnhancer } from '@/components/blog-admin/AIContentEnhancer';
+import { EnhancedArticleEditor } from '@/components/blog-admin/EnhancedArticleEditor';
 import logoNf from '@/assets/logo-nf.png';
 
 const StatCard = ({ title, value, icon: Icon, trend }: { 
@@ -271,55 +273,72 @@ const AIPostEditor = ({
               </Button>
               <DropdownMenu open={showPublishMenu} onOpenChange={setShowPublishMenu}>
                 <DropdownMenuTrigger asChild>
-                  <Button disabled={saving} className="gap-2">
+                  <Button disabled={saving} className="gap-2 bg-gradient-to-r from-primary to-accent hover:opacity-90">
                     <Send className="h-4 w-4" />
                     Publier
                     <ChevronDown className="h-3 w-3" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64">
-                  <DropdownMenuLabel>Options de publication</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <div className="px-2 py-2 space-y-3">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={publishOptions.homepage}
-                        onChange={(e) => setPublishOptions(prev => ({ ...prev, homepage: e.target.checked }))}
-                        className="rounded border-border"
-                      />
-                      <Home className="h-4 w-4 text-primary" />
-                      <span className="text-sm">Page d'accueil Nectforma</span>
-                    </label>
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={publishOptions.instagram}
-                        onChange={(e) => setPublishOptions(prev => ({ ...prev, instagram: e.target.checked }))}
-                        className="rounded border-border"
-                      />
-                      <Instagram className="h-4 w-4 text-pink-500" />
-                      <span className="text-sm">Instagram</span>
-                    </label>
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={publishOptions.linkedin}
-                        onChange={(e) => setPublishOptions(prev => ({ ...prev, linkedin: e.target.checked }))}
-                        className="rounded border-border"
-                      />
-                      <Linkedin className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm">LinkedIn</span>
-                    </label>
+                <DropdownMenuContent align="end" className="w-72 p-0">
+                  <div className="p-3 bg-gradient-to-r from-primary/10 to-accent/10 border-b">
+                    <h4 className="font-semibold text-sm flex items-center gap-2">
+                      <Send className="h-4 w-4" />
+                      Options de publication
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Sélectionnez les destinations
+                    </p>
                   </div>
-                  <DropdownMenuSeparator />
-                  <div className="p-2">
+                  <div className="p-3 space-y-3">
+                    <div 
+                      className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${publishOptions.homepage ? 'bg-primary/10 border border-primary/30' : 'hover:bg-muted'}`}
+                      onClick={() => setPublishOptions(prev => ({ ...prev, homepage: !prev.homepage }))}
+                    >
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${publishOptions.homepage ? 'bg-primary border-primary' : 'border-muted-foreground/30'}`}>
+                        {publishOptions.homepage && <Check className="h-3 w-3 text-white" />}
+                      </div>
+                      <Home className="h-4 w-4 text-primary" />
+                      <div className="flex-1">
+                        <span className="text-sm font-medium">Page d'accueil Nectforma</span>
+                        <p className="text-xs text-muted-foreground">Blog principal</p>
+                      </div>
+                    </div>
+                    
+                    <div 
+                      className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${publishOptions.instagram ? 'bg-pink-500/10 border border-pink-500/30' : 'hover:bg-muted'}`}
+                      onClick={() => setPublishOptions(prev => ({ ...prev, instagram: !prev.instagram }))}
+                    >
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${publishOptions.instagram ? 'bg-pink-500 border-pink-500' : 'border-muted-foreground/30'}`}>
+                        {publishOptions.instagram && <Check className="h-3 w-3 text-white" />}
+                      </div>
+                      <Instagram className="h-4 w-4 text-pink-500" />
+                      <div className="flex-1">
+                        <span className="text-sm font-medium">Instagram</span>
+                        <p className="text-xs text-muted-foreground">Publication automatique</p>
+                      </div>
+                    </div>
+                    
+                    <div 
+                      className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${publishOptions.linkedin ? 'bg-blue-500/10 border border-blue-500/30' : 'hover:bg-muted'}`}
+                      onClick={() => setPublishOptions(prev => ({ ...prev, linkedin: !prev.linkedin }))}
+                    >
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${publishOptions.linkedin ? 'bg-blue-600 border-blue-600' : 'border-muted-foreground/30'}`}>
+                        {publishOptions.linkedin && <Check className="h-3 w-3 text-white" />}
+                      </div>
+                      <Linkedin className="h-4 w-4 text-blue-600" />
+                      <div className="flex-1">
+                        <span className="text-sm font-medium">LinkedIn</span>
+                        <p className="text-xs text-muted-foreground">Réseau professionnel</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-3 border-t bg-muted/30">
                     <Button 
                       onClick={handlePublishWithOptions} 
                       disabled={saving || (!publishOptions.homepage && !publishOptions.instagram && !publishOptions.linkedin)}
-                      className="w-full"
+                      className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90"
                     >
-                      {saving ? 'Publication...' : 'Confirmer la publication'}
+                      {saving ? 'Publication...' : `Publier sur ${[publishOptions.homepage && 'Blog', publishOptions.instagram && 'Instagram', publishOptions.linkedin && 'LinkedIn'].filter(Boolean).join(', ') || '...'}`}
                     </Button>
                   </div>
                 </DropdownMenuContent>
@@ -352,13 +371,11 @@ const AIPostEditor = ({
               </div>
 
               <div>
-                <Label>Contenu</Label>
-                <Textarea
-                  placeholder="Écrivez votre article ici... (HTML supporté)"
-                  value={formData.content || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                  rows={20}
-                  className="font-mono text-sm"
+                <Label className="mb-2 block">Contenu</Label>
+                <EnhancedArticleEditor
+                  content={formData.content || ''}
+                  onChange={(content) => setFormData(prev => ({ ...prev, content }))}
+                  title={formData.title}
                 />
               </div>
             </div>
