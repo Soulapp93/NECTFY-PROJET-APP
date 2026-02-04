@@ -145,8 +145,11 @@ const AppContent = () => {
     // EXCEPTION: les pages légales (CGU, Politique) restent accessibles même connecté.
     if (authLoading) {
       return (
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary" />
+        <div className="flex items-center justify-center min-h-screen bg-background">
+          <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary" />
+            <p className="text-muted-foreground text-sm">Chargement...</p>
+          </div>
         </div>
       );
     }
@@ -168,6 +171,28 @@ const AppContent = () => {
         <Route path="/documentation" element={<Documentation />} />
       </Routes>
     );
+  }
+
+  // ============================================================================
+  // SÉCURITÉ CRITIQUE: Ne JAMAIS afficher l'interface utilisateur avant que
+  // le rôle soit complètement chargé. Cela évite les "flash" d'interfaces
+  // non autorisées qui pourraient exposer des données sensibles.
+  // ============================================================================
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary" />
+          <p className="text-muted-foreground text-sm">Connexion en cours...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Si l'utilisateur n'est pas connecté et n'est pas sur une page publique,
+  // rediriger vers l'authentification
+  if (!userId) {
+    return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
   return (
