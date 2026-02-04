@@ -1,88 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, Shield, Users, GraduationCap, UserCheck, Briefcase, Loader2 } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Shield, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-// Comptes de démo pour les tests
-const DEMO_ACCOUNTS = [
-  { 
-    role: 'Admin Principal', 
-    email: 'admin.principal@demo.nectforma.fr', 
-    password: 'Demo123!',
-    icon: Shield,
-  },
-  { 
-    role: 'Administrateur', 
-    email: 'admin@demo.nectforma.fr', 
-    password: 'Demo123!',
-    icon: Users,
-  },
-  { 
-    role: 'Formateur', 
-    email: 'formateur@demo.nectforma.fr', 
-    password: 'Demo123!',
-    icon: Briefcase,
-  },
-  { 
-    role: 'Étudiant', 
-    email: 'etudiant@demo.nectforma.fr', 
-    password: 'Demo123!',
-    icon: GraduationCap,
-  },
-  { 
-    role: 'Tuteur', 
-    email: 'tuteur@demo.nectforma.fr', 
-    password: 'Demo123!',
-    icon: UserCheck,
-  },
-];
 
 const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [loadingDemo, setLoadingDemo] = useState<string | null>(null);
-  const [demoReady, setDemoReady] = useState(false);
-  const [settingUpDemo, setSettingUpDemo] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
-
-  // Initialize demo accounts on first load
-  useEffect(() => {
-    const initDemoAccounts = async () => {
-      try {
-        const { data: demoCheck } = await supabase
-          .from('establishments')
-          .select('id')
-          .eq('email', 'demo@nectforma.fr')
-          .maybeSingle();
-
-        if (demoCheck) {
-          setDemoReady(true);
-          return;
-        }
-
-        setSettingUpDemo(true);
-        const { data, error } = await supabase.functions.invoke('setup-demo-accounts');
-        
-        if (error) {
-          console.error('Demo setup error:', error);
-        } else {
-          console.log('Demo accounts setup:', data);
-          setDemoReady(true);
-        }
-      } catch (err) {
-        console.error('Error checking demo accounts:', err);
-      } finally {
-        setSettingUpDemo(false);
-      }
-    };
-
-    initDemoAccounts();
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,75 +50,6 @@ const Auth = () => {
       setError('Erreur lors de la connexion. Veuillez réessayer.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDemoLogin = async (email: string, password: string, role: string) => {
-    setLoadingDemo(role);
-    setError(null);
-    
-    try {
-      if (!demoReady) {
-        toast.loading('Préparation des comptes démo...');
-        const { error: setupError } = await supabase.functions.invoke('setup-demo-accounts');
-        if (setupError) {
-          toast.dismiss();
-          toast.error('Erreur lors de la préparation des comptes démo');
-          setLoadingDemo(null);
-          return;
-        }
-        toast.dismiss();
-        setDemoReady(true);
-      }
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) {
-        toast.loading('Configuration du compte démo...');
-        await supabase.functions.invoke('setup-demo-accounts');
-        toast.dismiss();
-        
-        const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-
-        if (retryError) {
-          toast.error(`Impossible de se connecter en tant que ${role}. Veuillez réessayer.`);
-          setLoadingDemo(null);
-          return;
-        }
-
-        if (retryData.user) {
-          toast.success(`Connexion réussie en tant que ${role} !`);
-          const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
-          if (redirectUrl) {
-            sessionStorage.removeItem('redirectAfterLogin');
-            window.location.href = redirectUrl;
-          } else {
-            window.location.href = '/dashboard';
-          }
-        }
-        return;
-      }
-
-      if (data.user) {
-        toast.success(`Connexion réussie en tant que ${role} !`);
-        const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
-        if (redirectUrl) {
-          sessionStorage.removeItem('redirectAfterLogin');
-          window.location.href = redirectUrl;
-        } else {
-          window.location.href = '/dashboard';
-        }
-      }
-    } catch (err: any) {
-      toast.error('Erreur lors de la connexion démo');
-    } finally {
-      setLoadingDemo(null);
     }
   };
 
@@ -310,45 +170,6 @@ const Auth = () => {
               )}
             </button>
           </form>
-
-          {/* Demo Accounts Section */}
-          <div className="mt-6 pt-6 border-t border-border">
-            <div className="text-center mb-4">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Comptes de démonstration
-              </span>
-              {settingUpDemo && (
-                <div className="flex items-center justify-center gap-2 mt-2 text-xs text-muted-foreground">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  Préparation...
-                </div>
-              )}
-            </div>
-            
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {DEMO_ACCOUNTS.map((account) => {
-                const Icon = account.icon;
-                const isLoading = loadingDemo === account.role;
-                return (
-                  <button
-                    key={account.role}
-                    onClick={() => handleDemoLogin(account.email, account.password, account.role)}
-                    disabled={loadingDemo !== null || settingUpDemo}
-                    className="flex flex-col items-center justify-center gap-1.5 py-3 px-2 border-2 border-primary/20 rounded-xl transition-all duration-200 hover:border-primary hover:bg-primary/5 disabled:opacity-50 group"
-                  >
-                    {isLoading ? (
-                      <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                    ) : (
-                      <Icon className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
-                    )}
-                    <span className="font-medium text-xs text-foreground/80 group-hover:text-primary transition-colors text-center leading-tight">
-                      {account.role}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
 
           {/* Create establishment link */}
           <div className="mt-6 pt-6 border-t border-border text-center">
