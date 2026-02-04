@@ -446,7 +446,18 @@ const BlogAdmin = () => {
   }
 
   if (!canManageBlog) {
-    return null;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-8">
+        <div className="max-w-md w-full text-center space-y-4">
+          <img src={logoNf} alt="Nectforma" className="h-10 mx-auto" />
+          <h1 className="text-xl font-semibold">Accès refusé</h1>
+          <p className="text-sm text-muted-foreground">
+            Vous n’avez pas les droits nécessaires pour accéder à l’administration du blog.
+          </p>
+          <Button onClick={() => navigate('/')}>Retour à l’accueil</Button>
+        </div>
+      </div>
+    );
   }
 
   const getStatusBadge = (status: string) => {

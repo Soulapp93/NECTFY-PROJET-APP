@@ -35,28 +35,31 @@ export function useSuperAdmin() {
         return;
       }
 
-      const { data: roles, error } = await supabase
-        .from('platform_user_roles')
-        .select('role')
-        .eq('user_id', user.id);
+      // IMPORTANT: utiliser des RPC côté backend (SECURITY DEFINER) plutôt que
+      // lire directement la table `platform_user_roles` (qui peut être bloquée par RLS).
+      const [{ data: isSA, error: isSuperAdminError }, { data: canManageBlogData, error: canManageBlogError }] =
+        await Promise.all([
+          supabase.rpc('is_super_admin'),
+          supabase.rpc('can_manage_blog'),
+        ]);
 
-      if (error) {
-        console.error('Error checking platform roles:', error);
-        setLoading(false);
-        return;
+      if (isSuperAdminError) {
+        console.error('Error checking is_super_admin:', isSuperAdminError);
+      }
+      if (canManageBlogError) {
+        console.error('Error checking can_manage_blog:', canManageBlogError);
       }
 
-      const userRoles = (roles || []) as PlatformRole[];
-      setPlatformRoles(userRoles);
+      const superAdmin = !!isSA;
+      const manageBlog = !!canManageBlogData;
 
-      const isSA = userRoles.some(r => r.role === 'super_admin');
-      const isBlogEditor = userRoles.some(r => r.role === 'blog_editor');
-      const isSeoManager = userRoles.some(r => r.role === 'seo_manager');
-      const isAnalyticsViewer = userRoles.some(r => r.role === 'analytics_viewer');
+      setIsSuperAdmin(superAdmin);
+      setCanManageBlog(manageBlog);
+      // Pour l’instant, on conserve le comportement existant : analytics seulement si Super Admin.
+      setCanViewAnalytics(superAdmin);
 
-      setIsSuperAdmin(isSA);
-      setCanManageBlog(isSA || isBlogEditor || isSeoManager);
-      setCanViewAnalytics(isSA || isAnalyticsViewer);
+      // `platformRoles` devient non critique pour l'UI ; on le garde vide pour éviter les faux positifs.
+      setPlatformRoles(superAdmin ? [{ role: 'super_admin' }] : []);
     } catch (error) {
       console.error('Error in checkPlatformRoles:', error);
     } finally {
