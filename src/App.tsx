@@ -90,6 +90,59 @@ const AppContent = () => {
       </div>
     );
   }
+
+  // ============================================================================
+  // BLOG ADMIN (Super Admin uniquement)
+  // IMPORTANT: NE PAS inclure /blog-admin dans les "pages publiques".
+  // Sinon, un Super Admin sur /blog-admin est redirigé vers /blog-admin (boucle)
+  // => écran blanc (Navigate sans UI).
+  // ============================================================================
+  const isBlogAdminPage = location.pathname === '/blog-admin';
+  if (isBlogAdminPage) {
+    if (authLoading) {
+      return (
+        <div className="flex items-center justify-center min-h-screen bg-background">
+          <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary" />
+            <p className="text-muted-foreground text-sm">Chargement...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (authError) {
+      return (
+        <div className="flex items-center justify-center min-h-screen bg-background p-6">
+          <div className="max-w-md w-full text-center space-y-3">
+            <h1 className="text-lg font-semibold">Impossible de charger la session</h1>
+            <p className="text-sm text-muted-foreground">{authError}</p>
+            <div className="flex items-center justify-center gap-2">
+              <Button variant="outline" onClick={() => window.location.reload()}>
+                Réessayer
+              </Button>
+              <Button onClick={() => (window.location.href = '/auth')}>Se reconnecter</Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (!userId) {
+      return <Navigate to="/auth" state={{ from: location }} replace />;
+    }
+
+    if (userRole !== 'SuperAdmin') {
+      return <Navigate to="/" replace />;
+    }
+
+    return (
+      <>
+        <GoogleAnalytics measurementId={import.meta.env.VITE_GA_MEASUREMENT_ID || ''} />
+        <BlogAdmin />
+        <Toaster />
+      </>
+    );
+  }
   
   const isAuthPage = location.pathname === '/auth';
   const isCreateEstablishmentPage = location.pathname === '/create-establishment' || location.pathname === '/creer-etablissement';
@@ -149,7 +202,8 @@ const AppContent = () => {
   }
 
   // Pages publiques (sans authentification)
-  const publicPages = ['/', '/solutions', '/fonctionnalites', '/pourquoi-nous', '/cgu', '/politique-confidentialite', '/documentation', '/blog', '/blog-admin'];
+  // IMPORTANT: /blog-admin est volontairement EXCLU (guard dédié ci-dessus)
+  const publicPages = ['/', '/solutions', '/fonctionnalites', '/pourquoi-nous', '/cgu', '/politique-confidentialite', '/documentation', '/blog'];
   // Pages légales accessibles même connecté (CGU, Politique de Confidentialité)
   const legalPages = ['/cgu', '/politique-confidentialite'];
   const isPublicPage = publicPages.includes(location.pathname);
@@ -210,7 +264,6 @@ const AppContent = () => {
           <Route path="/documentation" element={<Documentation />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
-          <Route path="/blog-admin" element={<BlogAdmin />} />
         </Routes>
       </>
     );
