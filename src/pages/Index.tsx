@@ -22,8 +22,8 @@ import AnimatedButton from '@/components/landing/AnimatedButton';
 import SectionDivider from '@/components/landing/SectionDivider';
 import GradientBackground from '@/components/landing/GradientBackground';
 
-// Import de la vidéo teaser
-import nectformaTeaserVideo from '@/assets/videos/nectforma-teaser.mp4';
+// Import de la vidéo de présentation
+import nectformaPresentationVideo from '@/assets/videos/nectforma-presentation.mp4';
 
 // Imports des captures d'écran
 import tableauDeBordImg from '@/assets/screenshots/tableau-de-bord.png';
@@ -411,7 +411,7 @@ const Index = () => {
                 playsInline
                 poster={tableauDeBordImg}
               >
-                <source src={nectformaTeaserVideo} type="video/mp4" />
+                <source src={nectformaPresentationVideo} type="video/mp4" />
                 Votre navigateur ne supporte pas la lecture de vidéos.
               </video>
               <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2 px-3 py-1.5 bg-background/80 backdrop-blur-sm rounded-full border border-border/50">
