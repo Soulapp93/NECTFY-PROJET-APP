@@ -171,6 +171,10 @@ const AppContent = () => {
 
     // Ne pas rediriger si c'est une page légale
     if (userId && !isLegalPage) {
+      // Super Admin va vers /blog-admin
+      if (userRole === 'SuperAdmin') {
+        return <Navigate to="/blog-admin" replace />;
+      }
       const home = userRole === 'Admin' || userRole === 'AdminPrincipal' ? '/dashboard' : '/formations';
       return <Navigate to={home} replace />;
     }
@@ -214,6 +218,11 @@ const AppContent = () => {
   // rediriger vers l'authentification
   if (!userId) {
     return <Navigate to="/auth" state={{ from: location }} replace />;
+  }
+
+  // Super Admin: rediriger vers /blog-admin (il n'a pas accès à l'interface établissement)
+  if (userRole === 'SuperAdmin') {
+    return <Navigate to="/blog-admin" replace />;
   }
 
   return (

@@ -5,12 +5,33 @@ import { rpcWithRetry, retryQuery } from '@/lib/supabaseRetry';
 export const useCurrentUser = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchUserRole = useCallback(async (uid: string, mounted: { current: boolean }) => {
     try {
-      // Use retry logic for transient network errors
+      // D'abord vérifier si c'est un Super Admin (rôle de plateforme)
+      const { data: platformRoles, error: platformError } = await supabase
+        .from('platform_user_roles')
+        .select('role')
+        .eq('user_id', uid);
+
+      if (!mounted.current) return;
+
+      if (!platformError && platformRoles && platformRoles.length > 0) {
+        const isSA = platformRoles.some(r => r.role === 'super_admin');
+        setIsSuperAdmin(isSA);
+        
+        if (isSA) {
+          // Le Super Admin n'a pas besoin d'un rôle d'établissement
+          setUserRole('SuperAdmin');
+          setError(null);
+          return;
+        }
+      }
+
+      // Sinon, récupérer le rôle d'établissement via RPC
       const { data, error: rpcError } = await rpcWithRetry(
         () => supabase.rpc('get_current_user_role'),
         {
@@ -117,7 +138,7 @@ export const useCurrentUser = () => {
     };
   }, [fetchUserRole]);
 
-  return { userId, userRole, loading, error };
+  return { userId, userRole, isSuperAdmin, loading, error };
 };
 
 // Créer un hook pour récupérer les informations utilisateur avec tuteur/apprenti
