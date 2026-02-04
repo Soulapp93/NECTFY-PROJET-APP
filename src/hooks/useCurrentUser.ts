@@ -48,7 +48,8 @@ export const useCurrentUser = () => {
     // Nettoyer toute ancienne session démo au démarrage
     sessionStorage.removeItem('demo_user');
     
-    const getCurrentUser = async () => {
+    // INITIAL load - contrôle isLoading
+    const initializeAuth = async () => {
       try {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
@@ -57,12 +58,12 @@ export const useCurrentUser = () => {
         if (sessionError) {
           console.error('Erreur de session:', sessionError);
           setError('Erreur de session');
-          setLoading(false);
           return;
         }
         
         if (session?.user?.id) {
           setUserId(session.user.id);
+          // ATTENDRE que le rôle soit récupéré AVANT de mettre loading à false
           await fetchUserRole(session.user.id, mounted);
         } else {
           setUserId(null);
@@ -76,23 +77,28 @@ export const useCurrentUser = () => {
           setError('Erreur de connexion');
         }
       } finally {
+        // Loading à false SEULEMENT après que tout soit chargé
         if (mounted.current) setLoading(false);
       }
     };
 
-    // Écouter les changements d'authentification
+    // Listener pour les changements d'authentification EN COURS (NE contrôle PAS isLoading)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!mounted.current) return;
         
+        // Mettre loading à true pendant le changement
+        setLoading(true);
+        
         if (session?.user?.id) {
           setUserId(session.user.id);
-          // Déférer le fetch pour éviter les deadlocks
-          setTimeout(() => {
+          // Déférer le fetch pour éviter les deadlocks Supabase
+          setTimeout(async () => {
             if (mounted.current) {
-              fetchUserRole(session.user.id, mounted).finally(() => {
-                if (mounted.current) setLoading(false);
-              });
+              // ATTENDRE que le rôle soit récupéré
+              await fetchUserRole(session.user.id, mounted);
+              // PUIS mettre loading à false
+              if (mounted.current) setLoading(false);
             }
           }, 0);
         } else {
@@ -103,7 +109,7 @@ export const useCurrentUser = () => {
       }
     );
 
-    getCurrentUser();
+    initializeAuth();
 
     return () => {
       mounted.current = false;
