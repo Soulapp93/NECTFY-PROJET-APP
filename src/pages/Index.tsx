@@ -22,8 +22,8 @@ import AnimatedButton from '@/components/landing/AnimatedButton';
 import SectionDivider from '@/components/landing/SectionDivider';
 import GradientBackground from '@/components/landing/GradientBackground';
 
-// Import du logo NECTFORMA
-import nectformaLogo from '@/assets/logo-nectforma.png';
+// Import du logo NF
+import nfLogo from '@/assets/logo-nf.png';
 
 // Imports des captures d'écran
 import tableauDeBordImg from '@/assets/screenshots/tableau-de-bord.png';
@@ -399,39 +399,145 @@ const Index = () => {
             </AnimatedButton>
           </AnimatedSection>
 
-          {/* Logo Presentation Section */}
+          {/* Logo Presentation Section - 3D Space Effect */}
           <AnimatedSection animation="scale" delay={500} className="mt-12 md:mt-16 mb-8 md:mb-12 px-2">
-            <div className="relative max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-2xl shadow-primary/30 border border-primary/20 glass aspect-video flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10">
-              <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-accent/20 pointer-events-none z-10 rounded-2xl" />
+            <div className="relative max-w-4xl mx-auto rounded-3xl overflow-hidden aspect-video flex items-center justify-center"
+                 style={{ 
+                   background: 'radial-gradient(ellipse at center, hsl(270 80% 20%) 0%, hsl(250 60% 10%) 40%, hsl(230 50% 5%) 100%)',
+                   boxShadow: '0 0 80px rgba(139, 92, 246, 0.3), 0 0 120px rgba(168, 85, 247, 0.2), inset 0 0 60px rgba(139, 92, 246, 0.1)'
+                 }}>
               
-              {/* Cercles animés en arrière-plan */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="absolute w-64 h-64 md:w-96 md:h-96 rounded-full border border-primary/20 animate-[pulse_3s_ease-in-out_infinite]" />
-                <div className="absolute w-48 h-48 md:w-72 md:h-72 rounded-full border border-accent/30 animate-[pulse_2.5s_ease-in-out_infinite_0.5s]" />
-                <div className="absolute w-32 h-32 md:w-48 md:h-48 rounded-full border border-primary/40 animate-[pulse_2s_ease-in-out_infinite_1s]" />
+              {/* Étoiles spatiales */}
+              <div className="absolute inset-0 overflow-hidden">
+                {[...Array(50)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute rounded-full bg-white"
+                    style={{
+                      width: Math.random() * 3 + 1 + 'px',
+                      height: Math.random() * 3 + 1 + 'px',
+                      left: Math.random() * 100 + '%',
+                      top: Math.random() * 100 + '%',
+                      opacity: Math.random() * 0.8 + 0.2,
+                      animation: `twinkle ${Math.random() * 3 + 2}s ease-in-out infinite ${Math.random() * 2}s`
+                    }}
+                  />
+                ))}
               </div>
-              
+
+              {/* Anneaux orbitaux 3D */}
+              <div className="absolute inset-0 flex items-center justify-center" style={{ perspective: '1000px' }}>
+                <div 
+                  className="absolute w-[300px] h-[300px] md:w-[500px] md:h-[500px] rounded-full border-2 opacity-30"
+                  style={{ 
+                    borderColor: 'rgba(168, 85, 247, 0.5)',
+                    transform: 'rotateX(75deg)',
+                    animation: 'orbit-spin 20s linear infinite'
+                  }}
+                />
+                <div 
+                  className="absolute w-[250px] h-[250px] md:w-[420px] md:h-[420px] rounded-full border opacity-40"
+                  style={{ 
+                    borderColor: 'rgba(139, 92, 246, 0.6)',
+                    transform: 'rotateX(75deg) rotateZ(60deg)',
+                    animation: 'orbit-spin 15s linear infinite reverse'
+                  }}
+                />
+                <div 
+                  className="absolute w-[200px] h-[200px] md:w-[340px] md:h-[340px] rounded-full border opacity-50"
+                  style={{ 
+                    borderColor: 'rgba(196, 181, 253, 0.5)',
+                    transform: 'rotateX(75deg) rotateZ(-30deg)',
+                    animation: 'orbit-spin 25s linear infinite'
+                  }}
+                />
+              </div>
+
+              {/* Halo lumineux derrière le logo */}
+              <div 
+                className="absolute w-40 h-40 md:w-64 md:h-64 rounded-full"
+                style={{
+                  background: 'radial-gradient(circle, rgba(168, 85, 247, 0.4) 0%, rgba(139, 92, 246, 0.2) 40%, transparent 70%)',
+                  filter: 'blur(20px)',
+                  animation: 'pulse-glow 3s ease-in-out infinite'
+                }}
+              />
+
               {/* Logo et nom */}
-              <div className="relative z-20 flex flex-col items-center justify-center space-y-6 md:space-y-8">
-                <div className="animate-fade-in">
+              <div className="relative z-20 flex flex-col items-center justify-center space-y-4 md:space-y-6">
+                {/* Logo NF avec effet 3D */}
+                <div 
+                  className="relative"
+                  style={{ 
+                    animation: 'float-3d 6s ease-in-out infinite',
+                    transformStyle: 'preserve-3d'
+                  }}
+                >
                   <img 
-                    src={nectformaLogo} 
-                    alt="NECTFORMA Logo" 
-                    className="w-32 h-32 md:w-48 md:h-48 lg:w-56 lg:h-56 object-contain drop-shadow-2xl animate-[scale-in_0.6s_ease-out] hover:scale-105 transition-transform duration-300"
+                    src={nfLogo} 
+                    alt="NF Logo" 
+                    className="w-24 h-24 md:w-40 md:h-40 lg:w-48 lg:h-48 object-contain"
+                    style={{
+                      filter: 'drop-shadow(0 0 30px rgba(168, 85, 247, 0.8)) drop-shadow(0 0 60px rgba(139, 92, 246, 0.5))',
+                      animation: 'glow-pulse 2s ease-in-out infinite'
+                    }}
                   />
                 </div>
-                <div className="text-center animate-fade-in" style={{ animationDelay: '0.3s' }}>
-                  <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold gradient-text-animated tracking-tight">
+                
+                {/* Nom NECTFORMA */}
+                <div className="text-center">
+                  <h2 
+                    className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-wider"
+                    style={{
+                      background: 'linear-gradient(135deg, #c4b5fd 0%, #a78bfa 25%, #8b5cf6 50%, #7c3aed 75%, #a78bfa 100%)',
+                      backgroundSize: '200% 200%',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                      animation: 'gradient-shift 4s ease infinite',
+                      textShadow: '0 0 40px rgba(139, 92, 246, 0.5)'
+                    }}
+                  >
                     NECTFORMA
                   </h2>
-                  <p className="mt-2 md:mt-4 text-muted-foreground text-sm md:text-lg font-medium animate-fade-in" style={{ animationDelay: '0.6s' }}>
+                  <p 
+                    className="mt-3 md:mt-4 text-sm md:text-lg lg:text-xl font-medium tracking-wide"
+                    style={{
+                      color: 'rgba(196, 181, 253, 0.9)',
+                      textShadow: '0 0 20px rgba(139, 92, 246, 0.3)'
+                    }}
+                  >
                     La gestion de formation simplifiée
                   </p>
                 </div>
               </div>
-              
-              {/* Effet de brillance */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-[shimmer_3s_infinite] pointer-events-none" style={{ transform: 'skewX(-20deg)' }} />
+
+              {/* Particules flottantes */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                {[...Array(15)].map((_, i) => (
+                  <div
+                    key={`particle-${i}`}
+                    className="absolute rounded-full"
+                    style={{
+                      width: Math.random() * 6 + 2 + 'px',
+                      height: Math.random() * 6 + 2 + 'px',
+                      left: Math.random() * 100 + '%',
+                      top: Math.random() * 100 + '%',
+                      background: `radial-gradient(circle, rgba(${139 + Math.random() * 60}, ${92 + Math.random() * 100}, 246, 0.8) 0%, transparent 70%)`,
+                      animation: `float-particle ${Math.random() * 10 + 10}s ease-in-out infinite ${Math.random() * 5}s`
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Effet de brillance traversante */}
+              <div 
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.03) 45%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.03) 55%, transparent 60%)',
+                  animation: 'shine-sweep 8s ease-in-out infinite'
+                }}
+              />
             </div>
           </AnimatedSection>
 
