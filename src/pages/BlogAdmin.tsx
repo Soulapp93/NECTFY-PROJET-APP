@@ -312,7 +312,9 @@ const BlogAdmin = () => {
   const [categories, setCategories] = useState<BlogCategory[]>([]);
   const [tags, setTags] = useState<BlogTag[]>([]);
   const [stats, setStats] = useState<BlogStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  // IMPORTANT: ne pas bloquer l'UI en "chargement" si l'utilisateur n'a pas (encore)
+  // les droits blog. Le chargement ne doit être vrai que pendant `loadData()`.
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [editingPost, setEditingPost] = useState<BlogPost | null | 'new'>(null);
@@ -431,7 +433,9 @@ const BlogAdmin = () => {
     return matchesSearch && matchesStatus;
   });
 
-  if (authLoading || loading) {
+  // Attendre seulement la résolution des droits (authLoading).
+  // Ensuite, charger les données UNIQUEMENT si on a les droits.
+  if (authLoading || (canManageBlog && loading)) {
     return (
       <div className="min-h-screen bg-background p-8">
         <div className="max-w-7xl mx-auto space-y-6">
