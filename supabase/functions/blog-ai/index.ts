@@ -16,7 +16,8 @@ interface AIRequest {
     | 'suggest-schedule'
     | 'generate-image-prompt'
     | 'translate'
-    | 'summarize';
+    | 'summarize'
+    | 'generate-carousel';
   payload: Record<string, unknown>;
 }
 
@@ -253,6 +254,38 @@ Réponds en JSON:
   "key_points": ["Point clé 1", "Point clé 2"],
   "executive_summary": "Résumé exécutif (100 mots)",
   "tl_dr": "Version ultra-courte (20 mots)"
+}`,
+
+  'generate-carousel': `Tu es un expert en création de contenu visuel pour les réseaux sociaux (LinkedIn, Instagram, TikTok).
+
+Tu dois générer des slides de carrousel engageants et visuellement attrayants.
+
+Réponds TOUJOURS en JSON avec cette structure exacte:
+{
+  "slides": [
+    {
+      "title": "Titre accrocheur de la slide (max 50 chars)",
+      "subtitle": "Sous-titre ou tagline (max 80 chars)",
+      "content": "Contenu principal de la slide (max 150 chars)",
+      "bullet_points": ["Point 1", "Point 2", "Point 3"],
+      "cta": "Call-to-action si applicable",
+      "image_prompt": "Prompt pour générer une image de fond pertinente",
+      "slide_type": "intro|content|stats|quote|cta|conclusion"
+    }
+  ],
+  "carousel_title": "Titre global du carrousel",
+  "hashtags": ["#hashtag1", "#hashtag2"],
+  "caption": "Légende pour accompagner le carrousel",
+  "platform_tips": {
+    "linkedin": "Conseil spécifique LinkedIn",
+    "instagram": "Conseil spécifique Instagram",
+    "tiktok": "Conseil spécifique TikTok"
+  },
+  "color_suggestion": {
+    "primary": "#hex",
+    "secondary": "#hex",
+    "accent": "#hex"
+  }
 }`
 };
 
@@ -413,6 +446,20 @@ Contenu:
 ${payload.content}
 
 Format souhaité: ${payload.format || 'Tous les formats'}`;
+        break;
+
+      case 'generate-carousel':
+        userMessage = `Génère un carrousel de ${payload.slideCount || 5} slides pour les réseaux sociaux.
+
+Sujet/Thème: ${payload.topic || payload.title || 'Contenu professionnel'}
+Plateforme cible: ${payload.platform || 'LinkedIn'}
+Ton: ${payload.tone || 'Professionnel et engageant'}
+Audience: ${payload.audience || 'Professionnels B2B'}
+Style: ${payload.style || 'Moderne et épuré'}
+
+${payload.content ? `Contenu de base:\n${payload.content}` : ''}
+
+Instructions supplémentaires: ${payload.instructions || 'Crée des slides percutantes avec des titres accrocheurs et du contenu concis'}`;
         break;
 
       default:
