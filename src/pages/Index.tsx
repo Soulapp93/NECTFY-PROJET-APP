@@ -1,4 +1,4 @@
-import React from 'react';
+ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   LayoutDashboard, ShieldCheck, Users, GraduationCap, BookText, CalendarDays, 
@@ -6,7 +6,6 @@ import {
   ArrowRight, CheckCircle2, Sparkles, Play, Shield, Zap, Clock, Monitor,
   Send, Phone, MapPin
 } from 'lucide-react';
-import { useState } from 'react';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import FloatingCTA from '@/components/landing/FloatingCTA';
@@ -21,6 +20,8 @@ import Hover3DCard from '@/components/landing/Hover3DCard';
 import AnimatedButton from '@/components/landing/AnimatedButton';
 import SectionDivider from '@/components/landing/SectionDivider';
 import GradientBackground from '@/components/landing/GradientBackground';
+ import MobileDrawerNavigation from '@/components/landing/MobileDrawerNavigation';
+ import { Menu } from 'lucide-react';
 
 // Import du logo NF stylé
 import nfLogo from '@/assets/logo-nf-styled.png';
@@ -59,6 +60,7 @@ interface FeatureItem {
 
 const Index = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const features: FeatureItem[] = [
     {
       id: 'dashboard',
@@ -302,6 +304,15 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-3 md:py-4">
             <div className="flex items-center space-x-2 md:space-x-3 flex-shrink-0">
+               {/* Hamburger menu button - mobile only */}
+               <button
+                 onClick={() => setIsMobileMenuOpen(true)}
+                 className="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 transition-colors mr-1"
+                 aria-label="Menu"
+               >
+                 <Menu className="h-5 w-5 text-white" />
+               </button>
+               
               <div className="w-8 h-8 md:w-10 md:h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/30 shadow-lg">
                 <span className="text-white font-bold text-xs md:text-sm">NF</span>
               </div>
@@ -968,6 +979,12 @@ const Index = () => {
       {/* Floating Elements */}
       <FloatingCTA />
       <ChatWidget />
+       
+       {/* Mobile Navigation Drawer */}
+       <MobileDrawerNavigation 
+         isOpen={isMobileMenuOpen} 
+         onClose={() => setIsMobileMenuOpen(false)} 
+       />
     </div>
   );
 };
