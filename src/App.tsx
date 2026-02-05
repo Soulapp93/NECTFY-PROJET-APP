@@ -206,7 +206,8 @@ const AppContent = () => {
   const publicPages = ['/', '/solutions', '/fonctionnalites', '/pourquoi-nous', '/cgu', '/politique-confidentialite', '/documentation', '/blog'];
   // Pages légales accessibles même connecté (CGU, Politique de Confidentialité)
   const legalPages = ['/cgu', '/politique-confidentialite'];
-  const isPublicPage = publicPages.includes(location.pathname);
+   const isPublicPage = publicPages.includes(location.pathname) || location.pathname.startsWith('/blog/');
+   const isBlogArticlePage = location.pathname.startsWith('/blog/');
   const isLegalPage = legalPages.includes(location.pathname);
   
   if (isPublicPage) {
@@ -242,7 +243,8 @@ const AppContent = () => {
     }
 
     // Ne pas rediriger si c'est une page légale
-    if (userId && !isLegalPage) {
+     // Ne pas rediriger si c'est une page légale ou un article de blog
+     if (userId && !isLegalPage && !isBlogArticlePage) {
       // Super Admin va vers /blog-admin
       if (userRole === 'SuperAdmin') {
         return <Navigate to="/blog-admin" replace />;
