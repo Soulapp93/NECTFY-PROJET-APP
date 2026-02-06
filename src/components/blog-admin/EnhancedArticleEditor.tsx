@@ -128,8 +128,9 @@ export const EnhancedArticleEditor: React.FC<EnhancedArticleEditorProps> = ({
 
       if (error) throw error;
 
-      if (data?.imageUrl) {
-        insertImage(data.imageUrl);
+      const imageUrl = data?.imageUrl || data?.data?.imageUrl;
+      if (imageUrl) {
+        insertImage(imageUrl);
         toast.success('Image générée et insérée !');
         setImagePrompt('');
         setShowImageGenerator(false);

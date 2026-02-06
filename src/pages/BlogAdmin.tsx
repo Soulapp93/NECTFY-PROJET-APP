@@ -108,12 +108,14 @@ const AIPostEditor = ({
   const [postId, setPostId] = useState<string | null>(post?.id || null);
 
   const generateSlug = (title: string) => {
-    return title
+    const base = title
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
+    const suffix = Date.now().toString(36);
+    return `${base}-${suffix}`;
   };
 
   // Auto-save every 30 seconds
