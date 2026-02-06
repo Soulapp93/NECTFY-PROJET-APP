@@ -3,18 +3,11 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { 
-  Clock, Calendar, ArrowLeft, Share2, Twitter, Linkedin, 
-  Facebook, Link2, Check, ChevronRight, User
+  Clock, Calendar, ArrowLeft, ArrowRight, Share2, Eye, User, ChevronRight, BookOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { getPostBySlug, trackPageView, trackScrollDepth, trackTimeOnPage, BlogPost as BlogPostType, getPublishedPosts } from '@/services/blogService';
 import logoNf from '@/assets/logo-nf.png';
@@ -27,18 +20,18 @@ const BlogHeader = () => (
         <span className="font-semibold text-lg">Nectforma</span>
       </Link>
       <nav className="hidden md:flex items-center gap-6">
-        <Link to="/blog" className="text-sm font-medium hover:text-primary transition-colors">
-          Blog
-        </Link>
-        <Link to="/solutions" className="text-sm font-medium hover:text-primary transition-colors">
-          Solutions
-        </Link>
+        <Link to="/blog" className="text-sm font-medium text-primary transition-colors">Blog</Link>
+        <Link to="/solutions" className="text-sm font-medium hover:text-primary transition-colors">Solutions</Link>
+        <Link to="/fonctionnalites" className="text-sm font-medium hover:text-primary transition-colors">Fonctionnalités</Link>
       </nav>
-      <Link to="/auth">
-        <Button variant="default" size="sm">
-          Se connecter
-        </Button>
-      </Link>
+      <div className="flex items-center gap-3">
+        <Link to="/auth">
+          <Button size="sm" variant="outline" className="hidden sm:inline-flex">Connexion</Button>
+        </Link>
+        <Link to="/auth">
+          <Button size="sm">Essai gratuit</Button>
+        </Link>
+      </div>
     </div>
   </header>
 );
@@ -48,17 +41,14 @@ const TableOfContents = ({ content }: { content: string }) => {
   const [activeId, setActiveId] = useState<string>('');
 
   useEffect(() => {
-    // Parse headings from content
     const parser = new DOMParser();
     const doc = parser.parseFromString(content, 'text/html');
     const h2s = doc.querySelectorAll('h2, h3');
-    
     const items = Array.from(h2s).map((h, i) => ({
       id: `heading-${i}`,
       text: h.textContent || '',
       level: parseInt(h.tagName[1])
     }));
-    
     setHeadings(items);
   }, [content]);
 
@@ -66,39 +56,32 @@ const TableOfContents = ({ content }: { content: string }) => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveId(entry.target.id);
-          }
+          if (entry.isIntersecting) setActiveId(entry.target.id);
         });
       },
       { rootMargin: '-20% 0% -35% 0%' }
     );
-
     headings.forEach(({ id }) => {
-      const element = document.getElementById(id);
-      if (element) observer.observe(element);
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
     });
-
     return () => observer.disconnect();
   }, [headings]);
 
   if (headings.length < 2) return null;
 
   return (
-    <nav className="sticky top-24 hidden lg:block">
-      <h4 className="font-semibold mb-4 text-sm">Sommaire</h4>
-      <ul className="space-y-2 text-sm">
+    <nav>
+      <h4 className="text-xs font-bold uppercase tracking-widest text-primary mb-4">Sommaire</h4>
+      <ul className="space-y-1">
         {headings.map((heading) => (
-          <li 
-            key={heading.id}
-            className={`${heading.level === 3 ? 'pl-4' : ''}`}
-          >
+          <li key={heading.id} className={heading.level === 3 ? 'pl-3' : ''}>
             <a
               href={`#${heading.id}`}
-              className={`block py-1 border-l-2 pl-3 transition-colors ${
+              className={`block py-1.5 text-sm border-l-2 pl-3 transition-colors leading-snug ${
                 activeId === heading.id
                   ? 'border-primary text-primary font-medium'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-primary/40'
               }`}
             >
               {heading.text}
@@ -110,49 +93,49 @@ const TableOfContents = ({ content }: { content: string }) => {
   );
 };
 
-const ShareButtons = ({ title, url }: { title: string; url: string }) => {
-  const [copied, setCopied] = useState(false);
-
+const SocialShareButtons = ({ title, url }: { title: string; url: string }) => {
   const shareUrls = {
-    twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`,
     linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+    twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`
   };
 
   const copyLink = async () => {
     await navigator.clipboard.writeText(url);
-    setCopied(true);
     toast.success('Lien copié !');
-    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Share2 className="h-4 w-4 mr-2" />
-          Partager
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => window.open(shareUrls.twitter, '_blank')}>
-          <Twitter className="h-4 w-4 mr-2" />
-          Twitter
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => window.open(shareUrls.linkedin, '_blank')}>
-          <Linkedin className="h-4 w-4 mr-2" />
-          LinkedIn
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => window.open(shareUrls.facebook, '_blank')}>
-          <Facebook className="h-4 w-4 mr-2" />
-          Facebook
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={copyLink}>
-          {copied ? <Check className="h-4 w-4 mr-2" /> : <Link2 className="h-4 w-4 mr-2" />}
-          Copier le lien
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="flex items-center gap-2 mt-6">
+      <button
+        onClick={() => window.open(shareUrls.linkedin, '_blank')}
+        className="w-9 h-9 rounded-full bg-[#0077B5] text-white flex items-center justify-center hover:opacity-80 transition-opacity"
+        title="LinkedIn"
+      >
+        <span className="text-sm font-bold">in</span>
+      </button>
+      <button
+        onClick={() => window.open(shareUrls.facebook, '_blank')}
+        className="w-9 h-9 rounded-full bg-[#1877F2] text-white flex items-center justify-center hover:opacity-80 transition-opacity"
+        title="Facebook"
+      >
+        <span className="text-sm font-bold">f</span>
+      </button>
+      <button
+        onClick={() => window.open(shareUrls.twitter, '_blank')}
+        className="w-9 h-9 rounded-full bg-[#1DA1F2] text-white flex items-center justify-center hover:opacity-80 transition-opacity"
+        title="Twitter"
+      >
+        <span className="text-sm font-bold">𝕏</span>
+      </button>
+      <button
+        onClick={copyLink}
+        className="w-9 h-9 rounded-full bg-muted text-muted-foreground flex items-center justify-center hover:bg-muted/80 transition-opacity"
+        title="Copier le lien"
+      >
+        <Share2 className="h-4 w-4" />
+      </button>
+    </div>
   );
 };
 
@@ -172,25 +155,26 @@ const RelatedPosts = ({ currentSlug }: { currentSlug: string }) => {
       <h3 className="text-2xl font-bold mb-6">Articles similaires</h3>
       <div className="grid md:grid-cols-3 gap-6">
         {posts.map(post => (
-          <Link 
-            key={post.id} 
-            to={`/blog/${post.slug}`}
-            className="group"
-          >
-            <div className="aspect-video rounded-lg overflow-hidden mb-3 bg-muted">
-              {post.cover_image_url && (
+          <Link key={post.id} to={`/blog/${post.slug}`} className="group">
+            <div className="aspect-video rounded-xl overflow-hidden mb-3 bg-muted relative">
+              {post.cover_image_url ? (
                 <img 
                   src={post.cover_image_url} 
                   alt={post.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                  <BookOpen className="h-8 w-8 text-primary/40" />
+                </div>
               )}
             </div>
-            <h4 className="font-semibold group-hover:text-primary transition-colors line-clamp-2">
+            <h4 className="font-semibold group-hover:text-primary transition-colors line-clamp-2 text-sm">
               {post.title}
             </h4>
-            <p className="text-sm text-muted-foreground mt-1">
-              {post.read_time_minutes} min de lecture
+            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+              <ArrowRight className="h-3 w-3 text-primary" />
+              Lire l'article
             </p>
           </Link>
         ))}
@@ -210,11 +194,8 @@ const BlogPostPage = () => {
 
   useEffect(() => {
     if (!slug) return;
-    
     loadPost();
-    
     return () => {
-      // Track time on page when leaving
       if (post) {
         const timeSpent = Math.floor((Date.now() - startTime.current) / 1000);
         trackTimeOnPage(post.id, timeSpent);
@@ -224,32 +205,22 @@ const BlogPostPage = () => {
   }, [slug]);
 
   useEffect(() => {
-    // Track scroll depth
     const handleScroll = () => {
-      if (!contentRef.current) return;
-      
       const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
       const scrollPercent = Math.round((scrollTop / (scrollHeight - clientHeight)) * 100);
       maxScroll.current = Math.max(maxScroll.current, scrollPercent);
     };
-
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const loadPost = async () => {
     if (!slug) return;
-    
     setLoading(true);
     try {
       const data = await getPostBySlug(slug);
-      if (!data) {
-        navigate('/blog', { replace: true });
-        return;
-      }
+      if (!data) { navigate('/blog', { replace: true }); return; }
       setPost(data);
-      
-      // Track page view
       trackPageView(data.id);
       startTime.current = Date.now();
     } catch (error) {
@@ -260,7 +231,6 @@ const BlogPostPage = () => {
     }
   };
 
-  // Process content to add IDs to headings
   const processContent = (html: string) => {
     let headingIndex = 0;
     return html.replace(/<(h[23])([^>]*)>/gi, (match, tag, attrs) => {
@@ -274,10 +244,10 @@ const BlogPostPage = () => {
       <div className="min-h-screen bg-background">
         <BlogHeader />
         <div className="container mx-auto px-4 py-12 max-w-4xl">
-          <Skeleton className="h-8 w-32 mb-8" />
+          <Skeleton className="h-8 w-48 mb-8" />
           <Skeleton className="h-12 w-full mb-4" />
           <Skeleton className="h-6 w-2/3 mb-8" />
-          <Skeleton className="aspect-video w-full mb-8" />
+          <Skeleton className="aspect-video w-full rounded-xl mb-8" />
           <div className="space-y-4">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-full" />
@@ -294,98 +264,103 @@ const BlogPostPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* SEO Meta Tags */}
       <title>{post.seo_title || post.title} | Blog Nectforma</title>
       <meta name="description" content={post.seo_description || post.excerpt || ''} />
-      <meta name="keywords" content={post.seo_keywords?.join(', ') || ''} />
       <meta property="og:title" content={post.seo_title || post.title} />
       <meta property="og:description" content={post.seo_description || post.excerpt || ''} />
       <meta property="og:image" content={post.cover_image_url || ''} />
       <meta property="og:type" content="article" />
-      <meta property="article:published_time" content={post.published_at || ''} />
-      <meta name="twitter:card" content="summary_large_image" />
       {post.canonical_url && <link rel="canonical" href={post.canonical_url} />}
 
       <BlogHeader />
 
-      <article className="container mx-auto px-4 py-8 md:py-12">
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
-          <Link to="/blog" className="hover:text-foreground transition-colors flex items-center gap-1">
-            <ArrowLeft className="h-4 w-4" />
-            Blog
-          </Link>
-          {post.category && (
-            <>
-              <ChevronRight className="h-4 w-4" />
-              <Link 
-                to={`/blog?category=${post.category.slug}`}
-                className="hover:text-foreground transition-colors"
-              >
-                {post.category.name}
-              </Link>
-            </>
-          )}
-        </nav>
+      {/* Breadcrumb bar */}
+      <div className="border-b bg-muted/30">
+        <div className="container mx-auto px-4 py-3">
+          <nav className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Link to="/" className="hover:text-foreground transition-colors">Accueil</Link>
+            <ChevronRight className="h-3.5 w-3.5" />
+            <Link to="/blog" className="hover:text-foreground transition-colors">Blog</Link>
+            {post.category && (
+              <>
+                <ChevronRight className="h-3.5 w-3.5" />
+                <Link to={`/blog?category=${post.category.slug}`} className="hover:text-foreground transition-colors">
+                  {post.category.name}
+                </Link>
+              </>
+            )}
+            <ChevronRight className="h-3.5 w-3.5" />
+            <span className="text-foreground truncate max-w-[300px]">{post.title}</span>
+          </nav>
+        </div>
+      </div>
 
-        <div className="grid lg:grid-cols-[1fr_250px] gap-12 max-w-6xl mx-auto">
-          <div>
-            {/* Header */}
+      <article className="container mx-auto px-4 py-8 md:py-12">
+        <div className="grid lg:grid-cols-[220px_1fr] gap-10 max-w-6xl mx-auto">
+          
+          {/* Left Sidebar: TOC + Social */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-24 space-y-6">
+              <TableOfContents content={post.content} />
+              <SocialShareButtons title={post.title} url={currentUrl} />
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <div className="min-w-0">
+            {/* Article Header */}
             <header className="mb-8">
               <div className="flex flex-wrap items-center gap-3 mb-4">
                 {post.category && (
-                  <Badge 
-                    variant="secondary"
-                    style={{ backgroundColor: post.category.color + '20', color: post.category.color }}
-                  >
+                  <span className="text-xs font-bold uppercase tracking-widest text-primary">
                     {post.category.name}
-                  </Badge>
+                  </span>
                 )}
-                <span className="text-sm text-muted-foreground flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  {post.read_time_minutes} min de lecture
-                </span>
+                <Badge variant="secondary" className="bg-primary/10 text-primary text-xs font-bold gap-1">
+                  <Eye className="h-3 w-3" />
+                  {post.views_count || 0}
+                </Badge>
               </div>
 
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight">
+              <h1 className="text-3xl md:text-4xl font-bold mb-4 leading-tight text-foreground">
                 {post.title}
               </h1>
 
-              {post.excerpt && (
-                <p className="text-xl text-muted-foreground mb-6">
-                  {post.excerpt}
-                </p>
-              )}
-
-              <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b">
-                <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="h-5 w-5 text-primary" />
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="h-4 w-4 text-primary" />
                   </div>
-                  <div>
-                    <p className="font-medium">Équipe Nectforma</p>
-                    {post.published_at && (
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {format(new Date(post.published_at), 'd MMMM yyyy', { locale: fr })}
-                      </p>
-                    )}
-                  </div>
+                  <span className="font-medium text-foreground">Équipe Nectforma</span>
                 </div>
-                <ShareButtons title={post.title} url={currentUrl} />
+                {post.published_at && (
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5" />
+                    {format(new Date(post.published_at), 'd MMMM yyyy', { locale: fr })}
+                  </span>
+                )}
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" />
+                  {post.read_time_minutes} min
+                </span>
               </div>
             </header>
 
             {/* Cover Image */}
             {post.cover_image_url && (
-              <div className="aspect-video rounded-xl overflow-hidden mb-8 shadow-lg">
+              <div className="rounded-xl overflow-hidden mb-10 shadow-md">
                 <img
                   src={post.cover_image_url}
                   alt={post.title}
-                  className="w-full h-full object-cover"
+                  className="w-full h-auto object-cover"
                 />
               </div>
             )}
+
+            {/* Mobile social share */}
+            <div className="lg:hidden mb-6">
+              <SocialShareButtons title={post.title} url={currentUrl} />
+            </div>
 
             {/* Content */}
             <div 
@@ -393,21 +368,21 @@ const BlogPostPage = () => {
               className="prose prose-lg max-w-none dark:prose-invert 
                 prose-headings:scroll-mt-20
                 prose-h1:text-3xl prose-h1:font-bold prose-h1:mt-8 prose-h1:mb-4
-                prose-h2:text-2xl prose-h2:font-bold prose-h2:mt-10 prose-h2:mb-4
-                prose-h3:text-xl prose-h3:font-semibold prose-h3:mt-8 prose-h3:mb-3
+                prose-h2:text-2xl prose-h2:font-bold prose-h2:mt-10 prose-h2:mb-4 prose-h2:text-primary
+                prose-h3:text-xl prose-h3:font-semibold prose-h3:mt-8 prose-h3:mb-3 prose-h3:text-primary/80
                 prose-p:text-foreground/80 prose-p:leading-relaxed prose-p:mb-4
                 prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-                prose-img:rounded-xl prose-img:shadow-lg prose-img:my-8
-                prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-muted/50 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-xl prose-blockquote:not-italic
-                prose-code:bg-muted prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm prose-code:font-mono
-                prose-pre:bg-muted prose-pre:border prose-pre:rounded-xl prose-pre:overflow-x-auto
+                prose-img:rounded-xl prose-img:shadow-md prose-img:my-8
+                prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-xl prose-blockquote:not-italic prose-blockquote:text-primary/90
+                prose-code:bg-muted prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm
+                prose-pre:bg-muted prose-pre:border prose-pre:rounded-xl
                 prose-ul:text-foreground/80 prose-ol:text-foreground/80
                 prose-li:mb-2
                 prose-strong:text-foreground prose-strong:font-semibold
                 prose-table:border prose-table:rounded-lg prose-table:overflow-hidden
                 prose-th:bg-muted prose-th:p-3 prose-th:text-left
                 prose-td:p-3 prose-td:border-t
-                [&_.carousel-slide]:rounded-xl [&_.carousel-slide]:shadow-lg [&_.carousel-slide]:overflow-hidden
+                [&_.carousel-slide]:rounded-xl [&_.carousel-slide]:shadow-lg
                 [&_div[style*='background']]:rounded-xl [&_div[style*='background']]:my-4"
               dangerouslySetInnerHTML={{ __html: processContent(post.content) }}
             />
@@ -427,14 +402,25 @@ const BlogPostPage = () => {
               </div>
             )}
 
-            {/* Related Posts */}
+            {/* Author Card */}
+            <div className="mt-10 p-6 rounded-2xl bg-muted/40 border border-border/40 flex items-start gap-4">
+              <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <User className="h-7 w-7 text-primary" />
+              </div>
+              <div>
+                <h4 className="font-bold text-foreground">Équipe Nectforma</h4>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Passionnés par l'innovation pédagogique, nous partageons nos conseils et bonnes pratiques pour la gestion des formations.
+                </p>
+                <div className="flex items-center gap-2 mt-3">
+                  <button className="w-7 h-7 rounded-full bg-[#0077B5] text-white flex items-center justify-center text-xs hover:opacity-80">in</button>
+                </div>
+              </div>
+            </div>
+
+            {/* Related */}
             <RelatedPosts currentSlug={post.slug} />
           </div>
-
-          {/* Table of Contents */}
-          <aside className="hidden lg:block">
-            <TableOfContents content={post.content} />
-          </aside>
         </div>
       </article>
 

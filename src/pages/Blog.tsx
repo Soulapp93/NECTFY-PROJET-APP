@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Clock, Calendar, ArrowRight, Tag, Folder } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { ArrowRight, Eye, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -18,21 +17,19 @@ const BlogHeader = () => (
         <span className="font-semibold text-lg">Nectforma</span>
       </Link>
       <nav className="hidden md:flex items-center gap-6">
-        <Link to="/blog" className="text-sm font-medium hover:text-primary transition-colors">
-          Blog
-        </Link>
-        <Link to="/solutions" className="text-sm font-medium hover:text-primary transition-colors">
-          Solutions
-        </Link>
-        <Link to="/fonctionnalites" className="text-sm font-medium hover:text-primary transition-colors">
-          Fonctionnalités
-        </Link>
+        <Link to="/blog" className="text-sm font-medium text-primary transition-colors">Blog</Link>
+        <Link to="/solutions" className="text-sm font-medium hover:text-primary transition-colors">Solutions</Link>
+        <Link to="/fonctionnalites" className="text-sm font-medium hover:text-primary transition-colors">Fonctionnalités</Link>
+        <Link to="/pourquoi-nous" className="text-sm font-medium hover:text-primary transition-colors">À propos</Link>
       </nav>
-      <Link to="/auth">
-        <Button variant="default" size="sm">
-          Se connecter
-        </Button>
-      </Link>
+      <div className="flex items-center gap-3">
+        <Link to="/auth">
+          <Button size="sm" variant="outline" className="hidden sm:inline-flex">Connexion</Button>
+        </Link>
+        <Link to="/auth">
+          <Button size="sm">Essai gratuit</Button>
+        </Link>
+      </div>
     </div>
   </header>
 );
@@ -69,7 +66,7 @@ const BlogFooter = () => (
           <h4 className="font-semibold mb-4">Légal</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li><Link to="/cgu" className="hover:text-foreground transition-colors">CGU</Link></li>
-            <li><Link to="/politique-confidentialite" className="hover:text-foreground transition-colors">Politique de confidentialité</Link></li>
+            <li><Link to="/politique-confidentialite" className="hover:text-foreground transition-colors">Confidentialité</Link></li>
           </ul>
         </div>
       </div>
@@ -80,77 +77,175 @@ const BlogFooter = () => (
   </footer>
 );
 
-const PostCard = ({ post }: { post: BlogPost }) => (
-  <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-border/50">
-    {post.cover_image_url && (
-      <div className="aspect-video overflow-hidden">
+const ViewsBadge = ({ views }: { views: number }) => (
+  <span className="absolute top-3 right-3 bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-md z-10">
+    <Eye className="h-3 w-3" />
+    {views >= 1000 ? `${(views / 1000).toFixed(1)}k` : views}
+  </span>
+);
+
+const ArticleCard = ({ post }: { post: BlogPost }) => (
+  <div className="group bg-card rounded-2xl border border-border/40 overflow-hidden hover:shadow-lg transition-all duration-300">
+    <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+      {post.cover_image_url ? (
         <img
           src={post.cover_image_url}
           alt={post.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
-      </div>
-    )}
-    <CardContent className="p-6">
-      <div className="flex items-center gap-3 mb-3">
+      ) : (
+        <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+          <BookOpen className="h-12 w-12 text-primary/40" />
+        </div>
+      )}
+      <ViewsBadge views={post.views_count || 0} />
+    </div>
+    <div className="p-5">
+      <div className="flex items-center gap-2 mb-3">
         {post.category && (
-          <Badge variant="secondary" className="text-xs" style={{ backgroundColor: post.category.color + '20', color: post.category.color }}>
+          <span className="text-xs font-bold uppercase tracking-wider text-primary">
             {post.category.name}
-          </Badge>
+          </span>
         )}
-        <span className="text-xs text-muted-foreground flex items-center gap-1">
-          <Clock className="h-3 w-3" />
-          {post.read_time_minutes} min
-        </span>
+        {post.category && post.published_at && (
+          <span className="text-xs text-muted-foreground">•</span>
+        )}
+        {post.published_at && (
+          <span className="text-xs text-muted-foreground uppercase tracking-wide">
+            {format(new Date(post.published_at), 'dd/MM/yyyy', { locale: fr })}
+          </span>
+        )}
       </div>
-      
       <Link to={`/blog/${post.slug}`}>
-        <h2 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors line-clamp-2">
+        <h3 className="font-semibold text-foreground leading-snug mb-3 line-clamp-2 group-hover:text-primary transition-colors">
+          {post.title}
+        </h3>
+      </Link>
+      <Link 
+        to={`/blog/${post.slug}`}
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+      >
+        <ArrowRight className="h-3.5 w-3.5" />
+        Lire l'article
+      </Link>
+    </div>
+  </div>
+);
+
+const FeaturedCard = ({ post }: { post: BlogPost }) => (
+  <div className="group bg-card rounded-2xl border border-border/40 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col md:flex-row">
+    <div className="relative md:w-1/2 aspect-video md:aspect-auto overflow-hidden bg-muted min-h-[200px]">
+      {post.cover_image_url ? (
+        <img
+          src={post.cover_image_url}
+          alt={post.title}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
+      ) : (
+        <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+          <BookOpen className="h-16 w-16 text-primary/40" />
+        </div>
+      )}
+      <ViewsBadge views={post.views_count || 0} />
+    </div>
+    <div className="md:w-1/2 p-6 md:p-8 flex flex-col justify-center">
+      <div className="flex items-center gap-2 mb-3">
+        {post.category && (
+          <span className="text-xs font-bold uppercase tracking-wider text-primary">
+            {post.category.name}
+          </span>
+        )}
+        {post.published_at && (
+          <>
+            <span className="text-xs text-muted-foreground">•</span>
+            <span className="text-xs text-muted-foreground uppercase tracking-wide">
+              {format(new Date(post.published_at), 'dd/MM/yyyy', { locale: fr })}
+            </span>
+          </>
+        )}
+      </div>
+      <Link to={`/blog/${post.slug}`}>
+        <h2 className="text-xl md:text-2xl font-bold mb-3 leading-tight group-hover:text-primary transition-colors">
           {post.title}
         </h2>
       </Link>
-      
       {post.excerpt && (
         <p className="text-muted-foreground text-sm mb-4 line-clamp-3">
           {post.excerpt}
         </p>
       )}
-      
-      <div className="flex items-center justify-between">
-        {post.published_at && (
-          <span className="text-xs text-muted-foreground flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            {format(new Date(post.published_at), 'd MMMM yyyy', { locale: fr })}
+      <Link 
+        to={`/blog/${post.slug}`}
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+      >
+        <ArrowRight className="h-3.5 w-3.5" />
+        Lire l'article
+      </Link>
+    </div>
+  </div>
+);
+
+const SidebarPromoCard = ({ title, description, linkText, linkUrl, icon }: {
+  title: string;
+  description: string;
+  linkText: string;
+  linkUrl: string;
+  icon: React.ReactNode;
+}) => (
+  <div className="bg-card rounded-2xl border border-border/40 p-6 text-center">
+    <div className="flex justify-center mb-4">{icon}</div>
+    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">{title}</p>
+    <p className="font-semibold text-foreground mb-4 text-sm">{description}</p>
+    <Link to={linkUrl}>
+      <Button variant="outline" size="sm" className="rounded-full text-xs">
+        {linkText}
+      </Button>
+    </Link>
+  </div>
+);
+
+const PopularPostItem = ({ post }: { post: BlogPost }) => (
+  <div className="border-b border-border/30 pb-4 last:border-0 last:pb-0">
+    <div className="flex items-center gap-2 mb-1">
+      {post.category && (
+        <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
+          {post.category.name}
+        </span>
+      )}
+      {post.published_at && (
+        <>
+          <span className="text-[10px] text-muted-foreground">•</span>
+          <span className="text-[10px] text-muted-foreground">
+            {format(new Date(post.published_at), 'dd/MM/yyyy', { locale: fr })}
           </span>
-        )}
-        <Link 
-          to={`/blog/${post.slug}`}
-          className="text-sm font-medium text-primary hover:underline flex items-center gap-1"
-        >
-          Lire <ArrowRight className="h-3 w-3" />
-        </Link>
-      </div>
-    </CardContent>
-  </Card>
+        </>
+      )}
+    </div>
+    <Link to={`/blog/${post.slug}`}>
+      <h4 className="text-sm font-medium text-foreground hover:text-primary transition-colors line-clamp-2 mb-1">
+        {post.title}
+      </h4>
+    </Link>
+    <Link 
+      to={`/blog/${post.slug}`}
+      className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+    >
+      <ArrowRight className="h-3 w-3" />
+      Lire l'article
+    </Link>
+  </div>
 );
 
 const PostCardSkeleton = () => (
-  <Card className="overflow-hidden">
-    <Skeleton className="aspect-video" />
-    <CardContent className="p-6 space-y-3">
-      <div className="flex gap-2">
-        <Skeleton className="h-5 w-20" />
-        <Skeleton className="h-5 w-16" />
-      </div>
-      <Skeleton className="h-6 w-full" />
-      <Skeleton className="h-4 w-full" />
-      <Skeleton className="h-4 w-2/3" />
-      <div className="flex justify-between pt-2">
-        <Skeleton className="h-4 w-24" />
-        <Skeleton className="h-4 w-16" />
-      </div>
-    </CardContent>
-  </Card>
+  <div className="bg-card rounded-2xl border border-border/40 overflow-hidden">
+    <Skeleton className="aspect-[4/3]" />
+    <div className="p-5 space-y-3">
+      <Skeleton className="h-3 w-32" />
+      <Skeleton className="h-5 w-full" />
+      <Skeleton className="h-5 w-3/4" />
+      <Skeleton className="h-4 w-24" />
+    </div>
+  </div>
 );
 
 const Blog = () => {
@@ -161,6 +256,7 @@ const Blog = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
     searchParams.get('category')
   );
+  const [visibleCount, setVisibleCount] = useState(9);
 
   useEffect(() => {
     loadData();
@@ -170,11 +266,10 @@ const Blog = () => {
     setLoading(true);
     try {
       const [postsData, categoriesData] = await Promise.all([
-        getPublishedPosts(20, 0),
+        getPublishedPosts(50, 0),
         getCategories()
       ]);
       
-      // Filter by category if selected
       const filteredPosts = selectedCategory
         ? postsData.filter(p => p.category?.slug === selectedCategory)
         : postsData;
@@ -189,67 +284,83 @@ const Blog = () => {
   };
 
   const featuredPost = posts[0];
-  const otherPosts = posts.slice(1);
+  const gridPosts = posts.slice(1, visibleCount + 1);
+  const popularPosts = [...posts].sort((a, b) => (b.views_count || 0) - (a.views_count || 0)).slice(0, 4);
+  const hasMore = posts.length > visibleCount + 1;
 
   return (
     <div className="min-h-screen bg-background">
       <BlogHeader />
       
-      {/* Hero Section */}
-      <section className="relative py-16 md:py-24 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              Blog Nectforma
-            </h1>
-            <p className="text-lg text-muted-foreground">
-              Découvrez nos articles sur la gestion des formations, l'innovation pédagogique et les bonnes pratiques pour les établissements d'enseignement.
-            </p>
-          </div>
+      {/* Hero Banner */}
+      <section className="relative bg-gradient-to-r from-primary/90 via-primary to-primary/80 py-16 md:py-20 overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-10 left-10 w-32 h-32 rounded-full bg-white/20 blur-2xl" />
+          <div className="absolute bottom-10 right-20 w-48 h-48 rounded-full bg-white/15 blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
+        </div>
+        <div className="container mx-auto px-4 relative z-10 text-center">
+          <h1 className="text-3xl md:text-5xl font-bold text-white mb-3">
+            Blog Nectforma
+          </h1>
+          <p className="text-white/80 text-lg max-w-2xl mx-auto">
+            Toute l'actualité sur la galaxie Nectforma
+          </p>
         </div>
       </section>
 
-      {/* Categories */}
+      {/* Categories Filter */}
       {categories.length > 0 && (
-        <section className="border-b">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center gap-2 overflow-x-auto pb-2">
-              <Button
-                variant={!selectedCategory ? 'default' : 'ghost'}
-                size="sm"
+        <section className="border-b bg-card">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+              <button
                 onClick={() => setSelectedCategory(null)}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  !selectedCategory 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
               >
                 Tous
-              </Button>
+              </button>
               {categories.map(cat => (
-                <Button
+                <button
                   key={cat.id}
-                  variant={selectedCategory === cat.slug ? 'default' : 'ghost'}
-                  size="sm"
                   onClick={() => setSelectedCategory(cat.slug)}
-                  className="whitespace-nowrap"
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                    selectedCategory === cat.slug 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  }`}
                 >
-                  <Folder className="h-3 w-3 mr-1" />
                   {cat.name}
-                </Button>
+                </button>
               ))}
             </div>
           </div>
         </section>
       )}
 
-      {/* Articles */}
-      <section className="py-12">
+      {/* Main Content */}
+      <section className="py-10 md:py-14">
         <div className="container mx-auto px-4">
           {loading ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <PostCardSkeleton key={i} />
-              ))}
+            <div className="grid lg:grid-cols-[1fr_300px] gap-10">
+              <div className="space-y-8">
+                <Skeleton className="h-64 rounded-2xl" />
+                <div className="grid md:grid-cols-3 gap-6">
+                  {[...Array(6)].map((_, i) => <PostCardSkeleton key={i} />)}
+                </div>
+              </div>
+              <div className="space-y-6">
+                <Skeleton className="h-48 rounded-2xl" />
+                <Skeleton className="h-64 rounded-2xl" />
+              </div>
             </div>
           ) : posts.length === 0 ? (
             <div className="text-center py-16">
-              <Tag className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h2 className="text-xl font-semibold mb-2">Aucun article</h2>
               <p className="text-muted-foreground">
                 {selectedCategory 
@@ -258,56 +369,73 @@ const Blog = () => {
               </p>
             </div>
           ) : (
-            <>
-              {/* Featured Post */}
-              {featuredPost && !selectedCategory && (
-                <div className="mb-12">
-                  <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 md:flex">
-                    {featuredPost.cover_image_url && (
-                      <div className="md:w-1/2 aspect-video md:aspect-auto overflow-hidden">
-                        <img
-                          src={featuredPost.cover_image_url}
-                          alt={featuredPost.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                      </div>
-                    )}
-                    <CardContent className="p-8 md:w-1/2 flex flex-col justify-center">
-                      <Badge className="w-fit mb-4">À la une</Badge>
-                      <Link to={`/blog/${featuredPost.slug}`}>
-                        <h2 className="text-2xl md:text-3xl font-bold mb-4 group-hover:text-primary transition-colors">
-                          {featuredPost.title}
-                        </h2>
-                      </Link>
-                      {featuredPost.excerpt && (
-                        <p className="text-muted-foreground mb-6 line-clamp-3">
-                          {featuredPost.excerpt}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          {featuredPost.read_time_minutes} min de lecture
-                        </span>
-                        {featuredPost.published_at && (
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            {format(new Date(featuredPost.published_at), 'd MMMM yyyy', { locale: fr })}
-                          </span>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
+            <div className="grid lg:grid-cols-[1fr_300px] gap-10">
+              {/* Left: Articles */}
+              <div className="space-y-8">
+                {/* Featured Article */}
+                {featuredPost && !selectedCategory && (
+                  <FeaturedCard post={featuredPost} />
+                )}
 
-              {/* Grid of Posts */}
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {(selectedCategory ? posts : otherPosts).map(post => (
-                  <PostCard key={post.id} post={post} />
-                ))}
+                {/* Articles Grid */}
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  {(selectedCategory ? posts : gridPosts).map(post => (
+                    <ArticleCard key={post.id} post={post} />
+                  ))}
+                </div>
+
+                {/* Load More */}
+                {hasMore && !selectedCategory && (
+                  <div className="text-center pt-4">
+                    <Button 
+                      onClick={() => setVisibleCount(prev => prev + 9)}
+                      className="rounded-full px-8"
+                    >
+                      Voir plus d'articles
+                    </Button>
+                  </div>
+                )}
               </div>
-            </>
+
+              {/* Right Sidebar */}
+              <aside className="space-y-6 hidden lg:block">
+                <SidebarPromoCard
+                  title="WEBINAIRE"
+                  description="Participez à notre prochain webinaire de démo"
+                  linkText="Découvrir nos webinaires"
+                  linkUrl="/fonctionnalites"
+                  icon={
+                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                      <span className="text-2xl">🎥</span>
+                    </div>
+                  }
+                />
+
+                <SidebarPromoCard
+                  title="GUIDE PRATIQUE"
+                  description="Optimisez la gestion de vos formations"
+                  linkText="En savoir +"
+                  linkUrl="/solutions"
+                  icon={
+                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                      <span className="text-2xl">📘</span>
+                    </div>
+                  }
+                />
+
+                {/* Popular Articles */}
+                {popularPosts.length > 0 && (
+                  <div className="bg-card rounded-2xl border border-border/40 p-6">
+                    <h3 className="text-primary font-bold text-lg mb-5">Articles les + lus</h3>
+                    <div className="space-y-4">
+                      {popularPosts.map(post => (
+                        <PopularPostItem key={post.id} post={post} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </aside>
+            </div>
           )}
         </div>
       </section>
