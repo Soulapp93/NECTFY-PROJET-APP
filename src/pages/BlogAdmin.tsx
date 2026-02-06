@@ -81,7 +81,7 @@ const AIPostEditor = ({
   post?: BlogPost | null;
   categories: BlogCategory[];
   tags: BlogTag[];
-  onSave: (data: Partial<BlogPost>, tagIds: string[]) => Promise<void>;
+  onSave: (data: Partial<BlogPost>, tagIds: string[]) => Promise<string | void>;
   onClose: () => void;
   initialTopic?: string;
 }) => {
@@ -122,13 +122,15 @@ const AIPostEditor = ({
   const triggerAutoSave = useCallback(async () => {
     if (!formData.title?.trim()) return;
     try {
-      const dataToSave = { ...formData, status: formData.status || 'draft' as const };
-      await onSave(dataToSave, selectedTags);
+      const dataToSave = { ...formData, ...(postId ? { id: postId } : {}), status: formData.status || 'draft' as const };
+      if (!postId) dataToSave.slug = generateSlug(formData.title || 'article');
+      const savedId = await onSave(dataToSave, selectedTags);
+      if (savedId && !postId) setPostId(savedId);
       setLastSaved(new Date());
     } catch (e) {
       console.error('Auto-save failed:', e);
     }
-  }, [formData, selectedTags, onSave]);
+  }, [formData, selectedTags, onSave, postId]);
 
   useEffect(() => {
     if (autoSaveTimer) clearTimeout(autoSaveTimer);
@@ -154,12 +156,16 @@ const AIPostEditor = ({
     }
     setSaving(true);
     try {
+      const slug = postId ? formData.slug : generateSlug(formData.title || 'article');
       const dataToSave = {
         ...formData,
+        ...(postId ? { id: postId } : {}),
+        slug,
         status: publish ? 'published' as const : formData.status,
         published_at: publish ? new Date().toISOString() : formData.published_at
       };
-      await onSave(dataToSave, selectedTags);
+      const savedId = await onSave(dataToSave, selectedTags);
+      if (savedId && !postId) setPostId(savedId);
       toast.success(publish ? 'Article publié sur la page d\'accueil !' : 'Brouillon enregistré');
       onClose();
     } catch (error) {
@@ -175,7 +181,7 @@ const AIPostEditor = ({
     const newFormData: Partial<BlogPost> = {
       ...formData,
       title: article.title,
-      slug: article.slug,
+      slug: generateSlug(article.title),
       excerpt: article.excerpt,
       content: article.content,
       seo_title: article.seo_title,
@@ -191,8 +197,10 @@ const AIPostEditor = ({
 
     if (matchingCat) {
       newFormData.category_id = matchingCat.id;
+    } else if (categories.length > 0) {
+      // Default to first category if no match
+      newFormData.category_id = categories[0].id;
     }
-    // If no matching category, we'll create it after save
 
     setFormData(newFormData);
 
@@ -215,7 +223,8 @@ const AIPostEditor = ({
         ...newFormData,
         status: 'draft' as const
       };
-      await onSave(dataToSave, matchingTagIds);
+      const savedId = await onSave(dataToSave, matchingTagIds);
+      if (savedId) setPostId(savedId);
       setLastSaved(new Date());
       toast.success('Article généré et sauvegardé automatiquement !');
     } catch (e) {
@@ -780,17 +789,28 @@ const BlogAdmin = () => {
     }
   };
 
-  const handleSavePost = async (data: Partial<BlogPost>, tagIds: string[]) => {
+  const handleSavePost = async (data: Partial<BlogPost>, tagIds: string[]): Promise<string | void> => {
     if (editingPost === 'new') {
+      // Check if we already have a postId from a previous save (auto-save)
+      const existingId = data.id;
+      if (existingId) {
+        await updatePost(existingId, data);
+        await setPostTags(existingId, tagIds);
+        await loadData();
+        return existingId;
+      }
       const newPost = await createPost(data);
       if (tagIds.length > 0) {
         await setPostTags(newPost.id, tagIds);
       }
+      await loadData();
+      return newPost.id;
     } else if (editingPost) {
       await updatePost(editingPost.id, data);
       await setPostTags(editingPost.id, tagIds);
+      await loadData();
+      return editingPost.id;
     }
-    await loadData();
   };
 
   const handleDeletePost = async (id: string) => {

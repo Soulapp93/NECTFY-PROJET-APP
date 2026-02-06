@@ -106,66 +106,48 @@ export const EnhancedArticleEditor: React.FC<EnhancedArticleEditorProps> = ({
   };
 
   // Generate AI image based on prompt
-  const generateAIImage = async () => {
-    if (!imagePrompt.trim()) {
+  const generateAIImage = async (autoPrompt = false) => {
+    const promptToUse = autoPrompt 
+      ? `Professional blog cover image for article titled "${title || 'Formation professionnelle'}". Modern, clean design, educational technology theme.`
+      : imagePrompt.trim();
+    
+    if (!promptToUse) {
       toast.error('Veuillez entrer une description pour l\'image');
       return;
     }
 
     setIsGeneratingImage(true);
     try {
-      // Use the blog-ai edge function for image generation
       const { data, error } = await supabase.functions.invoke('blog-ai', {
         body: {
           action: 'generate-image',
           data: {
-            prompt: imagePrompt,
+            prompt: promptToUse,
             title: title || 'Article',
-            style: 'professional, modern, clean design'
+            style: 'professional, modern, clean design, high quality'
           }
         }
       });
 
       if (error) throw error;
 
-      const imageUrl = data?.imageUrl || data?.data?.imageUrl;
-      if (imageUrl) {
+      console.log('Image generation response keys:', Object.keys(data || {}));
+      
+      // The response is { success: true, imageUrl: "data:image/..." }
+      const imageUrl = data?.imageUrl;
+      
+      if (imageUrl && imageUrl.startsWith('data:image')) {
         insertImage(imageUrl);
-        toast.success('Image générée et insérée !');
+        toast.success('Image générée et insérée dans l\'article !');
         setImagePrompt('');
         setShowImageGenerator(false);
       } else {
-        // Fallback: Insert a placeholder with the prompt description
-        const placeholderDiv = `
-          <div style="background: linear-gradient(135deg, hsl(var(--primary)/0.1), hsl(var(--accent)/0.1)); 
-                      padding: 2rem; border-radius: 12px; text-align: center; margin: 1rem 0;">
-            <p style="font-size: 0.875rem; color: hsl(var(--muted-foreground));">
-              🎨 Image suggérée: ${imagePrompt}
-            </p>
-          </div>
-        `;
-        document.execCommand('insertHTML', false, placeholderDiv);
-        onChange(editorRef.current?.innerHTML || content);
-        toast.info('Placeholder d\'image ajouté. Vous pouvez le remplacer par une vraie image.');
-        setImagePrompt('');
-        setShowImageGenerator(false);
+        console.warn('No valid image URL in response:', typeof imageUrl, imageUrl?.substring?.(0, 50));
+        toast.error('L\'image n\'a pas pu être générée. Réessayez.');
       }
     } catch (error) {
       console.error('Image generation error:', error);
-      // Insert placeholder anyway
-      const placeholderDiv = `
-        <div style="background: linear-gradient(135deg, hsl(var(--primary)/0.1), hsl(var(--accent)/0.1)); 
-                    padding: 2rem; border-radius: 12px; text-align: center; margin: 1rem 0; border: 2px dashed hsl(var(--border));">
-          <p style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem;">🖼️ Image à ajouter</p>
-          <p style="font-size: 0.875rem; color: hsl(var(--muted-foreground));">
-            ${imagePrompt}
-          </p>
-        </div>
-      `;
-      document.execCommand('insertHTML', false, placeholderDiv);
-      onChange(editorRef.current?.innerHTML || content);
-      setImagePrompt('');
-      setShowImageGenerator(false);
+      toast.error('Erreur lors de la génération de l\'image. Réessayez.');
     } finally {
       setIsGeneratingImage(false);
     }
@@ -479,23 +461,24 @@ export const EnhancedArticleEditor: React.FC<EnhancedArticleEditorProps> = ({
                     />
                     <div className="flex gap-2">
                       <Button
-                        onClick={() => setImagePrompt(`Image professionnelle pour un article sur: ${title || 'la formation professionnelle'}`)}
+                        onClick={() => generateAIImage(true)}
                         variant="outline"
                         size="sm"
+                        disabled={isGeneratingImage}
                       >
                         <Wand2 className="h-3 w-3 mr-1" />
-                        Auto-suggestion
+                        Auto-générer
                       </Button>
                     </div>
                     <Button
-                      onClick={generateAIImage}
+                      onClick={() => generateAIImage(false)}
                       disabled={isGeneratingImage || !imagePrompt.trim()}
                       className="w-full"
                     >
                       {isGeneratingImage ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Génération...
+                          Génération en cours...
                         </>
                       ) : (
                         <>
