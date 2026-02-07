@@ -5,7 +5,7 @@ import {
   FileText, TrendingUp, BarChart3, Calendar, Clock,
   Globe, Folder, Send, Save, ArrowLeft, Sparkles,
   Target, Wand2, Bot, Home, ChevronDown, Check,
-  CalendarPlus, CalendarCheck, KeyRound
+  CalendarPlus, CalendarCheck, KeyRound, BookOpen, ArrowRight, Eye as EyeIcon
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -70,6 +70,60 @@ const StatCard = ({ title, value, icon: Icon, trend }: {
 // AI POST EDITOR (with auto-save)
 // ============================================
 
+// Article Preview Component
+const ArticlePreviewPanel = ({ formData, category }: { formData: Partial<BlogPost>; category?: BlogCategory }) => (
+  <div className="space-y-6 p-4">
+    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Aperçu page d'accueil</h3>
+    {/* Featured card preview */}
+    <div className="bg-card rounded-2xl border-2 border-primary/20 overflow-hidden shadow-sm">
+      <div className="flex flex-col">
+        <div className="aspect-video overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5">
+          {formData.cover_image_url ? (
+            <img src={formData.cover_image_url} alt={formData.title || ''} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <BookOpen className="h-10 w-10 text-primary/30" />
+            </div>
+          )}
+        </div>
+        <div className="p-4">
+          <div className="flex items-center gap-2 mb-2">
+            {category && <span className="text-[10px] font-bold uppercase tracking-wider text-primary">{category.name}</span>}
+            <span className="text-[10px] text-muted-foreground">• {format(new Date(), 'dd/MM/yyyy', { locale: fr })}</span>
+          </div>
+          <h4 className="font-semibold text-sm leading-snug mb-2 line-clamp-2">{formData.title || 'Titre de l\'article'}</h4>
+          {formData.excerpt && <p className="text-xs text-muted-foreground line-clamp-2">{formData.excerpt}</p>}
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-primary mt-2">
+            <ArrowRight className="h-3 w-3" /> Lire l'article
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Aperçu article</h3>
+    {/* Article detail preview */}
+    <div className="bg-primary/5 rounded-2xl p-3">
+      <div className="bg-background rounded-xl border-2 border-primary/30 p-4 shadow-sm">
+        {category && <span className="text-[10px] font-bold uppercase tracking-wider text-primary">{category.name}</span>}
+        <h4 className="font-bold text-sm mt-1 mb-2">{formData.title || 'Titre de l\'article'}</h4>
+        <div className="flex items-center gap-2 text-[10px] text-muted-foreground mb-3">
+          <span>Équipe Nectforma</span>
+          <span>•</span>
+          <span>{format(new Date(), 'd MMM yyyy', { locale: fr })}</span>
+        </div>
+        {formData.cover_image_url && (
+          <div className="rounded-lg overflow-hidden mb-3 border border-primary/10">
+            <img src={formData.cover_image_url} alt="" className="w-full h-24 object-cover" />
+          </div>
+        )}
+        <div className="text-[10px] text-muted-foreground line-clamp-4">
+          {formData.excerpt || 'Le contenu de votre article apparaîtra ici...'}
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 const AIPostEditor = ({ 
   post, 
   categories,
@@ -102,6 +156,7 @@ const AIPostEditor = ({
   );
   const [saving, setSaving] = useState(false);
   const [showAIPanel, setShowAIPanel] = useState(!post);
+  const [showPreview, setShowPreview] = useState(false);
   const [aiMode, setAiMode] = useState<'generate' | 'seo' | 'enhance'>('generate');
   const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -253,7 +308,7 @@ const AIPostEditor = ({
 
   return (
     <div className="fixed inset-0 bg-background z-50 overflow-hidden flex">
-      <div className={`flex-1 overflow-auto ${showAIPanel ? 'lg:mr-[450px]' : ''}`}>
+      <div className={`flex-1 overflow-auto ${showAIPanel ? 'lg:mr-[450px]' : showPreview ? 'lg:mr-[350px]' : ''}`}>
         <header className="sticky top-0 bg-background border-b z-10">
           <div className="container mx-auto px-4 py-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -271,8 +326,15 @@ const AIPostEditor = ({
             </div>
             <div className="flex items-center gap-2">
               <Button 
+                variant={showPreview ? 'secondary' : 'outline'}
+                onClick={() => { setShowPreview(!showPreview); if (!showPreview) setShowAIPanel(false); }}
+              >
+                <EyeIcon className="h-4 w-4 mr-2" />
+                Aperçu
+              </Button>
+              <Button 
                 variant={showAIPanel ? 'secondary' : 'outline'}
-                onClick={() => setShowAIPanel(!showAIPanel)}
+                onClick={() => { setShowAIPanel(!showAIPanel); if (!showAIPanel) setShowPreview(false); }}
               >
                 <Sparkles className="h-4 w-4 mr-2" />
                 IA
@@ -486,6 +548,22 @@ const AIPostEditor = ({
               </div>
             </Tabs>
           </div>
+        </div>
+      )}
+
+      {showPreview && (
+        <div className="fixed right-0 top-0 bottom-0 w-full lg:w-[350px] bg-background border-l overflow-auto z-20">
+          <div className="sticky top-0 bg-background border-b p-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <EyeIcon className="h-5 w-5 text-primary" />
+              <h2 className="font-semibold">Aperçu</h2>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setShowPreview(false)}>×</Button>
+          </div>
+          <ArticlePreviewPanel 
+            formData={formData} 
+            category={categories.find(c => c.id === formData.category_id)}
+          />
         </div>
       )}
     </div>
