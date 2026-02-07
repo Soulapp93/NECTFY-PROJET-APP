@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ArrowRight, BookOpen } from 'lucide-react';
+import ArticleCoverImage from '@/components/blog/ArticleCoverImage';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getPublishedPosts, getCategories, BlogPost, BlogCategory } from '@/services/blogService';
@@ -78,19 +79,7 @@ const BlogFooter = () => (
 
 const ArticleCard = ({ post }: { post: BlogPost }) => (
   <div className="group bg-card rounded-2xl border-2 border-primary/20 overflow-hidden hover:shadow-xl hover:border-primary/40 transition-all duration-300">
-    <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5">
-      {post.cover_image_url ? (
-        <img
-          src={post.cover_image_url}
-          alt={post.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center">
-          <BookOpen className="h-12 w-12 text-primary/30" />
-        </div>
-      )}
-    </div>
+    <ArticleCoverImage title={post.title} size="card" className="aspect-[4/3]" />
     <div className="p-5">
       <div className="flex items-center gap-2 mb-3">
         {post.category && (
@@ -128,19 +117,7 @@ const ArticleCard = ({ post }: { post: BlogPost }) => (
 
 const FeaturedCard = ({ post }: { post: BlogPost }) => (
   <div className="group bg-card rounded-2xl border-2 border-primary/20 overflow-hidden hover:shadow-xl hover:border-primary/40 transition-all duration-300 flex flex-col md:flex-row">
-    <div className="relative md:w-1/2 aspect-video md:aspect-auto overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5 min-h-[200px]">
-      {post.cover_image_url ? (
-        <img
-          src={post.cover_image_url}
-          alt={post.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center">
-          <BookOpen className="h-16 w-16 text-primary/30" />
-        </div>
-      )}
-    </div>
+    <ArticleCoverImage title={post.title} size="hero" className="md:w-1/2 aspect-video md:aspect-auto min-h-[200px]" />
     <div className="md:w-1/2 p-6 md:p-8 flex flex-col justify-center">
       <div className="flex items-center gap-2 mb-3">
         {post.category && (

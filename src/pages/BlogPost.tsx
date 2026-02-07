@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { getPostBySlug, trackPageView, trackScrollDepth, trackTimeOnPage, BlogPost as BlogPostType, getPublishedPosts } from '@/services/blogService';
 import logoNf from '@/assets/logo-nf.png';
+import ArticleCoverImage from '@/components/blog/ArticleCoverImage';
 
 const BlogHeader = () => (
   <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
@@ -71,9 +72,9 @@ const TableOfContents = ({ content }: { content: string }) => {
   if (headings.length < 2) return null;
 
   return (
-    <nav>
+    <nav className="bg-card rounded-2xl border border-primary/15 p-5">
       <h4 className="text-xs font-bold uppercase tracking-widest text-primary mb-4">Sommaire</h4>
-      <ul className="space-y-1">
+      <ul className="space-y-0.5">
         {headings.map((heading) => (
           <li key={heading.id} className={heading.level === 3 ? 'pl-3' : ''}>
             <a
@@ -106,33 +107,17 @@ const SocialShareButtons = ({ title, url }: { title: string; url: string }) => {
   };
 
   return (
-    <div className="flex items-center gap-2 mt-6">
-      <button
-        onClick={() => window.open(shareUrls.linkedin, '_blank')}
-        className="w-9 h-9 rounded-full bg-[#0077B5] text-white flex items-center justify-center hover:opacity-80 transition-opacity"
-        title="LinkedIn"
-      >
+    <div className="flex items-center gap-2">
+      <button onClick={() => window.open(shareUrls.linkedin, '_blank')} className="w-9 h-9 rounded-full bg-[#0077B5] text-white flex items-center justify-center hover:opacity-80 transition-opacity" title="LinkedIn">
         <span className="text-sm font-bold">in</span>
       </button>
-      <button
-        onClick={() => window.open(shareUrls.facebook, '_blank')}
-        className="w-9 h-9 rounded-full bg-[#1877F2] text-white flex items-center justify-center hover:opacity-80 transition-opacity"
-        title="Facebook"
-      >
+      <button onClick={() => window.open(shareUrls.facebook, '_blank')} className="w-9 h-9 rounded-full bg-[#1877F2] text-white flex items-center justify-center hover:opacity-80 transition-opacity" title="Facebook">
         <span className="text-sm font-bold">f</span>
       </button>
-      <button
-        onClick={() => window.open(shareUrls.twitter, '_blank')}
-        className="w-9 h-9 rounded-full bg-[#1DA1F2] text-white flex items-center justify-center hover:opacity-80 transition-opacity"
-        title="Twitter"
-      >
+      <button onClick={() => window.open(shareUrls.twitter, '_blank')} className="w-9 h-9 rounded-full bg-[#1DA1F2] text-white flex items-center justify-center hover:opacity-80 transition-opacity" title="Twitter">
         <span className="text-sm font-bold">𝕏</span>
       </button>
-      <button
-        onClick={copyLink}
-        className="w-9 h-9 rounded-full bg-muted text-muted-foreground flex items-center justify-center hover:bg-muted/80 transition-opacity"
-        title="Copier le lien"
-      >
+      <button onClick={copyLink} className="w-9 h-9 rounded-full bg-muted text-muted-foreground flex items-center justify-center hover:bg-muted/80 transition-opacity" title="Copier le lien">
         <Share2 className="h-4 w-4" />
       </button>
     </div>
@@ -156,23 +141,8 @@ const RelatedPosts = ({ currentSlug }: { currentSlug: string }) => {
       <div className="grid md:grid-cols-3 gap-6">
         {posts.map(post => (
           <Link key={post.id} to={`/blog/${post.slug}`} className="group">
-            <div className="aspect-video rounded-xl overflow-hidden mb-3 bg-muted relative border-2 border-primary/20">
-              {post.cover_image_url ? (
-                <img 
-                  src={post.cover_image_url} 
-                  alt={post.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                  <BookOpen className="h-8 w-8 text-primary/40" />
-                </div>
-              )}
-            </div>
-            <h4 className="font-semibold group-hover:text-primary transition-colors line-clamp-2 text-sm">
-              {post.title}
-            </h4>
-            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+            <ArticleCoverImage title={post.title} size="card" className="aspect-video rounded-xl" />
+            <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
               <ArrowRight className="h-3 w-3 text-primary" />
               Lire l'article
             </p>
@@ -296,21 +266,25 @@ const BlogPostPage = () => {
       </div>
 
       <article className="container mx-auto px-4 py-8 md:py-12">
-        <div className="grid lg:grid-cols-[220px_1fr] gap-10 max-w-6xl mx-auto">
+        <div className="grid lg:grid-cols-[240px_1fr] gap-8 max-w-6xl mx-auto">
           
-          {/* Left Sidebar: TOC + Social */}
+          {/* Left Sidebar: TOC + Social — Digiforma style */}
           <aside className="hidden lg:block">
-            <div className="sticky top-24 space-y-6">
+            <div className="sticky top-24 space-y-5">
               <TableOfContents content={post.content} />
-              <SocialShareButtons title={post.title} url={currentUrl} />
+              <div className="bg-card rounded-2xl border border-primary/15 p-5">
+                <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Partager</h4>
+                <SocialShareButtons title={post.title} url={currentUrl} />
+              </div>
             </div>
           </aside>
 
-          {/* Main Content - Violet framed */}
+          {/* Main Content — Framed */}
           <div className="min-w-0">
-            <div className="bg-background rounded-2xl border-2 border-primary/30 shadow-lg shadow-primary/5 p-6 md:p-10">
-              {/* Article Header */}
-              <header className="mb-8">
+            <div className="bg-background rounded-2xl border-2 border-primary/30 shadow-lg shadow-primary/5 overflow-hidden">
+              
+              {/* Header area inside frame */}
+              <div className="p-6 md:p-10 pb-0 md:pb-0">
                 <div className="flex flex-wrap items-center gap-3 mb-4">
                   {post.category && (
                     <span className="text-xs font-bold uppercase tracking-widest text-primary">
@@ -323,7 +297,7 @@ const BlogPostPage = () => {
                   {post.title}
                 </h1>
 
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-8">
                   <div className="flex items-center gap-2">
                     <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
                       <User className="h-4 w-4 text-primary" />
@@ -341,66 +315,66 @@ const BlogPostPage = () => {
                     {post.read_time_minutes} min
                   </span>
                 </div>
-              </header>
+              </div>
 
-              {/* Cover Image */}
-              {post.cover_image_url && (
-                <div className="rounded-xl overflow-hidden mb-10 shadow-md border-2 border-primary/20">
-                  <img
-                    src={post.cover_image_url}
-                    alt={post.title}
-                    className="w-full h-auto object-cover"
-                  />
-                </div>
-              )}
+              {/* Branded Cover Image — Digiforma-style with title */}
+              <div className="px-6 md:px-10 mb-8">
+                <ArticleCoverImage 
+                  title={post.title} 
+                  size="hero" 
+                  className="aspect-[16/7] rounded-xl shadow-md" 
+                />
+              </div>
 
               {/* Mobile social share */}
-              <div className="lg:hidden mb-6">
+              <div className="lg:hidden px-6 md:px-10 mb-6">
                 <SocialShareButtons title={post.title} url={currentUrl} />
               </div>
 
               {/* Content */}
-              <div 
-                ref={contentRef}
-                className="prose prose-lg max-w-none dark:prose-invert 
-                  prose-headings:scroll-mt-20
-                  prose-h1:text-3xl prose-h1:font-bold prose-h1:mt-8 prose-h1:mb-4
-                  prose-h2:text-2xl prose-h2:font-bold prose-h2:mt-10 prose-h2:mb-4 prose-h2:text-primary
-                  prose-h3:text-xl prose-h3:font-semibold prose-h3:mt-8 prose-h3:mb-3 prose-h3:text-primary/80
-                  prose-p:text-foreground/80 prose-p:leading-relaxed prose-p:mb-4
-                  prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-                  prose-img:rounded-xl prose-img:shadow-md prose-img:my-8 prose-img:border-2 prose-img:border-primary/10
-                  prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-xl prose-blockquote:not-italic prose-blockquote:text-primary/90
-                  prose-code:bg-muted prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm
-                  prose-pre:bg-muted prose-pre:border prose-pre:rounded-xl
-                  prose-ul:text-foreground/80 prose-ol:text-foreground/80
-                  prose-li:mb-2
-                  prose-strong:text-foreground prose-strong:font-semibold
-                  prose-table:border prose-table:rounded-lg prose-table:overflow-hidden
-                  prose-th:bg-muted prose-th:p-3 prose-th:text-left
-                  prose-td:p-3 prose-td:border-t
-                  [&_.carousel-slide]:rounded-xl [&_.carousel-slide]:shadow-lg
-                  [&_div[style*='background']]:rounded-xl [&_div[style*='background']]:my-4"
-                dangerouslySetInnerHTML={{ __html: processContent(post.content) }}
-              />
+              <div className="px-6 md:px-10 pb-8 md:pb-10">
+                <div 
+                  ref={contentRef}
+                  className="prose prose-lg max-w-none dark:prose-invert 
+                    prose-headings:scroll-mt-20
+                    prose-h1:text-3xl prose-h1:font-bold prose-h1:mt-8 prose-h1:mb-4
+                    prose-h2:text-2xl prose-h2:font-bold prose-h2:mt-10 prose-h2:mb-4 prose-h2:text-primary
+                    prose-h3:text-xl prose-h3:font-semibold prose-h3:mt-8 prose-h3:mb-3 prose-h3:text-primary/80
+                    prose-p:text-foreground/80 prose-p:leading-relaxed prose-p:mb-4
+                    prose-a:text-primary prose-a:no-underline hover:prose-a:underline
+                    prose-img:rounded-xl prose-img:shadow-md prose-img:my-8 prose-img:border-2 prose-img:border-primary/10
+                    prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-xl prose-blockquote:not-italic prose-blockquote:text-primary/90
+                    prose-code:bg-muted prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm
+                    prose-pre:bg-muted prose-pre:border prose-pre:rounded-xl
+                    prose-ul:text-foreground/80 prose-ol:text-foreground/80
+                    prose-li:mb-2
+                    prose-strong:text-foreground prose-strong:font-semibold
+                    prose-table:border prose-table:rounded-lg prose-table:overflow-hidden
+                    prose-th:bg-muted prose-th:p-3 prose-th:text-left
+                    prose-td:p-3 prose-td:border-t
+                    [&_.carousel-slide]:rounded-xl [&_.carousel-slide]:shadow-lg
+                    [&_div[style*='background']]:rounded-xl [&_div[style*='background']]:my-4"
+                  dangerouslySetInnerHTML={{ __html: processContent(post.content) }}
+                />
 
-              {/* Tags */}
-              {post.tags && post.tags.length > 0 && (
-                <div className="mt-8 pt-8 border-t border-primary/10">
-                  <div className="flex flex-wrap gap-2">
-                    {post.tags.map(tag => (
-                      <Link key={tag.id} to={`/blog?tag=${tag.slug}`}>
-                        <Badge variant="outline" className="hover:bg-primary/10 border-primary/20 transition-colors">
-                          #{tag.name}
-                        </Badge>
-                      </Link>
-                    ))}
+                {/* Tags */}
+                {post.tags && post.tags.length > 0 && (
+                  <div className="mt-8 pt-8 border-t border-primary/10">
+                    <div className="flex flex-wrap gap-2">
+                      {post.tags.map(tag => (
+                        <Link key={tag.id} to={`/blog?tag=${tag.slug}`}>
+                          <Badge variant="outline" className="hover:bg-primary/10 border-primary/20 transition-colors">
+                            #{tag.name}
+                          </Badge>
+                        </Link>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
-            {/* Author Card - Outside the frame */}
+            {/* Author Card */}
             <div className="mt-8 p-6 rounded-2xl bg-background border-2 border-primary/20 flex items-start gap-4">
               <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                 <User className="h-7 w-7 text-primary" />
@@ -427,7 +401,7 @@ const BlogPostPage = () => {
         <div className="container mx-auto px-4 text-center">
           <Link to="/" className="flex items-center gap-2 justify-center mb-4">
             <img src={logoNf} alt="Nectforma" className="h-8" />
-            <span className="font-semibold">Nectforma</span>
+            <span className="font-semibold text-lg">Nectforma</span>
           </Link>
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} Nectforma. Tous droits réservés.
