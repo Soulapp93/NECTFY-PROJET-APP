@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { ArrowRight, Eye, BookOpen } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { ArrowRight, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getPublishedPosts, getCategories, BlogPost, BlogCategory } from '@/services/blogService';
@@ -77,16 +76,9 @@ const BlogFooter = () => (
   </footer>
 );
 
-const ViewsBadge = ({ views }: { views: number }) => (
-  <span className="absolute top-3 right-3 bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-md z-10">
-    <Eye className="h-3 w-3" />
-    {views >= 1000 ? `${(views / 1000).toFixed(1)}k` : views}
-  </span>
-);
-
 const ArticleCard = ({ post }: { post: BlogPost }) => (
-  <div className="group bg-card rounded-2xl border border-border/40 overflow-hidden hover:shadow-lg transition-all duration-300">
-    <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+  <div className="group bg-card rounded-2xl border-2 border-primary/20 overflow-hidden hover:shadow-xl hover:border-primary/40 transition-all duration-300">
+    <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5">
       {post.cover_image_url ? (
         <img
           src={post.cover_image_url}
@@ -94,11 +86,10 @@ const ArticleCard = ({ post }: { post: BlogPost }) => (
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
       ) : (
-        <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-          <BookOpen className="h-12 w-12 text-primary/40" />
+        <div className="w-full h-full flex items-center justify-center">
+          <BookOpen className="h-12 w-12 text-primary/30" />
         </div>
       )}
-      <ViewsBadge views={post.views_count || 0} />
     </div>
     <div className="p-5">
       <div className="flex items-center gap-2 mb-3">
@@ -121,6 +112,9 @@ const ArticleCard = ({ post }: { post: BlogPost }) => (
           {post.title}
         </h3>
       </Link>
+      {post.excerpt && (
+        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{post.excerpt}</p>
+      )}
       <Link 
         to={`/blog/${post.slug}`}
         className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
@@ -133,8 +127,8 @@ const ArticleCard = ({ post }: { post: BlogPost }) => (
 );
 
 const FeaturedCard = ({ post }: { post: BlogPost }) => (
-  <div className="group bg-card rounded-2xl border border-border/40 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col md:flex-row">
-    <div className="relative md:w-1/2 aspect-video md:aspect-auto overflow-hidden bg-muted min-h-[200px]">
+  <div className="group bg-card rounded-2xl border-2 border-primary/20 overflow-hidden hover:shadow-xl hover:border-primary/40 transition-all duration-300 flex flex-col md:flex-row">
+    <div className="relative md:w-1/2 aspect-video md:aspect-auto overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5 min-h-[200px]">
       {post.cover_image_url ? (
         <img
           src={post.cover_image_url}
@@ -142,11 +136,10 @@ const FeaturedCard = ({ post }: { post: BlogPost }) => (
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
       ) : (
-        <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-          <BookOpen className="h-16 w-16 text-primary/40" />
+        <div className="w-full h-full flex items-center justify-center">
+          <BookOpen className="h-16 w-16 text-primary/30" />
         </div>
       )}
-      <ViewsBadge views={post.views_count || 0} />
     </div>
     <div className="md:w-1/2 p-6 md:p-8 flex flex-col justify-center">
       <div className="flex items-center gap-2 mb-3">
@@ -182,25 +175,6 @@ const FeaturedCard = ({ post }: { post: BlogPost }) => (
         Lire l'article
       </Link>
     </div>
-  </div>
-);
-
-const SidebarPromoCard = ({ title, description, linkText, linkUrl, icon }: {
-  title: string;
-  description: string;
-  linkText: string;
-  linkUrl: string;
-  icon: React.ReactNode;
-}) => (
-  <div className="bg-card rounded-2xl border border-border/40 p-6 text-center">
-    <div className="flex justify-center mb-4">{icon}</div>
-    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">{title}</p>
-    <p className="font-semibold text-foreground mb-4 text-sm">{description}</p>
-    <Link to={linkUrl}>
-      <Button variant="outline" size="sm" className="rounded-full text-xs">
-        {linkText}
-      </Button>
-    </Link>
   </div>
 );
 
@@ -346,7 +320,7 @@ const Blog = () => {
       <section className="py-10 md:py-14">
         <div className="container mx-auto px-4">
           {loading ? (
-            <div className="grid lg:grid-cols-[1fr_300px] gap-10">
+            <div className="grid lg:grid-cols-[1fr_280px] gap-10">
               <div className="space-y-8">
                 <Skeleton className="h-64 rounded-2xl" />
                 <div className="grid md:grid-cols-3 gap-6">
@@ -354,7 +328,6 @@ const Blog = () => {
                 </div>
               </div>
               <div className="space-y-6">
-                <Skeleton className="h-48 rounded-2xl" />
                 <Skeleton className="h-64 rounded-2xl" />
               </div>
             </div>
@@ -369,7 +342,7 @@ const Blog = () => {
               </p>
             </div>
           ) : (
-            <div className="grid lg:grid-cols-[1fr_300px] gap-10">
+            <div className="grid lg:grid-cols-[1fr_280px] gap-10">
               {/* Left: Articles */}
               <div className="space-y-8">
                 {/* Featured Article */}
@@ -397,35 +370,10 @@ const Blog = () => {
                 )}
               </div>
 
-              {/* Right Sidebar */}
+              {/* Right Sidebar - Only popular articles */}
               <aside className="space-y-6 hidden lg:block">
-                <SidebarPromoCard
-                  title="WEBINAIRE"
-                  description="Participez à notre prochain webinaire de démo"
-                  linkText="Découvrir nos webinaires"
-                  linkUrl="/fonctionnalites"
-                  icon={
-                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-                      <span className="text-2xl">🎥</span>
-                    </div>
-                  }
-                />
-
-                <SidebarPromoCard
-                  title="GUIDE PRATIQUE"
-                  description="Optimisez la gestion de vos formations"
-                  linkText="En savoir +"
-                  linkUrl="/solutions"
-                  icon={
-                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-                      <span className="text-2xl">📘</span>
-                    </div>
-                  }
-                />
-
-                {/* Popular Articles */}
                 {popularPosts.length > 0 && (
-                  <div className="bg-card rounded-2xl border border-border/40 p-6">
+                  <div className="bg-card rounded-2xl border-2 border-primary/20 p-6">
                     <h3 className="text-primary font-bold text-lg mb-5">Articles les + lus</h3>
                     <div className="space-y-4">
                       {popularPosts.map(post => (

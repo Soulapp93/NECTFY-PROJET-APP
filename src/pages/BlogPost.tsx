@@ -3,7 +3,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { 
-  Clock, Calendar, ArrowLeft, ArrowRight, Share2, Eye, User, ChevronRight, BookOpen
+  Clock, Calendar, ArrowRight, Share2, User, ChevronRight, BookOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -156,7 +156,7 @@ const RelatedPosts = ({ currentSlug }: { currentSlug: string }) => {
       <div className="grid md:grid-cols-3 gap-6">
         {posts.map(post => (
           <Link key={post.id} to={`/blog/${post.slug}`} className="group">
-            <div className="aspect-video rounded-xl overflow-hidden mb-3 bg-muted relative">
+            <div className="aspect-video rounded-xl overflow-hidden mb-3 bg-muted relative border-2 border-primary/20">
               {post.cover_image_url ? (
                 <img 
                   src={post.cover_image_url} 
@@ -263,7 +263,7 @@ const BlogPostPage = () => {
   const currentUrl = window.location.href;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-primary/5">
       <title>{post.seo_title || post.title} | Blog Nectforma</title>
       <meta name="description" content={post.seo_description || post.excerpt || ''} />
       <meta property="og:title" content={post.seo_title || post.title} />
@@ -275,7 +275,7 @@ const BlogPostPage = () => {
       <BlogHeader />
 
       {/* Breadcrumb bar */}
-      <div className="border-b bg-muted/30">
+      <div className="border-b bg-background">
         <div className="container mx-auto px-4 py-3">
           <nav className="flex items-center gap-2 text-sm text-muted-foreground">
             <Link to="/" className="hover:text-foreground transition-colors">Accueil</Link>
@@ -306,104 +306,102 @@ const BlogPostPage = () => {
             </div>
           </aside>
 
-          {/* Main Content */}
+          {/* Main Content - Violet framed */}
           <div className="min-w-0">
-            {/* Article Header */}
-            <header className="mb-8">
-              <div className="flex flex-wrap items-center gap-3 mb-4">
-                {post.category && (
-                  <span className="text-xs font-bold uppercase tracking-widest text-primary">
-                    {post.category.name}
-                  </span>
-                )}
-                <Badge variant="secondary" className="bg-primary/10 text-primary text-xs font-bold gap-1">
-                  <Eye className="h-3 w-3" />
-                  {post.views_count || 0}
-                </Badge>
-              </div>
-
-              <h1 className="text-3xl md:text-4xl font-bold mb-4 leading-tight text-foreground">
-                {post.title}
-              </h1>
-
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="h-4 w-4 text-primary" />
-                  </div>
-                  <span className="font-medium text-foreground">Équipe Nectforma</span>
+            <div className="bg-background rounded-2xl border-2 border-primary/30 shadow-lg shadow-primary/5 p-6 md:p-10">
+              {/* Article Header */}
+              <header className="mb-8">
+                <div className="flex flex-wrap items-center gap-3 mb-4">
+                  {post.category && (
+                    <span className="text-xs font-bold uppercase tracking-widest text-primary">
+                      {post.category.name}
+                    </span>
+                  )}
                 </div>
-                {post.published_at && (
+
+                <h1 className="text-3xl md:text-4xl font-bold mb-4 leading-tight text-foreground">
+                  {post.title}
+                </h1>
+
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <User className="h-4 w-4 text-primary" />
+                    </div>
+                    <span className="font-medium text-foreground">Équipe Nectforma</span>
+                  </div>
+                  {post.published_at && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {format(new Date(post.published_at), 'd MMMM yyyy', { locale: fr })}
+                    </span>
+                  )}
                   <span className="flex items-center gap-1">
-                    <Calendar className="h-3.5 w-3.5" />
-                    {format(new Date(post.published_at), 'd MMMM yyyy', { locale: fr })}
+                    <Clock className="h-3.5 w-3.5" />
+                    {post.read_time_minutes} min
                   </span>
-                )}
-                <span className="flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5" />
-                  {post.read_time_minutes} min
-                </span>
-              </div>
-            </header>
+                </div>
+              </header>
 
-            {/* Cover Image */}
-            {post.cover_image_url && (
-              <div className="rounded-xl overflow-hidden mb-10 shadow-md">
-                <img
-                  src={post.cover_image_url}
-                  alt={post.title}
-                  className="w-full h-auto object-cover"
-                />
-              </div>
-            )}
+              {/* Cover Image */}
+              {post.cover_image_url && (
+                <div className="rounded-xl overflow-hidden mb-10 shadow-md border-2 border-primary/20">
+                  <img
+                    src={post.cover_image_url}
+                    alt={post.title}
+                    className="w-full h-auto object-cover"
+                  />
+                </div>
+              )}
 
-            {/* Mobile social share */}
-            <div className="lg:hidden mb-6">
-              <SocialShareButtons title={post.title} url={currentUrl} />
+              {/* Mobile social share */}
+              <div className="lg:hidden mb-6">
+                <SocialShareButtons title={post.title} url={currentUrl} />
+              </div>
+
+              {/* Content */}
+              <div 
+                ref={contentRef}
+                className="prose prose-lg max-w-none dark:prose-invert 
+                  prose-headings:scroll-mt-20
+                  prose-h1:text-3xl prose-h1:font-bold prose-h1:mt-8 prose-h1:mb-4
+                  prose-h2:text-2xl prose-h2:font-bold prose-h2:mt-10 prose-h2:mb-4 prose-h2:text-primary
+                  prose-h3:text-xl prose-h3:font-semibold prose-h3:mt-8 prose-h3:mb-3 prose-h3:text-primary/80
+                  prose-p:text-foreground/80 prose-p:leading-relaxed prose-p:mb-4
+                  prose-a:text-primary prose-a:no-underline hover:prose-a:underline
+                  prose-img:rounded-xl prose-img:shadow-md prose-img:my-8 prose-img:border-2 prose-img:border-primary/10
+                  prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-xl prose-blockquote:not-italic prose-blockquote:text-primary/90
+                  prose-code:bg-muted prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm
+                  prose-pre:bg-muted prose-pre:border prose-pre:rounded-xl
+                  prose-ul:text-foreground/80 prose-ol:text-foreground/80
+                  prose-li:mb-2
+                  prose-strong:text-foreground prose-strong:font-semibold
+                  prose-table:border prose-table:rounded-lg prose-table:overflow-hidden
+                  prose-th:bg-muted prose-th:p-3 prose-th:text-left
+                  prose-td:p-3 prose-td:border-t
+                  [&_.carousel-slide]:rounded-xl [&_.carousel-slide]:shadow-lg
+                  [&_div[style*='background']]:rounded-xl [&_div[style*='background']]:my-4"
+                dangerouslySetInnerHTML={{ __html: processContent(post.content) }}
+              />
+
+              {/* Tags */}
+              {post.tags && post.tags.length > 0 && (
+                <div className="mt-8 pt-8 border-t border-primary/10">
+                  <div className="flex flex-wrap gap-2">
+                    {post.tags.map(tag => (
+                      <Link key={tag.id} to={`/blog?tag=${tag.slug}`}>
+                        <Badge variant="outline" className="hover:bg-primary/10 border-primary/20 transition-colors">
+                          #{tag.name}
+                        </Badge>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Content */}
-            <div 
-              ref={contentRef}
-              className="prose prose-lg max-w-none dark:prose-invert 
-                prose-headings:scroll-mt-20
-                prose-h1:text-3xl prose-h1:font-bold prose-h1:mt-8 prose-h1:mb-4
-                prose-h2:text-2xl prose-h2:font-bold prose-h2:mt-10 prose-h2:mb-4 prose-h2:text-primary
-                prose-h3:text-xl prose-h3:font-semibold prose-h3:mt-8 prose-h3:mb-3 prose-h3:text-primary/80
-                prose-p:text-foreground/80 prose-p:leading-relaxed prose-p:mb-4
-                prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-                prose-img:rounded-xl prose-img:shadow-md prose-img:my-8
-                prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-xl prose-blockquote:not-italic prose-blockquote:text-primary/90
-                prose-code:bg-muted prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm
-                prose-pre:bg-muted prose-pre:border prose-pre:rounded-xl
-                prose-ul:text-foreground/80 prose-ol:text-foreground/80
-                prose-li:mb-2
-                prose-strong:text-foreground prose-strong:font-semibold
-                prose-table:border prose-table:rounded-lg prose-table:overflow-hidden
-                prose-th:bg-muted prose-th:p-3 prose-th:text-left
-                prose-td:p-3 prose-td:border-t
-                [&_.carousel-slide]:rounded-xl [&_.carousel-slide]:shadow-lg
-                [&_div[style*='background']]:rounded-xl [&_div[style*='background']]:my-4"
-              dangerouslySetInnerHTML={{ __html: processContent(post.content) }}
-            />
-
-            {/* Tags */}
-            {post.tags && post.tags.length > 0 && (
-              <div className="mt-8 pt-8 border-t">
-                <div className="flex flex-wrap gap-2">
-                  {post.tags.map(tag => (
-                    <Link key={tag.id} to={`/blog?tag=${tag.slug}`}>
-                      <Badge variant="outline" className="hover:bg-muted transition-colors">
-                        #{tag.name}
-                      </Badge>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Author Card */}
-            <div className="mt-10 p-6 rounded-2xl bg-muted/40 border border-border/40 flex items-start gap-4">
+            {/* Author Card - Outside the frame */}
+            <div className="mt-8 p-6 rounded-2xl bg-background border-2 border-primary/20 flex items-start gap-4">
               <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                 <User className="h-7 w-7 text-primary" />
               </div>
@@ -425,7 +423,7 @@ const BlogPostPage = () => {
       </article>
 
       {/* Footer */}
-      <footer className="border-t bg-muted/30 py-12 mt-16">
+      <footer className="border-t bg-background py-12 mt-16">
         <div className="container mx-auto px-4 text-center">
           <Link to="/" className="flex items-center gap-2 justify-center mb-4">
             <img src={logoNf} alt="Nectforma" className="h-8" />
