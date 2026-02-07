@@ -381,6 +381,11 @@ const AIPostEditor = ({
                   content={formData.content || ''}
                   onChange={(content) => setFormData(prev => ({ ...prev, content }))}
                   title={formData.title}
+                  onImageGenerated={(imageUrl) => {
+                    if (!formData.cover_image_url) {
+                      setFormData(prev => ({ ...prev, cover_image_url: imageUrl }));
+                    }
+                  }}
                 />
               </div>
             </div>

@@ -360,7 +360,7 @@ serve(async (req) => {
       }
 
       if (!imageUrl) {
-        console.error('No image in AI response');
+        console.error('No image in AI response:', JSON.stringify(imageData).substring(0, 300));
         return new Response(
           JSON.stringify({ error: 'Aucune image générée' }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -23,6 +23,7 @@ interface EnhancedArticleEditorProps {
   content: string;
   onChange: (content: string) => void;
   title?: string;
+  onImageGenerated?: (imageUrl: string) => void;
 }
 
 // Preset color palette
@@ -53,7 +54,8 @@ const fontSizes = [
 export const EnhancedArticleEditor: React.FC<EnhancedArticleEditorProps> = ({
   content,
   onChange,
-  title
+  title,
+  onImageGenerated
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -96,14 +98,39 @@ export const EnhancedArticleEditor: React.FC<EnhancedArticleEditorProps> = ({
     }
   };
 
-  // Insert image from URL
-  const insertImage = (url: string) => {
-    if (editorRef.current) {
-      const img = `<img src="${url}" alt="Article image" style="max-width: 100%; height: auto; border-radius: 8px; margin: 1rem 0;" />`;
-      document.execCommand('insertHTML', false, img);
-      onChange(editorRef.current.innerHTML);
+  // Insert image using direct DOM manipulation (reliable replacement for deprecated execCommand)
+  const insertImage = useCallback((url: string) => {
+    if (!editorRef.current) return;
+    
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = 'Article image';
+    img.style.cssText = 'max-width: 100%; height: auto; border-radius: 8px; margin: 1rem 0; display: block;';
+    
+    // Try to insert at cursor position
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      // Check if cursor is inside the editor
+      if (editorRef.current.contains(range.commonAncestorContainer)) {
+        range.deleteContents();
+        range.insertNode(img);
+        // Move cursor after the image
+        range.setStartAfter(img);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      } else {
+        // Cursor is outside editor, append at end
+        editorRef.current.appendChild(img);
+      }
+    } else {
+      // No selection, append at end
+      editorRef.current.appendChild(img);
     }
-  };
+    
+    onChange(editorRef.current.innerHTML);
+  }, [onChange]);
 
   // Generate AI image based on prompt
   const generateAIImage = async (autoPrompt = false) => {
@@ -131,28 +158,24 @@ export const EnhancedArticleEditor: React.FC<EnhancedArticleEditorProps> = ({
 
       if (error) throw error;
 
-      console.log('Image generation response:', JSON.stringify({
-        keys: Object.keys(data || {}),
-        success: data?.success,
-        hasImageUrl: !!data?.imageUrl,
-        imageUrlType: typeof data?.imageUrl,
-        imageUrlLength: data?.imageUrl?.length || 0,
-        imageUrlPrefix: data?.imageUrl?.substring?.(0, 30),
-      }));
+      let imageUrl = data?.imageUrl;
       
-      const imageUrl = data?.imageUrl;
+      // Handle raw base64 without prefix
+      if (imageUrl && !imageUrl.startsWith('data:') && !imageUrl.startsWith('http') && imageUrl.length > 100) {
+        imageUrl = `data:image/png;base64,${imageUrl}`;
+      }
       
-      // Accept base64 data URIs or http(s) URLs
       if (imageUrl && (imageUrl.startsWith('data:') || imageUrl.startsWith('http'))) {
+        // Focus editor before inserting
+        editorRef.current?.focus();
+        // Small delay to ensure focus is established
+        await new Promise(r => setTimeout(r, 100));
         insertImage(imageUrl);
-        toast.success('Image générée et insérée dans l\'article !');
-        setImagePrompt('');
-        setShowImageGenerator(false);
-      } else if (imageUrl && imageUrl.length > 100) {
-        // Likely raw base64 without prefix
-        const fullUrl = `data:image/png;base64,${imageUrl}`;
-        insertImage(fullUrl);
-        toast.success('Image générée et insérée dans l\'article !');
+        
+        // Also set as cover image
+        onImageGenerated?.(imageUrl);
+        
+        toast.success('Image générée et ajoutée avec succès !');
         setImagePrompt('');
         setShowImageGenerator(false);
       } else {
