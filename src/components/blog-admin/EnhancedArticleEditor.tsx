@@ -131,13 +131,27 @@ export const EnhancedArticleEditor: React.FC<EnhancedArticleEditorProps> = ({
 
       if (error) throw error;
 
-      console.log('Image generation response keys:', Object.keys(data || {}));
+      console.log('Image generation response:', JSON.stringify({
+        keys: Object.keys(data || {}),
+        success: data?.success,
+        hasImageUrl: !!data?.imageUrl,
+        imageUrlType: typeof data?.imageUrl,
+        imageUrlLength: data?.imageUrl?.length || 0,
+        imageUrlPrefix: data?.imageUrl?.substring?.(0, 30),
+      }));
       
-      // The response is { success: true, imageUrl: "data:image/..." }
       const imageUrl = data?.imageUrl;
       
-      if (imageUrl && imageUrl.startsWith('data:image')) {
+      // Accept base64 data URIs or http(s) URLs
+      if (imageUrl && (imageUrl.startsWith('data:') || imageUrl.startsWith('http'))) {
         insertImage(imageUrl);
+        toast.success('Image générée et insérée dans l\'article !');
+        setImagePrompt('');
+        setShowImageGenerator(false);
+      } else if (imageUrl && imageUrl.length > 100) {
+        // Likely raw base64 without prefix
+        const fullUrl = `data:image/png;base64,${imageUrl}`;
+        insertImage(fullUrl);
         toast.success('Image générée et insérée dans l\'article !');
         setImagePrompt('');
         setShowImageGenerator(false);

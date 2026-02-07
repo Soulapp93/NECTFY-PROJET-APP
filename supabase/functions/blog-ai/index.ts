@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -346,10 +347,81 @@ serve(async (req) => {
       }
 
       const imageData = await imageResponse.json();
-      const imageUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+      console.log('Image API response structure:', JSON.stringify({
+        hasChoices: !!imageData.choices,
+        hasImages: !!imageData.choices?.[0]?.message?.images,
+        imagesLength: imageData.choices?.[0]?.message?.images?.length,
+      }));
+      
+      let imageUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+      
+      if (!imageUrl) {
+        imageUrl = imageData.data?.[0]?.url || imageData.data?.[0]?.b64_json;
+      }
+
+      if (!imageUrl) {
+        console.error('No image in AI response');
+        return new Response(
+          JSON.stringify({ error: 'Aucune image générée' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // If it's base64, upload to storage and return public URL
+      if (imageUrl.startsWith('data:')) {
+        try {
+          const supabaseAdmin = createClient(
+            Deno.env.get('SUPABASE_URL')!,
+            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+          );
+
+          // Extract base64 data
+          const base64Match = imageUrl.match(/^data:image\/(\w+);base64,(.+)$/);
+          if (!base64Match) throw new Error('Invalid base64 format');
+          
+          const ext = base64Match[1] === 'jpeg' ? 'jpg' : base64Match[1];
+          const base64Data = base64Match[2];
+          const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+          
+          const fileName = `blog-images/${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+          
+          const { error: uploadError } = await supabaseAdmin.storage
+            .from('blog-assets')
+            .upload(fileName, binaryData, {
+              contentType: `image/${base64Match[1]}`,
+              upsert: false,
+            });
+
+          if (uploadError) {
+            console.error('Storage upload error:', uploadError);
+            // Fallback: return base64 directly
+            return new Response(
+              JSON.stringify({ success: true, imageUrl }),
+              { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+
+          const { data: publicUrlData } = supabaseAdmin.storage
+            .from('blog-assets')
+            .getPublicUrl(fileName);
+
+          console.log('Image uploaded to storage:', publicUrlData.publicUrl);
+          
+          return new Response(
+            JSON.stringify({ success: true, imageUrl: publicUrlData.publicUrl }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        } catch (uploadErr) {
+          console.error('Upload failed, returning base64:', uploadErr);
+          return new Response(
+            JSON.stringify({ success: true, imageUrl }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
       
       return new Response(
-        JSON.stringify({ success: true, imageUrl: imageUrl || null }),
+        JSON.stringify({ success: true, imageUrl }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
