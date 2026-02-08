@@ -114,18 +114,18 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    line-height: 1.55;
+    line-height: 1.6;
     letter-spacing: -0.01em;
   }
 
-  /* Typographie améliorée - Titres avec Poppins */
+  /* Typographie - Titres avec Plus Jakarta Sans */
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Poppins', 'Inter', sans-serif;
-    font-weight: 600;
-    letter-spacing: -0.02em;
+    font-family: 'Plus Jakarta Sans', 'DM Sans', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.025em;
   }
 
   /* Desktop compact scaling */

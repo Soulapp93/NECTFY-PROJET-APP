@@ -1,10 +1,10 @@
- import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   LayoutDashboard, ShieldCheck, Users, GraduationCap, BookText, CalendarDays, 
   ClipboardCheck, Mail, UsersRound, Building2, UserCircle, Briefcase,
   ArrowRight, CheckCircle2, Sparkles, Play, Shield, Zap, Clock, Monitor,
-  Send, Phone, MapPin
+  Send, Phone, MapPin, ChevronDown
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -21,6 +21,7 @@ import AnimatedButton from '@/components/landing/AnimatedButton';
 import SectionDivider from '@/components/landing/SectionDivider';
 import GradientBackground from '@/components/landing/GradientBackground';
  import MobileDrawerNavigation from '@/components/landing/MobileDrawerNavigation';
+ import HeaderDropdown from '@/components/landing/HeaderDropdown';
  import { Menu } from 'lucide-react';
 
 // Import du logo NF stylé
@@ -323,22 +324,39 @@ const Index = () => {
               </div>
             </div>
             
-            <nav className="hidden lg:flex items-center space-x-8">
-              <a href="#fonctionnalites" className="text-white/80 hover:text-white font-medium transition-all duration-300 hover:scale-105">
-                Solutions
-              </a>
-              <Link to="/fonctionnalites" className="text-white/80 hover:text-white font-medium transition-all duration-300 hover:scale-105">
-                Fonctionnalités
-              </Link>
-              <Link to="/pourquoi-nous" className="text-white/80 hover:text-white font-medium transition-all duration-300 hover:scale-105">
+            <nav className="hidden lg:flex items-center space-x-1">
+              {/* Solution dropdown */}
+              <HeaderDropdown
+                label="Solution"
+                items={[
+                  { label: 'Tableau de bord', href: '#fonctionnalites', isAnchor: true },
+                  { label: 'Gestion des formations', href: '/fonctionnalites' },
+                  { label: 'Emplois du temps', href: '/fonctionnalites' },
+                  { label: 'Émargement digital', href: '/fonctionnalites' },
+                  { label: 'Classes virtuelles', href: '/fonctionnalites' },
+                ]}
+              />
+              {/* Fonctionnalités dropdown */}
+              <HeaderDropdown
+                label="Fonctionnalités"
+                items={[
+                  { label: 'Administration', href: '/fonctionnalites' },
+                  { label: 'Gestion des utilisateurs', href: '/fonctionnalites' },
+                  { label: 'Cahiers de texte', href: '/fonctionnalites' },
+                  { label: 'Messagerie interne', href: '/fonctionnalites' },
+                  { label: 'Groupes & Chat', href: '/fonctionnalites' },
+                  { label: 'Espace tuteurs', href: '/fonctionnalites' },
+                ]}
+              />
+              <Link to="/pourquoi-nous" className="px-4 py-2 text-white/80 hover:text-white font-medium transition-all duration-200 rounded-lg hover:bg-white/10">
                 Pourquoi nous ?
               </Link>
-              <Link to="/blog" className="text-white/80 hover:text-white font-medium transition-all duration-300 hover:scale-105">
+              <Link to="/blog" className="px-4 py-2 text-white/80 hover:text-white font-medium transition-all duration-200 rounded-lg hover:bg-white/10">
                 Articles & Blog
               </Link>
               <a 
                 href="#contact" 
-                className="text-white/80 hover:text-white font-medium transition-all duration-300 hover:scale-105"
+                className="px-4 py-2 text-white/80 hover:text-white font-medium transition-all duration-200 rounded-lg hover:bg-white/10"
               >
                 Contact
               </a>
